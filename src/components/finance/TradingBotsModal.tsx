@@ -1,17 +1,23 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import type { StoreLike } from '@/lib/engine/paperLedgerStore';
+import type { PaperTrade } from '@/lib/engine/paperTrading';
+
+const ACCOUNT_FOR_BOT: Record<string, 'altair-sol' | 'kenzo-usdc' | 'damian-usd'> = {
+  'meteora-lp': 'altair-sol',
+  'prediction-market': 'kenzo-usdc',
+  'xauusd-ea': 'damian-usd',
+};
 import { useVenueFeed } from '@/components/trading/useVenueFeed';
+import { loadPaperLedgerV2, savePaperLedgerV2, resetPaperLedgerV2, type LoadResult } from '@/lib/engine/paperLedgerStore';
+import { placePolymarketOrderV2 } from '@/lib/engine/paperPolymarketV2';
+import type { PaperLedgerV2 } from '@/lib/engine/paperLedgerV2';
 import type { MarketFeedEnvelope, MeteoraFeedData, PolymarketFeedData, ExnessFeedData } from '@/lib/data/markets';
 import { css } from '@emotion/css';
 import Modal from '@/components/ui/Modal';
 import { AGENTS } from '@/lib/data/agents';
 import {
-  loadPaperState,
-  savePaperState,
-  resetPaperState,
-  submitPolymarketTrade,
-  PaperState,
   MeteoraPool,
   PolymarketMarket,
 } from '@/lib/engine/paperTrading';
@@ -371,7 +377,11 @@ export default function TradingBotsModal({
   );
 
   const [activeBotId, setActiveBotId] = useState(initialBotId);
-  const [paperState, setPaperState] = useState<PaperState | null>(null);
+  const [ledgerV2, setLedgerV2] = useState<PaperLedgerV2 | null>(null);
+  const [loadInfo, setLoadInfo] = useState<LoadResult | null>(null);
+  const orderSeq = useRef(0);
+  const nextOrderId = () => `poly-${++orderSeq.current}-${Date.now()}`;
+  const localStore = () => (typeof window !== 'undefined' ? window.localStorage : null) as StoreLike;
   const [stateCorrupt, setStateCorrupt] = useState(false);
 
   // Meteora state
@@ -402,9 +412,17 @@ export default function TradingBotsModal({
   // Load paper state on mount
   useEffect(() => {
     if (!isOpen) return;
-    const { state, isCorrupt } = loadPaperState();
-    setPaperState(state);
-    setStateCorrupt(isCorrupt);
+    const store = typeof window !== 'undefined' ? window.localStorage : null;
+    if (!store) return;
+    const result = loadPaperLedgerV2(store);
+    setLoadInfo(result);
+    if (result.status === 'ready') {
+      setLedgerV2(result.ledger);
+      setStateCorrupt(false);
+    } else {
+      setLedgerV2(null);
+      setStateCorrupt(true);
+    }
   }, [isOpen]);
 
   // Fetch Meteora pools
@@ -475,23 +493,23 @@ export default function TradingBotsModal({
     [activeBotId, tradingBots]
   );
 
-  const currentBalance = paperState?.balances[activeBotId as 'meteora-lp' | 'prediction-market' | 'xauusd-ea'] ?? 0;
+  const currentBalance = ledgerV2 ? Number(ledgerV2.accounts[ACCOUNT_FOR_BOT[activeBotId] ?? 'kenzo-usdc'].available) : 0;
   const recentTrades = useMemo(
-    () => (paperState?.trades || []).filter((t) => t.botId === activeBotId),
-    [paperState, activeBotId]
+    () => [] as PaperTrade[],
+    [ledgerV2, activeBotId]
   );
 
   const [resetNotPersisted, setResetNotPersisted] = useState(false);
 
   const handleResetStorage = () => {
-    const { state: fresh, persisted } = resetPaperState();
-    setPaperState(fresh);
+    const { ledger, persisted } = resetPaperLedgerV2(localStore());
+    setLedgerV2(ledger);
     setStateCorrupt(false);
     setResetNotPersisted(!persisted);
   };
 
   const handlePolyOrder = (side: 'up' | 'down', market: PolymarketMarket) => {
-    if (!paperState) return;
+    if (!ledgerV2) return;
     setPolyStakeError('');
     const stakeNum = parseFloat(polyStake);
     if (isNaN(stakeNum) || stakeNum <= 0) {
@@ -501,21 +519,23 @@ export default function TradingBotsModal({
     const token = market.tokens?.find((t) => t.outcome.toLowerCase() === side);
     const price = token ? token.price : 0.5;
 
-    const res = submitPolymarketTrade(paperState, {
-      marketId: market.id,
-      question: market.question,
+    const ledger = ledgerV2;
+    if (!ledger) return;
+    const res = placePolymarketOrderV2(ledger, {
+      id: nextOrderId(),
       side,
-      stake: stakeNum,
+      stakeUsdc: stakeNum,
       price,
+      now: Date.now(),
     });
-
-    if (!res.success) {
-      setPolyStakeError(res.error || 'Gagal membuat paper order.');
+    if (res.ok === false) {
+      setPolyStakeError(
+        res.reason === 'insufficient-available' ? 'Stake melebihi saldo USDC tersedia.' : 'Gagal membuat paper order.',
+      );
       return;
     }
-
-    setPaperState(res.newState);
-    savePaperState(res.newState);
+    setLedgerV2(res.ledger);
+    savePaperLedgerV2(localStore(), res.ledger);
   };
 
   if (!isOpen) return null;
