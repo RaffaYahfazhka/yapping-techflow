@@ -5,9 +5,9 @@ import type { StoreLike } from '@/lib/engine/paperLedgerStore';
 import type { PaperTrade } from '@/lib/engine/paperTrading';
 
 const ACCOUNT_FOR_BOT: Record<string, 'altair-sol' | 'kenzo-usdc' | 'damian-usd'> = {
-  'meteora-lp': 'altair-sol',
-  'prediction-market': 'kenzo-usdc',
-  'xauusd-ea': 'damian-usd',
+  'altair-raditya': 'altair-sol',
+  'kenzo-danendra': 'kenzo-usdc',
+  'damian-prasetya': 'damian-usd',
 };
 import { useVenueFeed } from '@/components/trading/useVenueFeed';
 import { loadPaperLedgerV2, savePaperLedgerV2, resetPaperLedgerV2, type LoadResult } from '@/lib/engine/paperLedgerStore';
@@ -368,7 +368,7 @@ function NativePriceChart({
 export default function TradingBotsModal({
   isOpen,
   onClose,
-  initialBotId = 'meteora-lp',
+  initialBotId = 'altair-raditya',
   onFocusAgentInScene,
 }: TradingBotsModalProps) {
   const tradingBots = useMemo(
@@ -626,17 +626,17 @@ export default function TradingBotsModal({
           </div>
           <div className={styles.metricItem}>
             <span className={styles.metricLabel}>Connection Feed</span>
-            {activeBotId === 'meteora-lp' && (
+            {activeBotId === 'altair-raditya' && (
               <span className={styles.statusBadge(meteoraStatus)}>
                 {meteoraStatus.toUpperCase()} (Meteora DLMM)
               </span>
             )}
-            {activeBotId === 'prediction-market' && (
+            {activeBotId === 'kenzo-danendra' && (
               <span className={styles.statusBadge(polyStatus)}>
                 {polyStatus.toUpperCase()} (Polymarket Gamma)
               </span>
             )}
-            {activeBotId === 'xauusd-ea' && (
+            {activeBotId === 'damian-prasetya' && (
               <span className={styles.statusBadge(exnessStatus)}>
                 {exnessStatus.toUpperCase()} (Exness Demo)
               </span>
@@ -653,13 +653,13 @@ export default function TradingBotsModal({
           <div className={styles.metricItem}>
             <span className={styles.metricLabel}>Strategy Status</span>
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#a1a1aa' }}>
-              {activeBotId === 'prediction-market' ? 'Repo belum dipilih' : activeBot.duties.split(';')[0]}
+              {activeBotId === 'kenzo-danendra' ? 'Repo belum dipilih' : activeBot.duties.split(';')[0]}
             </span>
           </div>
         </div>
 
         {/* Specific Bot View */}
-        {activeBotId === 'meteora-lp' && (
+        {activeBotId === 'altair-raditya' && (
           <>
             <div className={styles.alertBanner(false)}>
               <strong>Meteora LP Worker (Read-Only):</strong> Memeringkat pool Solana dari rasio fee/TVL 24 jam. Saldo virtual $30 tetap tidak dialokasikan karena metrik API tidak memodelkan impermanent loss atau bin-range fee DLMM personal.
@@ -713,7 +713,7 @@ export default function TradingBotsModal({
           </>
         )}
 
-        {activeBotId === 'prediction-market' && (
+        {activeBotId === 'kenzo-danendra' && (
           <>
             <div className={styles.alertBanner(false)}>
               <strong>Polymarket 5m Crypto Worker:</strong> Memfilter pasar prediksi crypto Up/Down berdurasi 300 detik. Mendukung simulasi paper trade manual. Otomasi bot berstatus <em>Repo belum dipilih</em> hingga URL repositori GitHub diserahkan dan ditinjau.
@@ -801,7 +801,7 @@ export default function TradingBotsModal({
           </>
         )}
 
-        {activeBotId === 'xauusd-ea' && (
+        {activeBotId === 'damian-prasetya' && (
           <>
             {exnessStatus === 'unavailable' ? (
               <div className={styles.alertBanner(true)}>

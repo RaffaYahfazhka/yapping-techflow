@@ -65,9 +65,9 @@ export const VENUE_LABEL: Record<MarketVenue, string> = {
 
 /** Id bot di `AGENTS` → venue feed terkait. Bot lain tidak punya feed pasar. */
 export const BOT_VENUE_MAP: Record<string, MarketVenue> = {
-  'meteora-lp': 'meteora',
-  'prediction-market': 'polymarket',
-  'xauusd-ea': 'exness',
+  'altair-raditya': 'meteora',
+  'kenzo-danendra': 'polymarket',
+  'damian-prasetya': 'exness',
 };
 
 export function venueForBot(botId?: string | null): MarketVenue | null {

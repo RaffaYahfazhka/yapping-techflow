@@ -80,7 +80,7 @@ export default function OfficePage() {
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [activeAgentModalId, setActiveAgentModalId] = useState('tara');
   const [isTradingModalOpen, setIsTradingModalOpen] = useState(false);
-  const [activeTradingBotId, setActiveTradingBotId] = useState('meteora-lp');
+  const [activeTradingBotId, setActiveTradingBotId] = useState('altair-raditya');
   const [isKhansaChatOpen, setIsKhansaChatOpen] = useState(false);
   const [khansaAutoPrompt, setKhansaAutoPrompt] = useState(false);
   const [interactAgent, setInteractAgent] = useState(null);
