@@ -46,7 +46,8 @@ check('negative, unsafe, and mismatched values are reported', () => {
   l.accounts['kenzo-usdc'].available = -1;
   l.accounts['damian-usd'].reserved = 2 ** 60;
   const kinds = validateLedgerV2(l).map((i) => i.kind).sort();
-  assert.deepEqual(kinds, ['negative', 'unsafe-integer']);
+  // reserved is now also required to match open positions, so a bare reserved value is flagged too
+  assert.deepEqual(kinds, ['negative', 'reservation-mismatch', 'unsafe-integer']);
 });
 
 check('legacy $30 Meteora payload is never reinterpreted as SOL', () => {

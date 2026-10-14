@@ -17,7 +17,7 @@ export type PolyOrderResult =
 
 export function placePolymarketOrderV2(
   ledger: PaperLedgerV2,
-  order: { id: string; side: PolySide; stakeUsdc: number; price: number; now: number },
+  order: { id: string; side: PolySide; stakeUsdc: number; price: number; now: number; label?: string },
 ): PolyOrderResult {
   if (!(order.price > 0 && order.price < 1)) return { ok: false, reason: 'invalid-price' };
   const r = openPositionV2(ledger, {
@@ -25,6 +25,9 @@ export function placePolymarketOrderV2(
     accountId: POLY_ACCOUNT,
     stakeMajor: order.stakeUsdc,
     now: order.now,
+    label: order.label,
+    side: order.side,
+    price: order.price,
   });
   if (r.ok === false) return { ok: false, reason: r.reason };
   return { ok: true, ledger: r.ledger, position: r.position };

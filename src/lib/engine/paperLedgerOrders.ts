@@ -1,4 +1,4 @@
-import { PAPER_ACCOUNT_SPECS, majorToMinor, validateLedgerV2, type PaperLedgerV2, type PaperAccountId, type Currency } from './paperLedgerV2';
+import { PAPER_ACCOUNT_SPECS, majorToMinor, validateLedgerV2, type PaperLedgerV2, type PaperPositionV2, type PaperAccountId, type Currency } from './paperLedgerV2';
 
 export interface V2Position {
   id: string;
@@ -20,8 +20,9 @@ export type OrderResult =
 /** Reserve stake from `available` into `reserved`. Never mutates the input ledger. */
 export function openPositionV2(
   ledger: PaperLedgerV2,
-  input: { id: string; accountId: PaperAccountId; stakeMajor: number; now: number },
+  input: { id: string; accountId: PaperAccountId; stakeMajor: number; now: number; label?: string; side?: string; price?: number },
 ): OrderResult {
+  if ((ledger.positions ?? []).some((p) => p.id === input.id)) return { ok: false, reason: 'invariant-broken' };
   const acc = ledger.accounts[input.accountId];
   if (!acc) return { ok: false, reason: 'unknown-account' };
   if (!Number.isFinite(input.stakeMajor) || input.stakeMajor <= 0) return { ok: false, reason: 'invalid-amount' };
@@ -35,6 +36,17 @@ export function openPositionV2(
   if (stakeMinor <= 0) return { ok: false, reason: 'invalid-amount' };
   if (stakeMinor > acc.available) return { ok: false, reason: 'insufficient-available' };
 
+  const position: PaperPositionV2 = {
+    id: input.id,
+    accountId: acc.accountId,
+    currency: acc.currency,
+    stakeMinor,
+    status: 'OPEN',
+    label: input.label ?? '',
+    side: input.side ?? '',
+    price: input.price ?? 0,
+    openedAt: input.now,
+  };
   const next: PaperLedgerV2 = {
     ...ledger,
     revision: ledger.revision + 1,
@@ -46,18 +58,10 @@ export function openPositionV2(
         reserved: acc.reserved + stakeMinor,
       },
     },
+    positions: [...(ledger.positions ?? []), position],
   };
   if (validateLedgerV2(next).length > 0) return { ok: false, reason: 'invariant-broken' };
-
-  const position: V2Position = {
-    id: input.id,
-    accountId: acc.accountId,
-    currency: acc.currency,
-    stakeMinor,
-    status: 'OPEN',
-    openedAt: input.now,
-  };
-  return { ok: true, ledger: next, position };
+  return { ok: true, ledger: next, position: position as V2Position };
 }
 
 /**
@@ -70,7 +74,8 @@ export function settlePositionV2(
   position: V2Position,
   outcome: { pnlMajor: number; now: number },
 ): OrderResult & { position?: V2Position } {
-  if (position.status !== 'OPEN') return { ok: false, reason: 'invariant-broken' };
+  const stored = (ledger.positions ?? []).find((p) => p.id === position.id);
+  if (!stored || stored.status !== 'OPEN') return { ok: false, reason: 'invariant-broken' };
   const acc = ledger.accounts[position.accountId];
   if (!acc) return { ok: false, reason: 'unknown-account' };
   if (!Number.isFinite(outcome.pnlMajor)) return { ok: false, reason: 'invalid-amount' };
@@ -85,6 +90,7 @@ export function settlePositionV2(
   const clampedPnl = Math.max(floorMinor, pnlMinor);
   const credit = position.stakeMinor + clampedPnl;
 
+  const settled: PaperPositionV2 = { ...stored, status: 'SETTLED', settledAt: outcome.now, pnlMinor: clampedPnl };
   const next: PaperLedgerV2 = {
     ...ledger,
     revision: ledger.revision + 1,
@@ -92,15 +98,14 @@ export function settlePositionV2(
       ...ledger.accounts,
       [acc.accountId]: {
         ...acc,
-        reserved: acc.reserved - position.stakeMinor,
-        available: acc.available + credit,
+        reserved: acc.reserved - stored.stakeMinor,
+        available: acc.available + stored.stakeMinor + clampedPnl,
       },
     },
+    positions: (ledger.positions ?? []).map((p) => (p.id === stored.id ? settled : p)),
   };
   if (validateLedgerV2(next).length > 0) return { ok: false, reason: 'invariant-broken' };
-
-  const settled: V2Position = { ...position, status: 'SETTLED', settledAt: outcome.now, pnlMinor: clampedPnl };
-  return { ok: true, ledger: next, position: settled };
+  return { ok: true, ledger: next, position: settled as V2Position };
 }
 
 export { PAPER_ACCOUNT_SPECS };

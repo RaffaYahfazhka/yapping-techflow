@@ -494,10 +494,32 @@ export default function TradingBotsModal({
   );
 
   const currentBalance = ledgerV2 ? Number(ledgerV2.accounts[ACCOUNT_FOR_BOT[activeBotId] ?? 'kenzo-usdc'].available) : 0;
-  const recentTrades = useMemo(
-    () => [] as PaperTrade[],
-    [ledgerV2, activeBotId]
-  );
+  const recentTrades = useMemo<PaperTrade[]>(() => {
+    if (!ledgerV2) return [];
+    const accountId = ACCOUNT_FOR_BOT[activeBotId] ?? 'kenzo-usdc';
+    const currency = ledgerV2.accounts[accountId].currency;
+    const scale = currency === 'SOL' ? 1e9 : currency === 'USDC' ? 1e6 : 100;
+    return ledgerV2.positions
+      .filter((p) => p.accountId === accountId)
+      .slice()
+      .reverse()
+      .map((p) => {
+        const stake = p.stakeMinor / scale;
+        const pnl = p.pnlMinor === undefined ? undefined : p.pnlMinor / scale;
+        return {
+          id: p.id,
+          market: p.label || p.id,
+          side: (p.side || 'up') as PaperTrade['side'],
+          stake,
+          entryPrice: p.price,
+          openedAt: p.openedAt,
+          closedAt: p.settledAt,
+          status: p.status === 'OPEN' ? 'OPEN' : 'SETTLED',
+          outcome: p.status === 'OPEN' ? 'pending' : pnl !== undefined && pnl >= 0 ? 'win' : 'loss',
+          grossPnl: pnl,
+        } as PaperTrade;
+      });
+  }, [ledgerV2, activeBotId]);
 
   const [resetNotPersisted, setResetNotPersisted] = useState(false);
 
@@ -527,6 +549,7 @@ export default function TradingBotsModal({
       stakeUsdc: stakeNum,
       price,
       now: Date.now(),
+      label: market.question,
     });
     if (res.ok === false) {
       setPolyStakeError(

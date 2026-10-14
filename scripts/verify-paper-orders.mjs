@@ -61,4 +61,33 @@ ok('settling an already settled position is rejected (no double credit)', () => 
   assert.equal(again.ok, false);
 });
 
+ok('open records the position in the ledger with its stake', () => {
+  const o = openPositionV2(createSeedLedgerV2(), { id: 'q1', accountId: 'kenzo-usdc', stakeMajor: 25, now: 1, label: 'BTC up', side: 'up', price: 0.5 });
+  assert.equal(o.ledger.positions.length, 1);
+  assert.equal(o.ledger.positions[0].status, 'OPEN');
+  assert.equal(o.ledger.positions[0].stakeMinor, 25_000_000);
+  assert.deepEqual(validateLedgerV2(o.ledger), []);
+});
+
+ok('settle updates the stored position to SETTLED with realized pnl', () => {
+  const o = openPositionV2(createSeedLedgerV2(), { id: 'q2', accountId: 'kenzo-usdc', stakeMajor: 10, now: 1 });
+  const s = settlePositionV2(o.ledger, o.position, { pnlMajor: 4, now: 2 });
+  assert.equal(s.ledger.positions[0].status, 'SETTLED');
+  assert.equal(s.ledger.positions[0].pnlMinor, 4_000_000);
+  assert.deepEqual(validateLedgerV2(s.ledger), []);
+});
+
+ok('duplicate position id is rejected so history cannot be overwritten', () => {
+  const o = openPositionV2(createSeedLedgerV2(), { id: 'dup', accountId: 'kenzo-usdc', stakeMajor: 1, now: 1 });
+  const again = openPositionV2(o.ledger, { id: 'dup', accountId: 'kenzo-usdc', stakeMajor: 1, now: 2 });
+  assert.equal(again.ok, false);
+});
+
+ok('a reservation not backed by an open position is flagged by the validator', () => {
+  const o = openPositionV2(createSeedLedgerV2(), { id: 'r1', accountId: 'kenzo-usdc', stakeMajor: 5, now: 1 });
+  const broken = structuredClone(o.ledger);
+  broken.positions = [];
+  assert.ok(validateLedgerV2(broken).some((i) => i.kind === 'reservation-mismatch'));
+});
+
 console.log(`\nResults: ${passed} passed, 0 failed`);

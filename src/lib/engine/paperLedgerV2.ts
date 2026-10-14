@@ -51,11 +51,28 @@ export interface PaperAccountV2 {
   reserved: number;
 }
 
+export interface PaperPositionV2 {
+  id: string;
+  accountId: PaperAccountId;
+  currency: Currency;
+  /** Stake in minor units. */
+  stakeMinor: number;
+  status: 'OPEN' | 'SETTLED';
+  label: string;
+  side: string;
+  price: number;
+  openedAt: number;
+  settledAt?: number;
+  /** Realized P&L in minor units (settled only). */
+  pnlMinor?: number;
+}
+
 export interface PaperLedgerV2 {
   version: typeof LEDGER_SCHEMA_VERSION;
   revision: number;
   resetEpoch: number;
   accounts: Record<PaperAccountId, PaperAccountV2>;
+  positions: PaperPositionV2[];
 }
 
 export function majorToMinor(major: number, currency: Currency): number {
@@ -88,7 +105,7 @@ export function createSeedLedgerV2(): PaperLedgerV2 {
       reserved: 0,
     };
   }
-  return { version: LEDGER_SCHEMA_VERSION, revision: 0, resetEpoch: 0, accounts };
+  return { version: LEDGER_SCHEMA_VERSION, revision: 0, resetEpoch: 0, accounts, positions: [] };
 }
 
 export type LedgerIssue =
@@ -96,7 +113,8 @@ export type LedgerIssue =
   | { kind: 'negative'; accountId: string; field: string }
   | { kind: 'reservation-mismatch'; accountId: string }
   | { kind: 'currency-mismatch'; accountId: string }
-  | { kind: 'missing-account'; accountId: string };
+  | { kind: 'missing-account'; accountId: string }
+  | { kind: 'position-mismatch'; positionId: string };
 
 /** Structural + accounting invariants. Returns every issue found (empty = valid). */
 export function validateLedgerV2(ledger: PaperLedgerV2): LedgerIssue[] {
@@ -114,6 +132,26 @@ export function validateLedgerV2(ledger: PaperLedgerV2): LedgerIssue[] {
       const v = acc[field];
       if (!Number.isSafeInteger(v)) issues.push({ kind: 'unsafe-integer', accountId: spec.accountId, field });
       else if (v < 0) issues.push({ kind: 'negative', accountId: spec.accountId, field });
+    }
+  }
+  // Every position must reference a known account in its own currency, and
+  // the open stake must equal what is reserved for that account.
+  const ids = new Set<string>();
+  for (const pos of ledger.positions ?? []) {
+    const acc = ledger.accounts[pos.accountId];
+    if (ids.has(pos.id) || !acc || acc.currency !== pos.currency || !Number.isSafeInteger(pos.stakeMinor) || pos.stakeMinor <= 0) {
+      issues.push({ kind: 'position-mismatch', positionId: pos.id });
+    }
+    ids.add(pos.id);
+  }
+  for (const spec of PAPER_ACCOUNT_SPECS) {
+    const acc = ledger.accounts[spec.accountId];
+    if (!acc) continue;
+    const openStake = (ledger.positions ?? [])
+      .filter((p) => p.accountId === spec.accountId && p.status === 'OPEN')
+      .reduce((sum, p) => sum + p.stakeMinor, 0);
+    if (openStake !== acc.reserved) {
+      issues.push({ kind: 'reservation-mismatch', accountId: spec.accountId });
     }
   }
   return issues;
