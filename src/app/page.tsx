@@ -18,13 +18,14 @@ import MissionControlModal from '../components/mission/MissionControlModal';
 import MusicPlayerWidget from '../components/music/MusicPlayerWidget';
 import MusicPlayerModal, { RepeatMode } from '../components/music/MusicPlayerModal';
 import SplashScreen from '../components/ui/SplashScreen';
-import OfficeClientBoundary from '@/components/office/OfficeClientBoundary';
 import OfficeMinimap, { blipsFromScene, type Blip } from '@/components/map/OfficeMinimap';
 import OfficeGroupChatModal from '@/components/chat/OfficeGroupChatModal';
 import SkyDartsModal from '@/components/minigames/SkyDartsModal';
 import RetroArcadeModal from '@/components/minigames/RetroArcadeModal';
 import BossWardrobeModal, { type WardrobePreset } from '@/components/executive/BossWardrobeModal';
 import PhotoModeController from '@/components/executive/PhotoModeController';
+import NotificationToasts, { useNotificationToasts, type ToastKind } from '@/components/ui/NotificationToasts';
+import WallboardHologram from '@/components/canvas/WallboardHologram';
 import { createEmployeeSim, employeeStateTick, applyEmployeeTreat, applyWeatherToSim, visibleBubble, type EmployeeSim, type OfficeEvent } from '@/lib/engine/socialEngine';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 import SubordinateModal from '../components/SubordinateModal';
@@ -32,6 +33,7 @@ import TradingBotsModal from '../components/finance/TradingBotsModal';
 import KhansaChatModal from '../components/khansa/KhansaChatModal';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
+import { Compass, Coffee, Shirt, Target, Gamepad2, Camera, BarChart3, PartyPopper } from 'lucide-react';
 
 export default function OfficePage() {
   const stageRef = useRef(null);
@@ -94,6 +96,8 @@ export default function OfficePage() {
   const [isDartsOpen, setIsDartsOpen] = useState(false);
   const [isArcadeOpen, setIsArcadeOpen] = useState(false);
   const [isPhotoActive, setIsPhotoActive] = useState(false);
+  const [isWallboardOpen, setIsWallboardOpen] = useState(false);
+  const { toasts, push: pushToast, dismiss: dismissToast } = useNotificationToasts();
   const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
@@ -276,6 +280,7 @@ export default function OfficePage() {
       }
     );
     sceneRef.current = scene;
+    photoCaptureRef.current = () => scene.capture();
 
     // 2. Audio Engine
     const audio = new AudioEngine({
@@ -534,16 +539,34 @@ export default function OfficePage() {
   const activeTicketForSubordinate =
     liveTickets.find((t) => t.key === selectedTicketKey) || liveTickets[0] || TICKETS[0];
 
+  const handleTreatAll = useCallback(() => {
+    const now = Date.now();
+    setEmployeeSim((prev) => applyEmployeeTreat(prev, now));
+    setOfficeEvents((prev) => [
+      ...prev,
+      {
+        id: `tr-${now}`,
+        at: now,
+        actor: 'khansaku',
+        kind: 'treat',
+        text: '🎉 Mas Bos Raffa traktir Kopi Kenangan & Croissant untuk se-kantor!',
+      },
+    ]);
+    pushToast({
+      kind: 'coffee',
+      title: 'Traktir Se-Kantor!',
+      message: 'Khansaku mengantarkan Kopi Kenangan & Croissant ke meja seluruh karyawan. Stamina & fokus 100%!',
+    });
+  }, [pushToast]);
+
   return (
     <main id="app" className="relative w-screen h-screen overflow-hidden">
       <h1 className="sr-only">
         Kantor Raffa — Interactive 3D Virtual AI Office &amp; Autonomous Mission Control
       </h1>
 
-      {/* 3D WebGL Canvas (imperative scene: movement/avatar runtime) */}
+      {/* 3D WebGL Canvas (interactive isometric office runtime) */}
       <div id="stage" ref={stageRef} aria-label="Kantor 3D isometrik" />
-      {/* R3F declarative penthouse layer: WIB sky, terrace, wallboard, city glow */}
-      {booted && <OfficeClientBoundary equityPct={12.4} captureRef={photoCaptureRef} />}
       <div className="vignette" aria-hidden="true" />
 
       {/* Navbar Component */}
@@ -758,6 +781,7 @@ export default function OfficePage() {
         onSelectTicketKey={setSelectedTicketKey}
         initialTicketKey={selectedTicketKey}
         autoRequestPrompt={khansaAutoPrompt}
+        onTreat={handleTreatAll}
       />
 
       {/* Controls & Shortcut Help Modal */}
@@ -812,11 +836,7 @@ export default function OfficePage() {
           const ev: OfficeEvent = { id: `u-${Date.now()}`, at: Date.now(), actor: 'raffa', kind: 'status', text };
           setOfficeEvents((prev) => [...prev, ev]);
         }}
-        onTreat={() => {
-          const now = Date.now();
-          setEmployeeSim((prev) => applyEmployeeTreat(prev, now));
-          setOfficeEvents((prev) => [...prev, { id: `tr-${now}`, at: now, actor: 'khansaku', kind: 'treat', text: '🎉 Mas Bos Raffa traktir Kopi Kenangan & Croissant untuk se-kantor!' }]);
-        }}
+        onTreat={handleTreatAll}
         onDelegate={() => {
           setIsOfficeChatOpen(false);
           setIsKhansaChatOpen(true);
@@ -840,60 +860,94 @@ export default function OfficePage() {
       {/* YouTube Iframe Audio Host (Hidden unobtrusively without zero-dimension throttling) */}
       <div id="yt-player-host" aria-label="Pemutar musik YouTube" />
 
-      {/* Penthouse Quick Actions Dock */}
+      {/* Giant Wallboard Hologram — War Room */}
+      <WallboardHologram isOpen={isWallboardOpen && booted} onClose={() => setIsWallboardOpen(false)} />
+
+      {/* SCBD Executive Push Notification Toasts */}
+      <NotificationToasts toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Penthouse Quick Actions Dock — Glassmorphic with Lucide Icons */}
       {booted && (
         <div
           role="toolbar"
           aria-label="Penthouse Quick Actions"
-          className="fixed bottom-4 right-4 md:right-auto md:left-1/2 md:-translate-x-1/2 z-30 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#0a0a0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.6)] select-none text-xs"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 p-2 px-3 rounded-2xl bg-[#0a0a0e]/95 backdrop-blur-2xl border border-white/[0.12] shadow-[0_16px_48px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)] select-none text-[11px]"
         >
           <button
             type="button"
             onClick={() => setIsMinimapOpen((o) => !o)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold transition-all hover:-translate-y-0.5"
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(52,211,153,0.15)]"
             title="Radar Minimap Penthouse (M)"
           >
-            <span>🗺️ Radar</span>
+            <Compass size={13} className="transition-transform duration-300 group-hover:rotate-45" />
+            <span>Radar</span>
           </button>
           <button
             type="button"
             onClick={() => setIsOfficeChatOpen((o) => !o)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 font-semibold transition-all hover:-translate-y-0.5"
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 hover:border-amber-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(251,191,36,0.15)]"
             title="Warung Kopi TechFlow (N)"
           >
-            <span>☕ Warung Kopi</span>
+            <Coffee size={13} />
+            <span>Warung Kopi</span>
           </button>
           <button
             type="button"
+            onClick={handleTreatAll}
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-rose-300 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 hover:border-rose-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(244,63,94,0.2)]"
+            title="Traktir Kopi & Pizza Se-Kantor via Khansaku (100% Buff)"
+          >
+            <PartyPopper size={13} className="text-rose-400 transition-transform duration-200 group-hover:scale-110" />
+            <span>Traktir Kopi</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsWallboardOpen((o) => !o)}
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/20 hover:border-cyan-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(34,211,238,0.15)]"
+            title="Giant Wallboard Hologram (War Room)"
+          >
+            <BarChart3 size={13} />
+            <span>Wallboard</span>
+          </button>
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-white/10 mx-0.5" aria-hidden="true" />
+
+          <button
+            type="button"
             onClick={() => setIsWardrobeOpen((o) => !o)}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
             title="Setelan Wardrobe Bos Raffa (O)"
           >
-            <span>👔 Wardrobe</span>
+            <Shirt size={13} />
+            <span>Wardrobe</span>
           </button>
           <button
             type="button"
             onClick={() => setIsDartsOpen((o) => !o)}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
             title="Mini-Game Sky Darts Penthouse (G)"
           >
-            <span>🎯 Darts</span>
+            <Target size={13} />
+            <span>Darts</span>
           </button>
           <button
             type="button"
             onClick={() => setIsArcadeOpen((o) => !o)}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
             title="Retro Arcade: Crypto Scalper & Whack-A-Bug (B)"
           >
-            <span>🕹️ Arcade</span>
+            <Gamepad2 size={13} />
+            <span>Arcade</span>
           </button>
           <button
             type="button"
             onClick={() => setIsPhotoActive((o) => !o)}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
             title="Photo Drone Mode (P)"
           >
-            <span>📸 Photo</span>
+            <Camera size={13} />
+            <span>Photo</span>
           </button>
         </div>
       )}

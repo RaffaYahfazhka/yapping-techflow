@@ -79,8 +79,8 @@ export default function MusicPlayerWidget({
 
   return (
     <section
-      className={`fixed bottom-5 left-5 z-[70] grid w-[min(300px,calc(100vw-40px))] grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-2.5 overflow-hidden rounded-2xl border bg-[#0d0e13]/90 p-2 text-zinc-100 shadow-[0_14px_34px_rgba(0,0,0,0.55)] backdrop-blur-[18px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
-        playing ? 'border-emerald-500/40 shadow-[0_0_22px_rgba(16,185,129,0.18)]' : 'border-white/10'
+      className={`fixed bottom-6 left-6 z-[70] grid w-[min(320px,calc(100vw-48px))] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border bg-[#0d0e13]/95 p-2.5 text-zinc-100 shadow-[0_16px_38px_rgba(0,0,0,0.65)] backdrop-blur-[20px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
+        playing ? 'border-emerald-500/40 shadow-[0_0_24px_rgba(16,185,129,0.22)]' : 'border-white/15'
       } ${className}`}
       aria-label="Mini music player"
     >
@@ -89,8 +89,8 @@ export default function MusicPlayerWidget({
         onClick={onOpenPlayer}
         title="Buka Music Player"
         aria-label="Buka Music Player"
-        className={`h-10 w-10 overflow-hidden rounded-full border-2 bg-zinc-900 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-          playing ? 'animate-[spin_8s_linear_infinite] border-emerald-500' : 'border-white/15'
+        className={`h-11 w-11 overflow-hidden rounded-full border-2 bg-zinc-900 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 shrink-0 ${
+          playing ? 'animate-[spin_8s_linear_infinite] border-emerald-500' : 'border-white/20'
         } ${playing ? '' : '[animation-play-state:paused]'}`}
       >
         <img className="block h-full w-full object-cover" src={currentTrack?.cover || DEFAULT_COVER} alt="" />
@@ -102,13 +102,13 @@ export default function MusicPlayerWidget({
         onClick={onOpenPlayer}
         title={currentTrack?.title}
       >
-        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-bold">
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold tracking-tight">
           {currentTrack?.title || 'YouTube Music'}
         </div>
-        <div className={`mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] tabular-nums ${tone}`}>{subText}</div>
+        <div className={`mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] tabular-nums font-medium ${tone}`}>{subText}</div>
       </button>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           type="button"
           onClick={onTogglePlay}

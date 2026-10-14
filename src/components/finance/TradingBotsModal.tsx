@@ -431,32 +431,45 @@ export default function TradingBotsModal({
   return (
     <ShivModal isOpen={isOpen} onClose={onClose} size="xl" title="Trading Bots Workspace" subtitle="Paper-trading & real-time market feeds — virtual balances only, no live execution">
       <div className="-mx-4 -mt-1">
-        {/* Bot tabs */}
-        <div className="flex gap-2 overflow-x-auto border-b border-white/10 bg-[#12141d]/70 px-4 pb-3">
-          {tradingBots.map((bot) => {
-            const isActive = bot.id === activeBotId;
-            const color = bot.color || '#10b981';
-            return (
-              <button
-                key={bot.id}
-                type="button"
-                onClick={() => {
-                  setActiveBotId(bot.id);
-                  onFocusAgentInScene?.(bot.id);
-                }}
-                className="flex items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                style={{
-                  borderColor: isActive ? color : 'rgba(255,255,255,0.08)',
-                  background: isActive ? `${color}18` : 'rgba(255,255,255,0.03)',
-                  color: isActive ? '#ffffff' : '#a1a1aa',
-                }}
-              >
-                <span className="size-2 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
-                <span>{bot.name}</span>
-                <span className="text-[11px] opacity-60">({bot.employeeId})</span>
-              </button>
-            );
-          })}
+        {/* Bot tabs & Reset Portfolio Action */}
+        <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-white/10 bg-[#12141d]/70 px-4 pb-3">
+          <div className="flex items-center gap-2">
+            {tradingBots.map((bot) => {
+              const isActive = bot.id === activeBotId;
+              const color = bot.color || '#10b981';
+              return (
+                <button
+                  key={bot.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveBotId(bot.id);
+                    onFocusAgentInScene?.(bot.id);
+                  }}
+                  className="flex items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  style={{
+                    borderColor: isActive ? color : 'rgba(255,255,255,0.08)',
+                    background: isActive ? `${color}18` : 'rgba(255,255,255,0.03)',
+                    color: isActive ? '#ffffff' : '#a1a1aa',
+                  }}
+                >
+                  <span className="size-2 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                  <span>{bot.name}</span>
+                  <span className="text-[11px] opacity-60">({bot.employeeId})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleResetLedger()}
+            className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-rose-500/25 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20 active:scale-95 disabled:opacity-50"
+            title="Reset saldo paper trading ke nilai default awal ($10,000 USD / 150 SOL / $5,000 USDC)"
+          >
+            <RotateCcw size={12} className={busy ? 'animate-spin' : ''} />
+            <span>Reset Balance / Portfolio</span>
+          </button>
         </div>
 
         <div className="flex max-h-[calc(85vh-160px)] flex-col gap-5 overflow-y-auto p-4">

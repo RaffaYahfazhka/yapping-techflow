@@ -4,6 +4,7 @@ import { CAMERA_OFFSET, CAMERA_YAW, ROOM, PLAYER, PALETTE } from './constants';
 import { screenToWorld, facingFromDirection, dampAngle } from './movement';
 import { resolveMovement } from './collision';
 import { AGENTS, BOSS } from '../data/agents';
+import { wibMinutesNow, phaseFromMinutes, skyPaletteFor } from './skyEngine';
 
 /**
  * Modern Architectural Low-Poly 3D Virtual AI Office
@@ -87,9 +88,14 @@ export class OfficeScene {
     const height = this.container.clientHeight || window.innerHeight;
     const aspect = width / height;
 
-    // 1. Scene
+    // 1. Scene & Dynamic WIB Sky
+    const wibMins = wibMinutesNow();
+    const phase = phaseFromMinutes(wibMins);
+    const palette = skyPaletteFor(phase);
+
     this.scene = new THREE.Scene();
-    this.scene.background = null;
+    this.scene.background = new THREE.Color(palette.background);
+    this.scene.fog = new THREE.FogExp2(palette.background, palette.fogDensity || 0.015);
 
     // 2. Isometric Orthographic Camera (d = 10 fills the screen beautifully)
     const d = 10;
@@ -104,9 +110,8 @@ export class OfficeScene {
     this.camera.position.set(CAMERA_OFFSET.x, CAMERA_OFFSET.y, CAMERA_OFFSET.z);
     this.camera.lookAt(0, 0, 0);
 
-    // 3. Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    this.renderer.setClearColor(0x000000, 0);
+    // 3. Renderer (Opaque, crisp, high-performance)
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
@@ -202,36 +207,46 @@ export class OfficeScene {
     outerGrid.position.y = -0.34;
     this.scene.add(outerGrid);
 
-    // Floor Base Slab (top sits strictly at y = -0.02, below the office floor)
-    const slabGeo = new THREE.BoxGeometry(ROOM.maxX * 2 + 1.2, 0.58, ROOM.maxZ * 2 + 1.2);
+    // Floor Base Slab (supporting full penthouse interior + rooftop terrace)
+    const slabW = ROOM.maxX * 2 + 1.2;
+    const slabD = (ROOM.maxZ - ROOM.minZ) + 1.2;
+    const slabCenterZ = (ROOM.minZ + ROOM.maxZ) / 2;
+    const slabGeo = new THREE.BoxGeometry(slabW, 0.58, slabD);
     const slabMat = new THREE.MeshStandardMaterial({ color: PALETTE.slab, roughness: 0.9 });
     const slab = new THREE.Mesh(slabGeo, slabMat);
-    slab.position.y = -0.31; // top face = -0.31 + 0.29 = -0.02
+    slab.position.set(0, -0.31, slabCenterZ);
     slab.receiveShadow = true;
     this.scene.add(slab);
 
-    // 2. Main Office Floor (Warm Architectural Studio at y = 0.005 with polygonOffset)
-    const floorGeo = new THREE.PlaneGeometry(ROOM.maxX * 2, ROOM.maxZ * 2);
-    const floorMat = new THREE.MeshStandardMaterial({
+    // Full Walkable Raycast Floor Plane (enables click-to-move across interior and terrace)
+    const clickFloorGeo = new THREE.PlaneGeometry(ROOM.maxX * 2, ROOM.maxZ - ROOM.minZ);
+    const clickFloorMat = new THREE.MeshBasicMaterial({ visible: false });
+    const clickFloor = new THREE.Mesh(clickFloorGeo, clickFloorMat);
+    clickFloor.rotation.x = -Math.PI / 2;
+    clickFloor.position.set(0, 0.005, slabCenterZ);
+    this.scene.add(clickFloor);
+    this.floorPlane = clickFloor;
+
+    // 2. Interior Penthouse Floor (Graphite Slate / Smoked Oak from z = -12 to 12)
+    const interiorD = 12 - ROOM.minZ; // 24m
+    const interiorFloorGeo = new THREE.PlaneGeometry(ROOM.maxX * 2, interiorD);
+    const interiorFloorMat = new THREE.MeshStandardMaterial({
       color: PALETTE.floor,
-      roughness: 0.65,
-      metalness: 0.08,
-      transparent: true,
-      opacity: 0.35,
+      roughness: 0.45,
+      metalness: 0.15,
       polygonOffset: true,
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
     });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0.005;
-    floor.receiveShadow = true;
-    this.scene.add(floor);
-    this.floorPlane = floor;
+    const interiorFloor = new THREE.Mesh(interiorFloorGeo, interiorFloorMat);
+    interiorFloor.rotation.x = -Math.PI / 2;
+    interiorFloor.position.set(0, 0.006, (ROOM.minZ + 12) / 2);
+    interiorFloor.receiveShadow = true;
+    this.scene.add(interiorFloor);
 
-    // Architectural floor tile grid lines inside office (at y = 0.015 with polygonOffset)
-    const gridHelper = new THREE.GridHelper(ROOM.maxX * 2, 32, '#a89f91', '#ded7cc');
-    gridHelper.position.y = 0.015;
+    // Architectural tile grid inside interior penthouse
+    const gridHelper = new THREE.GridHelper(ROOM.maxX * 2, 28, '#2d3345', '#1c202d');
+    gridHelper.position.set(0, 0.012, (ROOM.minZ + 12) / 2);
     if (gridHelper.material) {
       gridHelper.material.polygonOffset = true;
       gridHelper.material.polygonOffsetFactor = -2;
@@ -239,72 +254,295 @@ export class OfficeScene {
     }
     this.scene.add(gridHelper);
 
-    // Modern low back walls (aesthetic studio backdrop)
-    const wallMat = new THREE.MeshPhysicalMaterial({
-      color: 0x0b1020,
-      metalness: 0.1,
-      roughness: 0.05,
-      transmission: 0.85,
-      transparent: true,
-      opacity: 0.15,
+    // Executive Suite Luxury Rug (for Bos Raffa & Khansaku's royal command suite)
+    const rugGeo = new THREE.PlaneGeometry(7.8, 6.2);
+    const rugMat = new THREE.MeshStandardMaterial({
+      color: '#06281e',
+      roughness: 0.85,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -3,
     });
-    const trimMat = new THREE.MeshStandardMaterial({ color: PALETTE.wallTrim, roughness: 0.7 });
+    const rug = new THREE.Mesh(rugGeo, rugMat);
+    rug.rotation.x = -Math.PI / 2;
+    rug.position.set(-8, 0.018, -6.5);
+    this.scene.add(rug);
 
-    // North wall (Z = minZ) - transparent glass view to R3F skyline
-    const wallNGeo = new THREE.BoxGeometry(ROOM.maxX * 2, ROOM.wallH, 0.4);
-    const wallN = new THREE.Mesh(wallNGeo, wallMat);
-    wallN.position.set(0, ROOM.wallH / 2, ROOM.minZ);
-    wallN.receiveShadow = true;
-    this.scene.add(wallN);
-    // West wall (X = minX)
-    const wallWGeo = new THREE.BoxGeometry(0.4, ROOM.wallH, ROOM.maxZ * 2);
-    const wallW = new THREE.Mesh(wallWGeo, wallMat);
-    wallW.position.set(ROOM.minX, ROOM.wallH / 2, 0);
+    // Rug Gold Trim Border
+    const rugBorder = new THREE.LineSegments(
+      new THREE.EdgesGeometry(rugGeo),
+      new THREE.LineBasicMaterial({ color: '#f59e0b', linewidth: 2 })
+    );
+    rugBorder.rotation.x = -Math.PI / 2;
+    rugBorder.position.set(-8, 0.019, -6.5);
+    this.scene.add(rugBorder);
+
+    // War-Room Holographic Circle Inlay (under Holotable at x: 9.5, z: 0)
+    const holoDiscGeo = new THREE.CircleGeometry(2.5, 36);
+    const holoDiscMat = new THREE.MeshStandardMaterial({
+      color: '#0b1322',
+      roughness: 0.2,
+      metalness: 0.8,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -3,
+    });
+    const holoDisc = new THREE.Mesh(holoDiscGeo, holoDiscMat);
+    holoDisc.rotation.x = -Math.PI / 2;
+    holoDisc.position.set(9.5, 0.018, 0);
+    this.scene.add(holoDisc);
+
+    // 3. Penthouse Rooftop Sky Terrace (Teak Deck from z = 12 to 28)
+    const terraceD = ROOM.maxZ - 12; // 16m
+    const terraceCenterZ = (12 + ROOM.maxZ) / 2;
+    const terraceGeo = new THREE.PlaneGeometry(ROOM.maxX * 2, terraceD);
+    const terraceMat = new THREE.MeshStandardMaterial({
+      color: PALETTE.floorTerrace,
+      roughness: 0.65,
+      metalness: 0.05,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    const terrace = new THREE.Mesh(terraceGeo, terraceMat);
+    terrace.rotation.x = -Math.PI / 2;
+    terrace.position.set(0, 0.007, terraceCenterZ);
+    terrace.receiveShadow = true;
+    this.scene.add(terrace);
+
+    // Teak wood plank divider lines on terrace
+    const deckGrid = new THREE.GridHelper(ROOM.maxX * 2, 32, '#502c14', '#784322');
+    deckGrid.position.set(0, 0.014, terraceCenterZ);
+    if (deckGrid.material) {
+      deckGrid.material.polygonOffset = true;
+      deckGrid.material.polygonOffsetFactor = -2;
+      deckGrid.material.polygonOffsetUnits = -2;
+    }
+    this.scene.add(deckGrid);
+
+    // Terrace Slate Perimeter Borders
+    const borderMat = new THREE.MeshStandardMaterial({ color: '#181920', roughness: 0.8 });
+    const borderS = new THREE.Mesh(new THREE.BoxGeometry(ROOM.maxX * 2, 0.1, 0.5), borderMat);
+    borderS.position.set(0, 0.05, ROOM.maxZ - 0.25);
+    this.scene.add(borderS);
+
+    // 4. Acoustic Glass Sliding Partition (between Interior & Terrace at z = 12)
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: '#a5f3fc',
+      transparent: true,
+      opacity: 0.22,
+      roughness: 0.08,
+      transmission: 0.75,
+      metalness: 0.1,
+    });
+    const mullionMat = new THREE.MeshStandardMaterial({ color: '#18181f', roughness: 0.5, metalness: 0.6 });
+
+    // West Glass Partition (x: -16 to -3.2)
+    const glassW = new THREE.Mesh(new THREE.BoxGeometry(12.8, 3.6, 0.08), glassMat);
+    glassW.position.set(-9.6, 1.8, 12);
+    this.scene.add(glassW);
+    const frameW = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.12, 0.14), mullionMat);
+    frameW.position.set(-9.6, 3.6, 12);
+    this.scene.add(frameW);
+
+    // East Glass Partition (x: 3.2 to 16)
+    const glassE = new THREE.Mesh(new THREE.BoxGeometry(12.8, 3.6, 0.08), glassMat);
+    glassE.position.set(9.6, 1.8, 12);
+    this.scene.add(glassE);
+    const frameE = new THREE.Mesh(new THREE.BoxGeometry(12.8, 0.12, 0.14), mullionMat);
+    frameE.position.set(9.6, 3.6, 12);
+    this.scene.add(frameE);
+
+    // Central Sliding Door Frame Columns
+    [-3.2, 3.2].forEach((colX) => {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.8, 0.18), mullionMat);
+      col.position.set(colX, 1.9, 12);
+      this.scene.add(col);
+    });
+
+    // Glowing Terrace Entryway Threshold Strip (emerald accent)
+    const thresholdGeo = new THREE.PlaneGeometry(ROOM.maxX * 2, 0.2);
+    const thresholdMat = new THREE.MeshBasicMaterial({ color: '#10b981' });
+    const threshold = new THREE.Mesh(thresholdGeo, thresholdMat);
+    threshold.rotation.x = -Math.PI / 2;
+    threshold.position.set(0, 0.02, 12);
+    this.scene.add(threshold);
+
+    // 5. Frameless Tempered Glass Balustrade (Perimeter of Rooftop Terrace)
+    const balustradeMat = new THREE.MeshPhysicalMaterial({
+      color: '#c7e5ff',
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.04,
+      transmission: 0.85,
+    });
+    const railMat = new THREE.MeshStandardMaterial({ color: '#71717a', metalness: 0.9, roughness: 0.2 });
+
+    // South Balustrade (Z = 28)
+    const balustradeS = new THREE.Mesh(new THREE.BoxGeometry(ROOM.maxX * 2, 1.25, 0.06), balustradeMat);
+    balustradeS.position.set(0, 0.625, ROOM.maxZ);
+    this.scene.add(balustradeS);
+    const railS = new THREE.Mesh(new THREE.BoxGeometry(ROOM.maxX * 2, 0.06, 0.1), railMat);
+    railS.position.set(0, 1.25, ROOM.maxZ);
+    this.scene.add(railS);
+
+    // West Balustrade (X = minX on terrace, z = 12 to 28)
+    const balustradeW = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.25, terraceD), balustradeMat);
+    balustradeW.position.set(ROOM.minX, 0.625, terraceCenterZ);
+    this.scene.add(balustradeW);
+    const railW = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, terraceD), railMat);
+    railW.position.set(ROOM.minX, 1.25, terraceCenterZ);
+    this.scene.add(railW);
+
+    // East Balustrade (X = maxX on terrace, z = 12 to 28)
+    const balustradeE = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.25, terraceD), balustradeMat);
+    balustradeE.position.set(ROOM.maxX, 0.625, terraceCenterZ);
+    this.scene.add(balustradeE);
+    const railE = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, terraceD), railMat);
+    railE.position.set(ROOM.maxX, 1.25, terraceCenterZ);
+    this.scene.add(railE);
+
+    // Balustrade support posts every 4 meters
+    for (let x = -14; x <= 14; x += 4) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.25), railMat);
+      post.position.set(x, 0.625, ROOM.maxZ);
+      this.scene.add(post);
+    }
+
+    // 6. North Wall (Panorama Floor-to-Ceiling Windows with Skyline View)
+    const panoMat = new THREE.MeshPhysicalMaterial({
+      color: '#08101e',
+      transparent: true,
+      opacity: 0.18,
+      roughness: 0.05,
+      transmission: 0.8,
+    });
+    const panoMesh = new THREE.Mesh(new THREE.BoxGeometry(ROOM.maxX * 2, ROOM.wallH, 0.08), panoMat);
+    panoMesh.position.set(0, ROOM.wallH / 2, ROOM.minZ);
+    this.scene.add(panoMesh);
+
+    // Vertical Window Mullions
+    for (let x = -16; x <= 16; x += 4) {
+      const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.18, ROOM.wallH, 0.22), mullionMat);
+      mullion.position.set(x, ROOM.wallH / 2, ROOM.minZ);
+      this.scene.add(mullion);
+    }
+
+    // West Architectural Wall (X = minX inside interior)
+    const wallW = new THREE.Mesh(new THREE.BoxGeometry(0.4, ROOM.wallH, interiorD), new THREE.MeshStandardMaterial({ color: PALETTE.wall, roughness: 0.85 }));
+    wallW.position.set(ROOM.minX, ROOM.wallH / 2, (ROOM.minZ + 12) / 2);
     wallW.receiveShadow = true;
     this.scene.add(wallW);
 
-    // Wall baseboards
-    const trimN = new THREE.Mesh(new THREE.BoxGeometry(ROOM.maxX * 2, 0.25, 0.46), trimMat);
-    trimN.position.set(0, 0.125, ROOM.minZ);
-    this.scene.add(trimN);
+    // Build the 3D Metropolitan City Skyline outside the windows
+    this.setupCitySkyline();
 
-    const trimW = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.25, ROOM.maxZ * 2), trimMat);
-    trimW.position.set(ROOM.minX, 0.125, 0);
-    this.scene.add(trimW);
-
-    // "KANTOR RAFFA" Neon Sign on back wall
+    // Penthouse Neon Architectural Branding
     this.setupWallBranding();
+  }
+
+  setupCitySkyline() {
+    const skylineGroup = new THREE.Group();
+    const colors = ['#f59e0b', '#38bdf8', '#8b5cf6', '#10b981', '#f43f5e'];
+
+    // Deterministic skyscraper generation
+    let seed = 1337;
+    const rnd = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    // Skyscraper cluster outside North Panorama Windows (z < -14)
+    for (let i = 0; i < 32; i++) {
+      const w = 4 + rnd() * 8;
+      const d = 4 + rnd() * 8;
+      const h = 14 + rnd() * 38;
+      const x = -55 + rnd() * 110;
+      const z = -20 - rnd() * 55;
+
+      const bGeo = new THREE.BoxGeometry(w, h, d);
+      const bMat = new THREE.MeshStandardMaterial({
+        color: '#0a0d14',
+        roughness: 0.8,
+        metalness: 0.2,
+      });
+      const tower = new THREE.Mesh(bGeo, bMat);
+      tower.position.set(x, h / 2 - 0.4, z);
+      skylineGroup.add(tower);
+
+      // Lit office window bands
+      const windowRows = Math.floor(h / 3);
+      for (let r = 0; r < windowRows; r++) {
+        if (rnd() > 0.4) {
+          const winGeo = new THREE.PlaneGeometry(w * 0.8, 0.45);
+          const winColor = colors[(i + r) % colors.length];
+          const winMat = new THREE.MeshBasicMaterial({
+            color: winColor,
+            transparent: true,
+            opacity: 0.45,
+          });
+          const winStrip = new THREE.Mesh(winGeo, winMat);
+          winStrip.position.set(x, 2 + r * 2.8, z + d / 2 + 0.05);
+          skylineGroup.add(winStrip);
+        }
+      }
+
+      // Antenna beacon on tall buildings
+      if (h > 35) {
+        const spire = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.05, 0.15, 6),
+          new THREE.MeshStandardMaterial({ color: '#71717a' })
+        );
+        spire.position.set(x, h + 3, z);
+        skylineGroup.add(spire);
+
+        const beacon = new THREE.Mesh(
+          new THREE.SphereGeometry(0.2, 8, 8),
+          new THREE.MeshBasicMaterial({ color: '#ef4444' })
+        );
+        beacon.position.set(x, h + 6, z);
+        skylineGroup.add(beacon);
+      }
+    }
+
+    this.scene.add(skylineGroup);
   }
 
   setupWallBranding() {
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
+    canvas.width = 1200;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
 
-    ctx.fillStyle = '#e6e0d6';
-    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillStyle = '#0f1118';
+    ctx.fillRect(0, 0, 1200, 256);
 
-    ctx.fillStyle = '#09090b';
-    ctx.font = 'bold 56px "Inter", sans-serif';
-    ctx.fillText('KANTOR RAFFA', 50, 105);
+    // Glowing border outline
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, 1188, 244);
 
-    ctx.fillStyle = '#71717a';
-    ctx.font = '500 24px "JetBrains Mono", monospace';
-    ctx.fillText('AUTONOMOUS AI MISSION CONTROL · 9 AGENTS DEPLOYED', 50, 160);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 54px "Inter", sans-serif';
+    ctx.fillText('KANTOR RAFFA · PENTHOUSE SUITE', 50, 95);
 
-    // Emerald gradient stripe
-    const grad = ctx.createLinearGradient(50, 190, 500, 190);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 24px "JetBrains Mono", monospace';
+    ctx.fillText('AUTONOMOUS AI MISSION CONTROL & ROOFTOP TERRACE · 9 AGENTS', 50, 155);
+
+    // Gradient accent neon bar
+    const grad = ctx.createLinearGradient(50, 185, 750, 185);
     grad.addColorStop(0, '#10b981');
+    grad.addColorStop(0.5, '#38bdf8');
     grad.addColorStop(1, '#8b5cf6');
     ctx.fillStyle = grad;
-    ctx.fillRect(50, 185, 420, 6);
+    ctx.fillRect(50, 180, 680, 8);
 
     const tex = new THREE.CanvasTexture(canvas);
     const signMat = new THREE.MeshBasicMaterial({ map: tex });
-    const signGeo = new THREE.PlaneGeometry(8, 2);
+    const signGeo = new THREE.PlaneGeometry(10.5, 2.2);
     const signMesh = new THREE.Mesh(signGeo, signMat);
-    signMesh.position.set(-6, 2.6, ROOM.minZ + 0.22);
+    signMesh.position.set(-5.5, 3.1, ROOM.minZ + 0.22);
     this.scene.add(signMesh);
   }
 
@@ -967,41 +1205,206 @@ export class OfficeScene {
   }
 
   setupProps() {
-    // Indoor plants in corners
+    // 1. Potted Tropical Plants (Office Corners & Terrace Corners)
     const plantLocations = [
       [-14.5, -10.5],
       [14.5, -10.5],
       [-14.5, 10.5],
       [14.5, 10.5],
       [-0.5, -10.8],
+      [-14.5, 14.0], // Terrace NW
+      [14.5, 14.0],  // Terrace NE
+      [-14.5, 26.0], // Terrace SW
+      [14.5, 26.0],  // Terrace SE
     ];
 
     plantLocations.forEach(([px, pz]) => {
       const potGroup = new THREE.Group();
       potGroup.position.set(px, 0, pz);
 
-      // Ceramic pot
-      const potGeo = new THREE.CylinderGeometry(0.4, 0.3, 0.7, 12);
-      const potMat = new THREE.MeshStandardMaterial({ color: '#f4f4f5', roughness: 0.4 });
+      // Ceramic fluted pot
+      const potGeo = new THREE.CylinderGeometry(0.42, 0.32, 0.75, 14);
+      const potMat = new THREE.MeshStandardMaterial({ color: '#f4f4f5', roughness: 0.35 });
       const pot = new THREE.Mesh(potGeo, potMat);
-      pot.position.y = 0.35;
+      pot.position.y = 0.375;
       pot.castShadow = true;
       potGroup.add(pot);
 
-      // Plant foliage (monstera / snake plant leaves)
-      const leafMat = new THREE.MeshStandardMaterial({ color: '#15803d', roughness: 0.6 });
-      for (let i = 0; i < 6; i++) {
-        const leafGeo = new THREE.ConeGeometry(0.18, 0.8 + (i % 3) * 0.2, 4);
+      // Lush tropical plant foliage
+      const leafMat = new THREE.MeshStandardMaterial({ color: '#16a34a', roughness: 0.55 });
+      for (let i = 0; i < 7; i++) {
+        const leafGeo = new THREE.ConeGeometry(0.2, 0.9 + (i % 3) * 0.22, 5);
         const leaf = new THREE.Mesh(leafGeo, leafMat);
-        const angle = (i / 6) * Math.PI * 2;
-        leaf.position.set(Math.cos(angle) * 0.15, 0.8 + (i % 2) * 0.1, Math.sin(angle) * 0.15);
-        leaf.rotation.x = (Math.random() - 0.5) * 0.3;
-        leaf.rotation.z = (Math.random() - 0.5) * 0.3;
+        const angle = (i / 7) * Math.PI * 2;
+        leaf.position.set(Math.cos(angle) * 0.16, 0.85 + (i % 2) * 0.12, Math.sin(angle) * 0.16);
+        leaf.rotation.x = (Math.random() - 0.5) * 0.35;
+        leaf.rotation.z = (Math.random() - 0.5) * 0.35;
         potGroup.add(leaf);
       }
 
       this.scene.add(potGroup);
     });
+
+    // 2. Penthouse Sky Terrace Outdoor Lounge (L-Sofa & Coffee Table at x: -8, z: 18.5)
+    const sofaGroup = new THREE.Group();
+    sofaGroup.position.set(-8, 0, 18.5);
+
+    const sofaMat = new THREE.MeshStandardMaterial({ color: '#27272a', roughness: 0.8 });
+    const cushionMat = new THREE.MeshStandardMaterial({ color: '#3f3f46', roughness: 0.7 });
+    const pillowMat = new THREE.MeshStandardMaterial({ color: '#10b981', roughness: 0.6 });
+
+    // Main sofa bench (W = 4.2, D = 1.2, H = 0.45)
+    const sofaMain = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.45, 1.2), sofaMat);
+    sofaMain.position.set(0, 0.225, 0);
+    sofaMain.castShadow = true;
+    sofaGroup.add(sofaMain);
+
+    // Main sofa backrest
+    const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.55, 0.3), sofaMat);
+    sofaBack.position.set(0, 0.65, -0.45);
+    sofaGroup.add(sofaBack);
+
+    // L-chaise return (W = 1.2, D = 2.4, H = 0.45)
+    const sofaL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.45, 2.4), sofaMat);
+    sofaL.position.set(-1.5, 0.225, 1.2);
+    sofaGroup.add(sofaL);
+
+    // L-chaise armrest
+    const sofaArm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.55, 2.4), sofaMat);
+    sofaArm.position.set(-2.0, 0.65, 1.2);
+    sofaGroup.add(sofaArm);
+
+    // Cushions & Accent Pillows
+    const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.15), pillowMat);
+    p1.position.set(-1.2, 0.65, -0.3);
+    sofaGroup.add(p1);
+    const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.15), new THREE.MeshStandardMaterial({ color: '#f59e0b' }));
+    p2.position.set(1.4, 0.65, -0.3);
+    sofaGroup.add(p2);
+
+    // Outdoor Modern Coffee Table
+    const tableMat = new THREE.MeshStandardMaterial({ color: '#18181b', metalness: 0.6, roughness: 0.3 });
+    const table = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.32, 1.0), tableMat);
+    table.position.set(0.6, 0.16, 1.4);
+    sofaGroup.add(table);
+
+    // Coffee Mugs on table
+    const mugMat = new THREE.MeshStandardMaterial({ color: '#e4e4e7', roughness: 0.2 });
+    const mug1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.16), mugMat);
+    mug1.position.set(0.4, 0.4, 1.3);
+    sofaGroup.add(mug1);
+    const mug2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.16), new THREE.MeshStandardMaterial({ color: '#f43f5e' }));
+    mug2.position.set(0.7, 0.4, 1.5);
+    sofaGroup.add(mug2);
+
+    this.scene.add(sofaGroup);
+
+    // 3. Chrome Observation Telescope on Tripod (at x: -11.5, z: 24.5)
+    const teleGroup = new THREE.Group();
+    teleGroup.position.set(-11.5, 0, 24.5);
+    const steelMat = new THREE.MeshStandardMaterial({ color: '#e4e4e7', metalness: 0.9, roughness: 0.15 });
+
+    // Tripod Legs
+    for (let i = 0; i < 3; i++) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.4), steelMat);
+      const angle = (i / 3) * Math.PI * 2;
+      leg.position.set(Math.cos(angle) * 0.45, 0.68, Math.sin(angle) * 0.45);
+      leg.rotation.z = (Math.PI / 10) * Math.sin(angle);
+      leg.rotation.x = -(Math.PI / 10) * Math.cos(angle);
+      teleGroup.add(leg);
+    }
+
+    // Telescope Mount & Barrel
+    const teleMount = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.25), steelMat);
+    teleMount.position.y = 1.4;
+    teleGroup.add(teleMount);
+
+    const teleBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 1.1), steelMat);
+    teleBarrel.position.set(0, 1.55, 0.2);
+    teleBarrel.rotation.x = -Math.PI / 4; // aimed up at night sky/skyline
+    teleBarrel.rotation.y = -Math.PI / 6;
+    teleGroup.add(teleBarrel);
+
+    this.scene.add(teleGroup);
+
+    // 4. Retro Arcade Cabinet Machine (at x: 11, z: 16)
+    const arcadeGroup = new THREE.Group();
+    arcadeGroup.position.set(11, 0, 16);
+    arcadeGroup.rotation.y = -Math.PI / 2; // facing toward lounge/center
+
+    const cabMat = new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.5 });
+    const cabSideMat = new THREE.MeshStandardMaterial({ color: '#8b5cf6', roughness: 0.4 });
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.1, 1.1), cabMat);
+    cab.position.y = 1.05;
+    cab.castShadow = true;
+    arcadeGroup.add(cab);
+
+    // Illuminated Marquee ("CRYPTO SCALPER")
+    const marqGeo = new THREE.BoxGeometry(0.9, 0.3, 0.05);
+    const marqMat = new THREE.MeshBasicMaterial({ color: '#38bdf8' });
+    const marq = new THREE.Mesh(marqGeo, marqMat);
+    marq.position.set(0, 1.85, 0.56);
+    arcadeGroup.add(marq);
+
+    // Glowing CRT Game Screen
+    const screenGeo = new THREE.BoxGeometry(0.75, 0.6, 0.05);
+    const screenMat = new THREE.MeshBasicMaterial({ color: '#10b981' });
+    const screen = new THREE.Mesh(screenGeo, screenMat);
+    screen.position.set(0, 1.35, 0.48);
+    screen.rotation.x = -0.2;
+    arcadeGroup.add(screen);
+
+    // Control panel with joystick
+    const cPanel = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.1, 0.45), cabMat);
+    cPanel.position.set(0, 0.95, 0.6);
+    arcadeGroup.add(cPanel);
+
+    this.scene.add(arcadeGroup);
+
+    // 5. Sky Darts Target Board Stand (at x: 12, z: 23)
+    const dartsGroup = new THREE.Group();
+    dartsGroup.position.set(12, 0, 23);
+    dartsGroup.rotation.y = -Math.PI / 2; // facing toward terrace center
+
+    // Slate architectural feature column
+    const pillarMat = new THREE.MeshStandardMaterial({ color: '#1f2937', roughness: 0.85 });
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 0.35), pillarMat);
+    pillar.position.y = 1.4;
+    pillar.castShadow = true;
+    dartsGroup.add(pillar);
+
+    // Darts Target Board (Circle with concentric rings)
+    const dartBoardGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.06, 32);
+    const dartBoardMat = new THREE.MeshStandardMaterial({ color: '#09090b', roughness: 0.6 });
+    const dartBoard = new THREE.Mesh(dartBoardGeo, dartBoardMat);
+    dartBoard.rotation.x = Math.PI / 2;
+    dartBoard.position.set(0, 1.7, 0.2);
+    dartsGroup.add(dartBoard);
+
+    // Outer double ring (green)
+    const r1 = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.62, 32), new THREE.MeshBasicMaterial({ color: '#10b981', side: THREE.DoubleSide }));
+    r1.position.set(0, 1.7, 0.24);
+    dartsGroup.add(r1);
+
+    // Triple ring (red)
+    const r2 = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.42, 32), new THREE.MeshBasicMaterial({ color: '#ef4444', side: THREE.DoubleSide }));
+    r2.position.set(0, 1.7, 0.24);
+    dartsGroup.add(r2);
+
+    // Bullseye (gold)
+    const bullseye = new THREE.Mesh(new THREE.CircleGeometry(0.12, 24), new THREE.MeshBasicMaterial({ color: '#f59e0b', side: THREE.DoubleSide }));
+    bullseye.position.set(0, 1.7, 0.245);
+    dartsGroup.add(bullseye);
+
+    this.scene.add(dartsGroup);
+
+    // 6. Recessed Terrace Floor Warm Amber Deck Lights
+    const deckLightMat = new THREE.MeshBasicMaterial({ color: '#f59e0b' });
+    for (let x = -13; x <= 13; x += 6.5) {
+      const lightMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 12), deckLightMat);
+      lightMesh.position.set(x, 0.02, 27.5);
+      this.scene.add(lightMesh);
+    }
   }
 
   setupEvents() {
@@ -1396,7 +1799,12 @@ export class OfficeScene {
 
   setTheme(isLight) {
     if (!this.scene) return;
-    this.scene.background = null;
+    const bgCol = isLight ? '#f1f5f9' : '#0c0c0e';
+    this.scene.background = new THREE.Color(bgCol);
+    if (this.scene.fog) {
+      this.scene.fog.color = new THREE.Color(bgCol);
+      this.scene.fog.density = isLight ? 0.008 : 0.015;
+    }
   }
 
   checkProximity() {
@@ -1448,5 +1856,27 @@ export class OfficeScene {
       }
       this.renderer.dispose();
     }
+  }
+
+  async capture(): Promise<{ width: number; height: number }> {
+    if (!this.renderer || !this.scene || !this.camera) {
+      throw new Error('Scene 3D belum siap untuk capture');
+    }
+    this.renderer.render(this.scene, this.camera);
+    const canvas = this.renderer.domElement;
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return reject(new Error('Gagal menangkap gambar kanvas'));
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `kantor-raffa-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        resolve({ width: canvas.width, height: canvas.height });
+      }, 'image/png');
+    });
   }
 }

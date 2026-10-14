@@ -13,10 +13,11 @@ export interface ZoneDef {
 }
 
 export const ZONES: ZoneDef[] = [
-  { id: 'executive', label: 'Executive Suite', rect: { x1: -16, z1: -12, x2: -2, z2: -4 }, focus: [-8, 0, -8] },
-  { id: 'engineering', label: 'Engineering', rect: { x1: -16, z1: 0, x2: 6, z2: 12 }, focus: [-4, 0, 6] },
-  { id: 'skyline', label: 'Skyline Suite', rect: { x1: 10, z1: -10, x2: 16, z2: 10 }, focus: [13.5, 0, 0] },
-  { id: 'war-room', label: 'War Room', rect: { x1: 2, z1: -6, x2: 10, z2: 4 }, focus: [8, 0, 0] },
-  { id: 'pantry', label: 'Pantry', rect: { x1: 8, z1: 6, x2: 14, z2: 12 }, focus: [11, 0, 9] },
-  { id: 'terrace', label: 'Sky Terrace', rect: { x1: -4, z1: 20, x2: 16, z2: 30 }, focus: [6, 0, 24] },
+  { id: 'executive', label: 'Executive Suite', rect: { x1: -16, z1: -12, x2: -3, z2: -2 }, focus: [-8, 0, -6.5] },
+  { id: 'war-room', label: 'War Room & Hologram', rect: { x1: 2, z1: -6, x2: 10, z2: 4 }, focus: [8, 0, 0] },
+  { id: 'skyline', label: 'Skyline Quant Suite', rect: { x1: 10, z1: -12, x2: 16, z2: 6 }, focus: [13.5, 0, 0] },
+  { id: 'engineering', label: 'Engineering Wing', rect: { x1: -16, z1: 2, x2: 5, z2: 12 }, focus: [-2.5, 0, 6.5] },
+  { id: 'pantry', label: 'Espresso Lounge', rect: { x1: 7, z1: 6, x2: 16, z2: 12 }, focus: [11.5, 0, 9] },
+  { id: 'terrace', label: 'Sky Terrace Rooftop', rect: { x1: -16, z1: 12, x2: 16, z2: 28 }, focus: [0, 0, 20] },
 ];
+

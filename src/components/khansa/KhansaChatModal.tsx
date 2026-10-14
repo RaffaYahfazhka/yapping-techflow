@@ -13,6 +13,7 @@ export interface KhansaChatModalProps {
   onSelectTicketKey?: (key: string) => void;
   initialTicketKey?: string;
   autoRequestPrompt?: boolean;
+  onTreat?: () => void;
 }
 
 interface Message {
@@ -734,6 +735,7 @@ export default function KhansaChatModal({
   onSelectTicketKey,
   initialTicketKey,
   autoRequestPrompt = false,
+  onTreat,
 }: KhansaChatModalProps) {
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1063,6 +1065,19 @@ Rekomendasikan model Gemini 3.8 Flash dengan tingkat reasoning yang tepat (Low, 
           <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 700, whiteSpace: 'nowrap' }}>
             Ide Tanya:
           </span>
+          <button
+            type="button"
+            className={styles.quickPromptBtn}
+            style={{ borderColor: 'rgba(244, 63, 94, 0.4)', background: 'rgba(244, 63, 94, 0.12)', color: '#fb7185' }}
+            onClick={() => {
+              onTreat?.();
+              handleSendMessage(
+                'Khansaku sayang, tolong umumkan ke semua anak-anak kantor kalau Mas Bos traktir Kopi Kenangan & Croissant se-kantor ya! Biar pada semangat 100%!'
+              );
+            }}
+          >
+            ☕ Traktir Kopi Se-Kantor (100% Buff)
+          </button>
           <button
             type="button"
             className={styles.quickPromptBtn}
