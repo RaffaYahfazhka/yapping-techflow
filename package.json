@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "test:movement": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-movement.mjs",
-    "test:paper-bots": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-bots.mjs"
+    "test:paper-bots": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-bots.mjs",
+    "test:paper-ledger-v2": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-ledger-v2.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
