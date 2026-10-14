@@ -20,6 +20,8 @@ import MusicPlayerModal, { RepeatMode } from '../components/music/MusicPlayerMod
 import SplashScreen from '../components/ui/SplashScreen';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 import SubordinateModal from '../components/SubordinateModal';
+import TradingBotsModal from '../components/finance/TradingBotsModal';
+import KhansaChatModal from '../components/khansa/KhansaChatModal';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 
@@ -32,6 +34,7 @@ export default function OfficePage() {
   const inputLoopRef = useRef(null);
   const handleNextTrackRef = useRef(null);
   const openAgentWorkspaceRef = useRef(null);
+  const openKhansaChatRef = useRef(null);
 
   // App & Status State
   const [booted, setBooted] = useState(false);
@@ -76,6 +79,10 @@ export default function OfficePage() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [activeAgentModalId, setActiveAgentModalId] = useState('tara');
+  const [isTradingModalOpen, setIsTradingModalOpen] = useState(false);
+  const [activeTradingBotId, setActiveTradingBotId] = useState('meteora-lp');
+  const [isKhansaChatOpen, setIsKhansaChatOpen] = useState(false);
+  const [khansaAutoPrompt, setKhansaAutoPrompt] = useState(false);
   const [interactAgent, setInteractAgent] = useState(null);
   const interactAgentRef = useRef(null);
 
@@ -102,25 +109,47 @@ export default function OfficePage() {
   // Close all open modals helper to prevent modals overlapping
   const closeAllModals = useCallback(() => {
     setIsAgentModalOpen(false);
+    setIsTradingModalOpen(false);
     setIsMissionOpen(false);
     setIsTeamDirectoryOpen(false);
     setIsHelpOpen(false);
     setIsMusicModalOpen(false);
+    setIsKhansaChatOpen(false);
   }, []);
 
   // Open specific agent workspace
   const openAgentWorkspace = useCallback((agentId) => {
     closeAllModals();
-    setActiveAgentModalId(agentId || 'tara');
-    setIsAgentModalOpen(true);
+    const target = AGENTS.find((a) => a.id === agentId);
+    if (target?.workspace === 'trading') {
+      setActiveTradingBotId(agentId);
+      setIsTradingModalOpen(true);
+    } else {
+      setActiveAgentModalId(agentId || 'tara');
+      setIsAgentModalOpen(true);
+    }
     if (sceneRef.current?.focusOn) {
       sceneRef.current.focusOn(agentId);
     }
   }, [closeAllModals]);
 
+  // Open Khansa companion chat directly
+  const openKhansaChat = useCallback((ticketKey?: string, autoPrompt = false) => {
+    closeAllModals();
+    if (ticketKey) {
+      setSelectedTicketKey(ticketKey);
+    }
+    setKhansaAutoPrompt(autoPrompt);
+    setIsKhansaChatOpen(true);
+    if (sceneRef.current?.focusOn) {
+      sceneRef.current.focusOn('tara');
+    }
+  }, [closeAllModals]);
+
   useEffect(() => {
     openAgentWorkspaceRef.current = openAgentWorkspace;
-  }, [openAgentWorkspace]);
+    openKhansaChatRef.current = openKhansaChat;
+  }, [openAgentWorkspace, openKhansaChat]);
 
   // Clock Timer
   useEffect(() => {
@@ -256,10 +285,16 @@ export default function OfficePage() {
         audio.togglePlay();
       } else if (e.code === 'KeyM' && !e.repeat) {
         audio.toggleMute();
+      } else if (e.code === 'KeyK' && !e.repeat) {
+        openKhansaChatRef.current?.();
       } else if (e.code === 'KeyE' && !e.repeat) {
         const near = interactAgentRef.current;
-        const targetId = near?.commandTarget ? near.commandTarget.id : (near ? near.id : 'tara');
-        openAgentWorkspaceRef.current?.(targetId);
+        if (near && !near.commandTarget) {
+          openKhansaChatRef.current?.();
+        } else {
+          const targetId = near?.commandTarget ? near.commandTarget.id : (near ? near.id : 'tara');
+          openAgentWorkspaceRef.current?.(targetId);
+        }
       } else if (e.code === 'Escape') {
         closeAllModals();
       }
@@ -463,6 +498,7 @@ export default function OfficePage() {
           closeAllModals();
           setIsMissionOpen(true);
         }}
+        onOpenKhansaChat={() => openKhansaChat(selectedTicketKey)}
         onOpenFigma={() => openAgentWorkspace('jajang')}
         onToggleTerminal={() => setIsTerminalOpen((o) => !o)}
         onOpenHelp={() => {
@@ -520,12 +556,15 @@ export default function OfficePage() {
             boxShadow: '0 8px 32px rgba(244, 63, 94, 0.25)',
           }}
           onClick={() => {
-            const targetId = interactAgent?.commandTarget ? interactAgent.commandTarget.id : 'tara';
-            openAgentWorkspace(targetId);
+            if (interactAgent.commandTarget) {
+              openAgentWorkspace(interactAgent.commandTarget.id);
+            } else {
+              openKhansaChat(selectedTicketKey);
+            }
           }}
         >
           <kbd className="px-2 py-0.5 rounded bg-rose-500/30 text-rose-200 font-mono text-xs border border-rose-400/40">
-            E
+            {interactAgent.commandTarget ? 'E' : 'E / K'}
           </kbd>
           {interactAgent.commandTarget ? (
             <span>
@@ -536,7 +575,7 @@ export default function OfficePage() {
           ) : (
             <span>
               💖 Bicara dengan <b className="text-rose-300">Khansaku</b> (Permaisuri &amp; Corporate Secretary) —{' '}
-              <b className="text-rose-400">Tekan [E] / Klik</b>
+              <b className="text-rose-400">Tekan [E] / [K] / Klik</b>
             </span>
           )}
         </div>
@@ -608,6 +647,7 @@ export default function OfficePage() {
         selectedRepoPath={selectedRepoPath}
         onSelectRepoPath={setSelectedRepoPath}
         onExecuteTicket={handleExecuteTicket}
+        onOpenKhansaChat={(ticketKey, auto) => openKhansaChat(ticketKey, auto)}
       />
 
       {/* Subordinate Workspaces Modal */}
@@ -631,6 +671,25 @@ export default function OfficePage() {
           setIsMissionOpen(true);
         }}
         onFocusAgentInScene={(id) => sceneRef.current?.focusOn(id)}
+        onOpenKhansaChat={(ticketKey, auto) => openKhansaChat(ticketKey, auto)}
+      />
+
+      {/* Trading Bots Workspace Modal */}
+      <TradingBotsModal
+        isOpen={isTradingModalOpen}
+        onClose={() => setIsTradingModalOpen(false)}
+        initialBotId={activeTradingBotId}
+        onFocusAgentInScene={(id) => sceneRef.current?.focusOn(id)}
+      />
+      {/* Khansa Companion Chat & Antigravity Prompt Modal */}
+      <KhansaChatModal
+        isOpen={isKhansaChatOpen}
+        onClose={() => setIsKhansaChatOpen(false)}
+        tickets={liveTickets.length > 0 ? liveTickets : TICKETS}
+        activeTicket={activeTicketForSubordinate}
+        onSelectTicketKey={setSelectedTicketKey}
+        initialTicketKey={selectedTicketKey}
+        autoRequestPrompt={khansaAutoPrompt}
       />
 
       {/* Controls & Shortcut Help Modal */}
@@ -649,6 +708,7 @@ export default function OfficePage() {
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">D</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-white/10">→</kbd></div><div>Jalan ke KANAN layar</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">⇧ Shift</kbd></div><div>Sprint Cepat</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">E</kbd></div><div>Bicara dengan agen terdekat</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">K</kbd></div><div>Chat Khansa &amp; Prompt Antigravity</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">F</kbd></div><div>Slicing Figma ke Jajang</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">J</kbd></div><div>Mission Control Jira</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">T</kbd></div><div>Buka / Tutup Terminal</div>

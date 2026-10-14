@@ -116,6 +116,19 @@ const styles = {
     }
   `,
 
+  avatarInitials: (color: string) => css`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: ${color};
+    background: ${color}22;
+  `,
+
   namesCol: css`
     display: flex;
     flex-direction: column;
@@ -211,6 +224,14 @@ const styles = {
   `,
 };
 
+function getAgentInitials(agent: Agent) {
+  const source = String(agent.fullName || agent.name || agent.id || '').replace(/[()]/g, ' ');
+  const words = source.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 export default function AgentIdentityCard({
   agent,
   onOpenWorkspace,
@@ -236,10 +257,13 @@ export default function AgentIdentityCard({
       {/* Profile info */}
       <div className={styles.profileRow}>
         <div className={styles.avatarBox(color)}>
-          <img
-            src={agent.avatar || `/agents/${agent.id}.jpg`}
-            alt={agent.fullName || agent.name}
-          />
+          {agent.avatar ? (
+            <img src={agent.avatar} alt={agent.fullName || agent.name} />
+          ) : (
+            <span className={styles.avatarInitials(color)} aria-hidden="true">
+              {getAgentInitials(agent)}
+            </span>
+          )}
         </div>
         <div className={styles.namesCol}>
           <div className={styles.nameText}>{agent.fullName || agent.name}</div>

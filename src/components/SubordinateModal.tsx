@@ -39,6 +39,7 @@ export interface SubordinateModalProps {
   figmaParseResult?: { ok: boolean; nodeId?: string; fileKey?: string };
   onRunFullPipeline?: () => void;
   onFocusAgentInScene?: (id: string) => void;
+  onOpenKhansaChat?: (ticketKey?: string, autoPrompt?: boolean) => void;
 }
 
 // -------------------------------------------------------------
@@ -507,6 +508,7 @@ export default function SubordinateModal({
   figmaParseResult,
   onRunFullPipeline,
   onFocusAgentInScene,
+  onOpenKhansaChat,
 }: SubordinateModalProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -588,7 +590,8 @@ export default function SubordinateModal({
 
   if (!isOpen || !mounted) return null;
 
-  const currentAgent = AGENTS.find((a) => a.id === activeAgentId) || AGENTS[0];
+  const engineeringAgents = AGENTS.filter((a) => a.workspace !== 'trading');
+  const currentAgent = engineeringAgents.find((a) => a.id === activeAgentId) || engineeringAgents[0];
 
   // Derive feature branch & matching release branch
   const featureBranchName = customFeatureName.trim()
@@ -776,7 +779,7 @@ export default function TicketFeatureComponent() {
         {/* ===================== SUBORDINATE TABS BAR ===================== */}
         <div className={styles.tabNavRow}>
           <span className={styles.tabLabel}>Karyawan:</span>
-          {AGENTS.map((agent) => {
+          {engineeringAgents.map((agent) => {
             const isActive = activeAgentId === agent.id;
             return (
               <button
@@ -970,6 +973,44 @@ export default function TicketFeatureComponent() {
                       </div>
                     )}
                   </div>
+
+                  {onOpenKhansaChat && (
+                    <button
+                      type="button"
+                      className={css`
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        padding: 11px 16px;
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, rgba(244, 63, 94, 0.22), rgba(225, 29, 72, 0.15));
+                        border: 1px solid rgba(244, 63, 94, 0.45);
+                        color: #fecdd3;
+                        font-size: 13px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        margin-top: 10px;
+                        margin-bottom: 8px;
+                        transition: all 0.18s ease;
+                        &:hover {
+                          background: linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(225, 29, 72, 0.25));
+                          border-color: #fb7185;
+                          color: #ffffff;
+                          transform: translateY(-1px);
+                          box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+                        }
+                      `}
+                      onClick={() => {
+                        onClose();
+                        onOpenKhansaChat(activeTicket?.key, true);
+                      }}
+                    >
+                      <span>👑</span>
+                      <span>Ngobrol dengan Khansa &amp; Dapatkan Prompt Antigravity ({activeTicket?.key || 'Tiket Ini'})</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"

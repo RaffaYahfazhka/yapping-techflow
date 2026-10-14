@@ -30,6 +30,7 @@ export interface MissionControlModalProps {
   selectedRepoPath?: string;
   onSelectRepoPath?: (path: string) => void;
   onExecuteTicket?: (ticket: Ticket, path?: string, validation?: any) => void;
+  onOpenKhansaChat?: (ticketKey?: string, autoPrompt?: boolean) => void;
 }
 
 const STATUS_FILTERS = [
@@ -205,6 +206,7 @@ export default function MissionControlModal({
   selectedRepoPath,
   onSelectRepoPath,
   onExecuteTicket,
+  onOpenKhansaChat,
 }: MissionControlModalProps) {
   const [statusFilter, setStatusFilter] = useState('active');
   const [searchQuery, setSearchQuery] = useState('');
@@ -457,7 +459,45 @@ export default function MissionControlModal({
                 )}
 
                 {/* Direct Action Button in Detail Pane */}
-                <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ marginTop: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {onOpenKhansaChat && (
+                    <button
+                      type="button"
+                      className={css`
+                        width: 100%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        padding: 10px 16px;
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, rgba(244, 63, 94, 0.22), rgba(225, 29, 72, 0.15));
+                        border: 1px solid rgba(244, 63, 94, 0.45);
+                        color: #fecdd3;
+                        font-size: 13px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        transition: all 0.18s ease;
+                        &:hover {
+                          background: linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(225, 29, 72, 0.25));
+                          border-color: #fb7185;
+                          color: #ffffff;
+                          transform: translateY(-1px);
+                          box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+                        }
+                      `}
+                      onClick={() => {
+                        if (activeTicket) {
+                          onClose();
+                          onOpenKhansaChat(activeTicket.key, true);
+                        }
+                      }}
+                    >
+                      <span>👑</span>
+                      <span>Minta Khansa Buatkan Prompt Antigravity ({activeTicket.key})</span>
+                    </button>
+                  )}
+
                   <Button
                     variant="emerald"
                     size="md"

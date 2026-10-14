@@ -1,5 +1,5 @@
 /**
- * Kantor Raffa — 6 Karyawan AI + The Boss Raffa Yahfazhka.
+ * Kantor Raffa — 9 Karyawan AI (6 Engineering + 3 Trading Bots) + The Boss Raffa Yahfazhka.
  * desk.rot = 0  → agen duduk menghadap +Z (wajah terlihat kamera)
  * desk.rot = PI → agen duduk menghadap -Z (layar monitor terlihat kamera)
  */
@@ -116,6 +116,66 @@ export const AGENTS = [
     stats: { tasksDone: 298, precision: '99.9%', streak: '25 Hari' },
     look: { skin: '#cf9b78', hair: '#292524', shirt: '#0891b2', pants: '#18181b', hairStyle: 'curly', accessory: 'headset' },
     desk: { x: 3, z: 6.5, rot: Math.PI },
+    screens: ['pipeline', 'code'],
+  },
+  {
+    id: 'meteora-lp',
+    name: 'Meteora LP',
+    fullName: 'Meteora LP (Solana Liquidity Analyst)',
+    employeeId: 'BOT-001',
+    avatar: '', // no bot avatar asset — AgentIdentityCard renders initials
+    role: 'Solana LP Analyst',
+    short: 'Meteora',
+    color: '#14f195',
+    department: 'Trading Bot Division',
+    email: 'meteora.lp@techflow.local',
+    workspace: 'trading',
+    bio: 'Bot analis likuiditas Meteora DLMM: memeringkat pool Solana dari rasio fee/TVL dan memantau kandidat pasar secara read-only tanpa mengelola dana.',
+    duties: 'Pemeringkatan pool Meteora DLMM (read-only) & monitoring kandidat; saldo paper $30 dibiarkan belum dialokasikan, tanpa transaksi on-chain.',
+    skills: ['Meteora DLMM', 'Pool Analytics', 'Read-Only Feeds', 'Paper Trading', 'Solana'],
+    stats: { tasksDone: 0, precision: '—', streak: '—' },
+    look: { skin: '#d9a383', hair: '#0c0a09', shirt: '#14f195', pants: '#18181b', hairStyle: 'short', accessory: 'glasses' },
+    desk: { x: 13.5, z: -6.5, rot: 0 },
+    screens: ['pipeline', 'code'],
+  },
+  {
+    id: 'prediction-market',
+    name: 'Prediction Market',
+    fullName: 'Prediction Market (Polymarket 5m Analyst)',
+    employeeId: 'BOT-002',
+    avatar: '', // no bot avatar asset — AgentIdentityCard renders initials
+    role: 'Polymarket 5m Analyst',
+    short: 'Prediction',
+    color: '#8b5cf6',
+    department: 'Trading Bot Division',
+    email: 'prediction.market@techflow.local',
+    workspace: 'trading',
+    bio: 'Bot analis pasar prediksi crypto Up/Down 5 menit di Polymarket; menampilkan peluang nyata dan mencatat posisi paper manual tanpa eksekusi strategi otomatis.',
+    duties: 'Filter pasar crypto Up/Down berdurasi 300 detik & pencatatan paper manual; strategi otomatis menunggu repo GitHub dipilih dan ditinjau terpisah.',
+    skills: ['Polymarket CLOB', 'Gamma Markets API', 'WebSocket Feed', 'Paper Ledger', 'Risk Guardrails'],
+    stats: { tasksDone: 0, precision: '—', streak: '—' },
+    look: { skin: '#b97f5a', hair: '#1c1917', shirt: '#8b5cf6', pants: '#27272a', hairStyle: 'spiky', accessory: 'headphones' },
+    desk: { x: 13.5, z: 0, rot: 0 },
+    screens: ['pipeline', 'code'],
+  },
+  {
+    id: 'xauusd-ea',
+    name: 'XAUUSD EA',
+    fullName: 'XAUUSD EA (Forex EA Analyst)',
+    employeeId: 'BOT-003',
+    avatar: '', // no bot avatar asset — AgentIdentityCard renders initials
+    role: 'Forex EA Analyst',
+    short: 'XAUUSD',
+    color: '#f59e0b',
+    department: 'Trading Bot Division',
+    email: 'xauusd.ea@techflow.local',
+    workspace: 'trading',
+    bio: 'Bot EA eksperimental XAUUSD pada data akun demo Exness; menghitung sinyal EMA/ATR dan hanya menjalankan order paper virtual.',
+    duties: 'Baseline paper EMA(9)/EMA(21) + ATR(14) pada candle M5 XAUUSD demo; tanpa order nyata dan berhenti setelah batas rugi harian 2%.',
+    skills: ['XAUUSD M5', 'EMA / ATR Signals', 'Exness Demo API', 'Paper Positions', 'Daily Loss Stop'],
+    stats: { tasksDone: 0, precision: '—', streak: '—' },
+    look: { skin: '#c98e6b', hair: '#292524', shirt: '#f59e0b', pants: '#1f2937', hairStyle: 'buzz', accessory: 'beanie' },
+    desk: { x: 13.5, z: 6.5, rot: Math.PI },
     screens: ['pipeline', 'code'],
   },
 ];

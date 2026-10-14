@@ -10,7 +10,7 @@ import { AGENTS, BOSS } from '../data/agents';
  * Features:
  * - Isometric Orthographic Camera with smooth mouse drag-pan & zoom
  * - Screen-relative anti-inverted WASD movement with Obstacle Collision & Wall-sliding
- * - 6 AI Agent Workstations with low-poly avatars, idle typing animation, and floating canvas status badges
+ * - 9 AI Agent Workstations (6 engineering + 3 trading bots) with low-poly avatars, idle typing animation, and floating canvas status badges
  * - Boss character (Raffa) with walking animation, crown/accent, facing direction
  * - War-room holographic table with rotating rings and glowing core
  * - Indoor plants (monstera, snake plant) and architectural studio lights
@@ -283,7 +283,7 @@ export class OfficeScene {
 
     ctx.fillStyle = '#71717a';
     ctx.font = '500 24px "JetBrains Mono", monospace';
-    ctx.fillText('AUTONOMOUS AI MISSION CONTROL · 6 AGENTS DEPLOYED', 50, 160);
+    ctx.fillText('AUTONOMOUS AI MISSION CONTROL · 9 AGENTS DEPLOYED', 50, 160);
 
     // Emerald gradient stripe
     const grad = ctx.createLinearGradient(50, 190, 500, 190);

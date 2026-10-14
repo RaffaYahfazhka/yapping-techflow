@@ -160,7 +160,7 @@ export default function TeamDirectoryModal({
                 className={styles.deptBtn(filterDepartment === dept)}
                 onClick={() => setFilterDepartment(dept)}
               >
-                {dept === 'all' ? 'Semua (7)' : dept}
+                {dept === 'all' ? `Semua (${allTeam.length})` : dept}
               </button>
             ))}
           </div>

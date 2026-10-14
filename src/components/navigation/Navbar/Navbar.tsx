@@ -10,6 +10,7 @@ export interface NavbarProps {
   onToggleTheme?: () => void;
   onOpenTeamDirectory?: () => void;
   onOpenMissionControl?: () => void;
+  onOpenKhansaChat?: () => void;
   onOpenFigma?: () => void;
   onToggleTerminal?: () => void;
   onOpenHelp?: () => void;
@@ -242,6 +243,7 @@ export default function Navbar({
   onToggleTheme,
   onOpenTeamDirectory,
   onOpenMissionControl,
+  onOpenKhansaChat,
   onOpenFigma,
   onToggleTerminal,
   onOpenHelp,
@@ -323,6 +325,41 @@ export default function Navbar({
           <span>Mission Control</span>
         </button>
 
+        {onOpenKhansaChat && (
+          <button
+            type="button"
+            className={css`
+              display: inline-flex;
+              align-items: center;
+              gap: 7px;
+              padding: 7px 14px;
+              border-radius: 10px;
+              background: linear-gradient(135deg, rgba(244, 63, 94, 0.22), rgba(225, 29, 72, 0.15));
+              border: 1px solid rgba(244, 63, 94, 0.55);
+              color: #fecdd3;
+              font-size: 12px;
+              font-weight: 700;
+              cursor: pointer;
+              transition: all 0.18s ease;
+              box-shadow: 0 2px 10px rgba(244, 63, 94, 0.2);
+              white-space: nowrap;
+
+              &:hover {
+                background: linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(225, 29, 72, 0.25));
+                border-color: #fb7185;
+                color: #ffffff;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+              }
+            `}
+            onClick={onOpenKhansaChat}
+            title="Ngobrol langsung dengan Khansaku & racik prompt Antigravity (Shortcut: K)"
+          >
+            <span>👑</span>
+            <span>Chat Khansaku</span>
+          </button>
+        )}
+
         <button
           type="button"
           className={styles.actionBtn()}
@@ -398,6 +435,23 @@ export default function Navbar({
           >
             <span>🎯</span> Mission Control
           </button>
+          {onOpenKhansaChat && (
+            <button
+              type="button"
+              className={styles.actionBtn()}
+              style={{
+                background: 'rgba(244, 63, 94, 0.2)',
+                borderColor: 'rgba(244, 63, 94, 0.4)',
+                color: '#fecdd3',
+              }}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenKhansaChat();
+              }}
+            >
+              <span>👑</span> Chat Khansaku
+            </button>
+          )}
           <button
             type="button"
             className={styles.actionBtn()}

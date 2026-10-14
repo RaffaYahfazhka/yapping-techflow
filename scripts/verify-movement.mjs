@@ -3,10 +3,12 @@
  * memakai kamera isometrik three.js yang sama dengan runtime.
  *   yarn test:movement
  */
-import * as THREE from 'three';
-import { CAMERA_OFFSET } from '../src/lib/engine/constants.js';
-import { screenToWorld, facingFromDirection } from '../src/lib/engine/movement.js';
+import { register } from 'node:module';
+register('./ts-import-loader.mjs', import.meta.url);
 
+import * as THREE from 'three';
+const { CAMERA_OFFSET } = await import('../src/lib/engine/constants.ts');
+const { screenToWorld, facingFromDirection } = await import('../src/lib/engine/movement.ts');
 const cam = new THREE.OrthographicCamera(-16, 16, 9, -9, 0.1, 200);
 cam.position.set(CAMERA_OFFSET.x, CAMERA_OFFSET.y, CAMERA_OFFSET.z);
 cam.lookAt(0, 0, 0);
