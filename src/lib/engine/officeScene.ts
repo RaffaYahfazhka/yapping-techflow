@@ -89,8 +89,7 @@ export class OfficeScene {
 
     // 1. Scene
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#0c0c0e');
-    this.scene.fog = new THREE.FogExp2('#0c0c0e', 0.015);
+    this.scene.background = null;
 
     // 2. Isometric Orthographic Camera (d = 10 fills the screen beautifully)
     const d = 10;
@@ -106,7 +105,8 @@ export class OfficeScene {
     this.camera.lookAt(0, 0, 0);
 
     // 3. Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    this.renderer.setClearColor(0x000000, 0);
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
@@ -216,6 +216,8 @@ export class OfficeScene {
       color: PALETTE.floor,
       roughness: 0.65,
       metalness: 0.08,
+      transparent: true,
+      opacity: 0.35,
       polygonOffset: true,
       polygonOffsetFactor: -1,
       polygonOffsetUnits: -1,
@@ -238,16 +240,22 @@ export class OfficeScene {
     this.scene.add(gridHelper);
 
     // Modern low back walls (aesthetic studio backdrop)
-    const wallMat = new THREE.MeshStandardMaterial({ color: PALETTE.wall, roughness: 0.85 });
+    const wallMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0b1020,
+      metalness: 0.1,
+      roughness: 0.05,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.15,
+    });
     const trimMat = new THREE.MeshStandardMaterial({ color: PALETTE.wallTrim, roughness: 0.7 });
 
-    // North wall (Z = minZ)
+    // North wall (Z = minZ) - transparent glass view to R3F skyline
     const wallNGeo = new THREE.BoxGeometry(ROOM.maxX * 2, ROOM.wallH, 0.4);
     const wallN = new THREE.Mesh(wallNGeo, wallMat);
     wallN.position.set(0, ROOM.wallH / 2, ROOM.minZ);
     wallN.receiveShadow = true;
     this.scene.add(wallN);
-
     // West wall (X = minX)
     const wallWGeo = new THREE.BoxGeometry(0.4, ROOM.wallH, ROOM.maxZ * 2);
     const wallW = new THREE.Mesh(wallWGeo, wallMat);
@@ -1388,12 +1396,7 @@ export class OfficeScene {
 
   setTheme(isLight) {
     if (!this.scene) return;
-    const bgCol = isLight ? '#f1f5f9' : '#0c0c0e';
-    this.scene.background = new THREE.Color(bgCol);
-    if (this.scene.fog) {
-      this.scene.fog.color = new THREE.Color(bgCol);
-      this.scene.fog.density = isLight ? 0.008 : 0.015;
-    }
+    this.scene.background = null;
   }
 
   checkProximity() {

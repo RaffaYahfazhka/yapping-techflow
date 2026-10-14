@@ -1,7 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Target, Crown, Users, TerminalSquare, Palette, Keyboard, Sun, Moon } from 'lucide-react';
+import {
+  Target,
+  Crown,
+  Users,
+  TerminalSquare,
+  Palette,
+  Keyboard,
+  Sun,
+  Moon,
+  Compass,
+  Coffee,
+  Shirt,
+  Gamepad2,
+  Camera,
+  Crosshair,
+} from 'lucide-react';
 
 export interface NavbarProps {
   missionState?: string;
@@ -14,6 +29,12 @@ export interface NavbarProps {
   onOpenFigma?: () => void;
   onToggleTerminal?: () => void;
   onOpenHelp?: () => void;
+  onOpenMinimap?: () => void;
+  onOpenOfficeChat?: () => void;
+  onOpenWardrobe?: () => void;
+  onOpenDarts?: () => void;
+  onOpenArcade?: () => void;
+  onOpenPhotoMode?: () => void;
   className?: string;
 }
 
@@ -28,6 +49,12 @@ export default function Navbar({
   onOpenFigma,
   onToggleTerminal,
   onOpenHelp,
+  onOpenMinimap,
+  onOpenOfficeChat,
+  onOpenWardrobe,
+  onOpenDarts,
+  onOpenArcade,
+  onOpenPhotoMode,
   className = '',
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -44,7 +71,7 @@ export default function Navbar({
   return (
     <header
       id="hud-header"
-      className={`fixed top-3 left-3.5 right-3.5 z-40 flex items-center justify-between gap-4 px-4 py-2 rounded-2xl bg-[#0a0a0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55)] font-sans select-none ${className}`}
+      className={`fixed top-3 left-3.5 right-3.5 z-40 flex items-center justify-between gap-3 px-4 py-2 rounded-2xl bg-[#0a0a0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55)] font-sans select-none ${className}`}
     >
       {/* Brand Logo & Title */}
       <div className="flex items-center gap-3 shrink-0">
@@ -71,18 +98,18 @@ export default function Navbar({
           <div className="flex items-center gap-2">
             <span className="text-sm font-extrabold text-white tracking-tight leading-tight">Kantor Raffa</span>
             <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              v2.5 TS
+              Penthouse v3.2
             </span>
           </div>
-          <span className="text-[11px] text-zinc-400 leading-tight">Autonomous Mission Control</span>
+          <span className="text-[11px] text-zinc-400 leading-tight">Virtual AI Penthouse Suite</span>
         </div>
       </div>
 
       {/* Center Live Indicators */}
-      <div className="hidden lg:flex items-center gap-2.5">
+      <div className="hidden xl:flex items-center gap-2.5">
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
-          <span>6/6 Karyawan Aktif</span>
+          <span>9/9 Karyawan AI</span>
         </div>
         <span className="text-white/20 text-xs">|</span>
         <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${sprintColor}`}>
@@ -93,7 +120,79 @@ export default function Navbar({
       </div>
 
       {/* Right Desktop Actions */}
-      <div className="hidden md:flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-1.5">
+        {/* Wave 2: Penthouse Features */}
+        {onOpenMinimap && (
+          <button
+            type="button"
+            onClick={onOpenMinimap}
+            title="Radar Minimap Penthouse (Shortcut: M)"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
+          >
+            <Compass size={13} />
+            <span>Radar</span>
+          </button>
+        )}
+
+        {onOpenOfficeChat && (
+          <button
+            type="button"
+            onClick={onOpenOfficeChat}
+            title="Warung Kopi TechFlow / WAG Kantor (Shortcut: N)"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
+          >
+            <Coffee size={13} />
+            <span>Warung Kopi</span>
+          </button>
+        )}
+
+        {onOpenWardrobe && (
+          <button
+            type="button"
+            onClick={onOpenWardrobe}
+            title="Setelan Wardrobe Bos Raffa (Shortcut: O)"
+            className="p-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <Shirt size={15} />
+          </button>
+        )}
+
+        {onOpenDarts && (
+          <button
+            type="button"
+            onClick={onOpenDarts}
+            title="Mini-Game Sky Darts Penthouse (Shortcut: G)"
+            className="p-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <Crosshair size={15} />
+          </button>
+        )}
+
+        {onOpenArcade && (
+          <button
+            type="button"
+            onClick={onOpenArcade}
+            title="Retro Arcade: Crypto Scalper & Whack-A-Bug (Shortcut: B)"
+            className="p-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <Gamepad2 size={15} />
+          </button>
+        )}
+
+        {onOpenPhotoMode && (
+          <button
+            type="button"
+            onClick={onOpenPhotoMode}
+            title="Photo Drone Mode (Shortcut: P)"
+            className="p-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <Camera size={15} />
+          </button>
+        )}
+
+        <span className="text-white/15 mx-0.5">|</span>
+
+        {/* Existing Squad Operations */}
         <button
           type="button"
           onClick={onOpenMissionControl}
@@ -120,17 +219,17 @@ export default function Navbar({
           type="button"
           onClick={onOpenTeamDirectory}
           title="Daftar Profil Tim Karyawan AI"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-200 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-200 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
         >
           <Users size={13} />
-          <span>Tim Karyawan</span>
+          <span>Tim</span>
         </button>
 
         <button
           type="button"
           onClick={onToggleTerminal}
           title="Buka Terminal & Log Stream (Shortcut: T)"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all"
         >
           <TerminalSquare size={13} />
           <span>Terminal</span>
@@ -141,9 +240,9 @@ export default function Navbar({
             type="button"
             onClick={onOpenFigma}
             title="Desain Figma (Shortcut: F)"
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
-            <Palette size={16} />
+            <Palette size={15} />
           </button>
         )}
 
@@ -152,9 +251,9 @@ export default function Navbar({
             type="button"
             onClick={onOpenHelp}
             title="Bantuan Navigasi & Shortcut"
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
-            <Keyboard size={16} />
+            <Keyboard size={15} />
           </button>
         )}
 
@@ -162,9 +261,9 @@ export default function Navbar({
           type="button"
           onClick={onToggleTheme}
           title="Ganti Tema (Dark / Light)"
-          className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
         >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
       </div>
 
@@ -181,6 +280,57 @@ export default function Navbar({
       {/* Mobile Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 mt-2 p-3 rounded-2xl bg-[#0a0a0e]/95 border border-white/10 backdrop-blur-xl flex flex-col gap-2 shadow-2xl">
+          <div className="grid grid-cols-2 gap-2 pb-2 border-b border-white/10">
+            {onOpenMinimap && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenMinimap();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-300 bg-emerald-500/10"
+              >
+                <Compass size={14} /> Radar
+              </button>
+            )}
+            {onOpenOfficeChat && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenOfficeChat();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-amber-300 bg-amber-500/10"
+              >
+                <Coffee size={14} /> Warung Kopi
+              </button>
+            )}
+            {onOpenDarts && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenDarts();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 bg-white/5"
+              >
+                <Crosshair size={14} /> Darts
+              </button>
+            )}
+            {onOpenArcade && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenArcade();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 bg-white/5"
+              >
+                <Gamepad2 size={14} /> Arcade
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => {

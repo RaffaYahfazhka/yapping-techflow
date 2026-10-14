@@ -338,7 +338,9 @@ export default function OfficePage() {
         setIsPhotoActive((o) => !o);
       } else if (e.code === 'KeyM' && !e.repeat) {
         setIsMinimapOpen((o) => !o);
-      } else if (e.code === 'KeyW' && !e.repeat) {
+      } else if (e.code === 'KeyN' && !e.repeat) {
+        setIsOfficeChatOpen((o) => !o);
+      } else if (e.code === 'KeyO' && !e.repeat) {
         setIsWardrobeOpen((o) => !o);
       } else if (e.code === 'KeyG' && !e.repeat) {
         setIsDartsOpen((o) => !o);
@@ -565,6 +567,12 @@ export default function OfficePage() {
           closeAllModals();
           setIsHelpOpen(true);
         }}
+        onOpenMinimap={() => setIsMinimapOpen((o) => !o)}
+        onOpenOfficeChat={() => setIsOfficeChatOpen((o) => !o)}
+        onOpenWardrobe={() => setIsWardrobeOpen((o) => !o)}
+        onOpenDarts={() => setIsDartsOpen((o) => !o)}
+        onOpenArcade={() => setIsArcadeOpen((o) => !o)}
+        onOpenPhotoMode={() => setIsPhotoActive((o) => !o)}
       />
 
       {/* Pipeline HUD */}
@@ -772,7 +780,12 @@ export default function OfficePage() {
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">F</kbd></div><div>Slicing Figma ke Jajang</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">J</kbd></div><div>Mission Control Jira</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">T</kbd></div><div>Buka / Tutup Terminal</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">P</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-white/10">M</kbd></div><div>Play/Pause · Mute Music</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">M</kbd></div><div>Radar Minimap Penthouse</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">N</kbd></div><div>Warung Kopi (Chat Kantor)</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">O</kbd></div><div>Setelan Wardrobe Bos Raffa</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">G</kbd></div><div>Sky Darts (Rooftop Mini-Game)</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">B</kbd></div><div>Retro Arcade Machine</div>
+          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">P</kbd></div><div>Photo Drone Mode (Capture PNG)</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">C</kbd></div><div>Reset Kamera ke Raffa</div>
           <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">Esc</kbd></div><div>Tutup Modal Aktif</div>
         </div>
@@ -826,6 +839,64 @@ export default function OfficePage() {
 
       {/* YouTube Iframe Audio Host (Hidden unobtrusively without zero-dimension throttling) */}
       <div id="yt-player-host" aria-label="Pemutar musik YouTube" />
+
+      {/* Penthouse Quick Actions Dock */}
+      {booted && (
+        <div
+          role="toolbar"
+          aria-label="Penthouse Quick Actions"
+          className="fixed bottom-4 right-4 md:right-auto md:left-1/2 md:-translate-x-1/2 z-30 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#0a0a0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.6)] select-none text-xs"
+        >
+          <button
+            type="button"
+            onClick={() => setIsMinimapOpen((o) => !o)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 font-semibold transition-all hover:-translate-y-0.5"
+            title="Radar Minimap Penthouse (M)"
+          >
+            <span>🗺️ Radar</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsOfficeChatOpen((o) => !o)}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 font-semibold transition-all hover:-translate-y-0.5"
+            title="Warung Kopi TechFlow (N)"
+          >
+            <span>☕ Warung Kopi</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsWardrobeOpen((o) => !o)}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            title="Setelan Wardrobe Bos Raffa (O)"
+          >
+            <span>👔 Wardrobe</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsDartsOpen((o) => !o)}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            title="Mini-Game Sky Darts Penthouse (G)"
+          >
+            <span>🎯 Darts</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsArcadeOpen((o) => !o)}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            title="Retro Arcade: Crypto Scalper & Whack-A-Bug (B)"
+          >
+            <span>🕹️ Arcade</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPhotoActive((o) => !o)}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white font-medium transition-all hover:-translate-y-0.5"
+            title="Photo Drone Mode (P)"
+          >
+            <span>📸 Photo</span>
+          </button>
+        </div>
+      )}
     </main>
   );
 }
