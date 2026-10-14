@@ -7,7 +7,7 @@ import {
   PAPER_ACCOUNT_SPECS,
   type PaperLedgerV2,
   type PaperAccountId,
-} from './paperLedgerV2.ts';
+} from './paperLedgerV2';
 
 export type MigrationOutcome =
   | { kind: 'migrated'; ledger: PaperLedgerV2; source: 'canonical-ledger-v1' }

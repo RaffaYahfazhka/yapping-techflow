@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { migrateLegacyLedger } from '../src/lib/engine/paperLedgerMigrate.ts';
+import { register } from 'node:module';
+
+register('./ts-import-loader.mjs', import.meta.url);
+const { migrateLegacyLedger } = await import('../src/lib/engine/paperLedgerMigrate');
 
 let passed = 0;
 const ok = (name, fn) => { fn(); passed += 1; console.log(`✓ ${name}`); };
