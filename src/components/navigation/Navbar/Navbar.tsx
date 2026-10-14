@@ -434,7 +434,7 @@ export default function Navbar({
               onOpenMissionControl?.();
             }}
           >
-            <span>🎯</span> Mission Control
+            <span><Target size={13} /></span> Mission Control
           </button>
           {onOpenKhansaChat && (
             <button
@@ -450,7 +450,8 @@ export default function Navbar({
                 onOpenKhansaChat();
               }}
             >
-              <span>👑</span> Chat Khansaku
+              <Crown size={14} />
+              <span>Chat Khansaku</span>
             </button>
           )}
           <button
@@ -461,7 +462,7 @@ export default function Navbar({
               onOpenTeamDirectory?.();
             }}
           >
-            <span>👥</span> Tim Karyawan
+            <span><Users size={13} /></span> Tim Karyawan
           </button>
           <button
             type="button"
@@ -471,7 +472,7 @@ export default function Navbar({
               onToggleTerminal?.();
             }}
           >
-            <span>💻</span> Terminal Log
+            <span><TerminalSquare size={13} /></span> Terminal Log
           </button>
         </div>
       )}
