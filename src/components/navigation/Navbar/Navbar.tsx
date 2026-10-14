@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Target, Crown, Users, TerminalSquare, Palette, Keyboard, Sun, Moon } from 'lucide-react';
 import { css } from '@emotion/css';
 
 export interface NavbarProps {
@@ -321,7 +322,7 @@ export default function Navbar({
           onClick={onOpenMissionControl}
           title="Buka Mission Control Board (Shortcut: J)"
         >
-          <span>🎯</span>
+          <Target size={13} />
           <span>Mission Control</span>
         </button>
 
@@ -355,7 +356,7 @@ export default function Navbar({
             onClick={onOpenKhansaChat}
             title="Ngobrol langsung dengan Khansaku & racik prompt Antigravity (Shortcut: K)"
           >
-            <span>👑</span>
+            <Crown size={14} />
             <span>Chat Khansaku</span>
           </button>
         )}
@@ -366,7 +367,7 @@ export default function Navbar({
           onClick={onOpenTeamDirectory}
           title="Daftar Profil Tim Karyawan AI"
         >
-          <span>👥</span>
+          <Users size={13} />
           <span>Tim Karyawan</span>
         </button>
 
@@ -376,7 +377,7 @@ export default function Navbar({
           onClick={onToggleTerminal}
           title="Buka Terminal & Log Stream (Shortcut: T)"
         >
-          <span>💻</span>
+          <TerminalSquare size={13} />
           <span>Terminal</span>
         </button>
 
@@ -387,7 +388,7 @@ export default function Navbar({
             onClick={onOpenFigma}
             title="Desain Figma (Shortcut: F)"
           >
-            🎨
+            <Palette size={16} />
           </button>
         )}
 
@@ -398,7 +399,7 @@ export default function Navbar({
             onClick={onOpenHelp}
             title="Bantuan Navigasi & Shortcut"
           >
-            ⌨️
+            <Keyboard size={16} />
           </button>
         )}
 
@@ -408,7 +409,7 @@ export default function Navbar({
           onClick={onToggleTheme}
           title="Ganti Tema (Dark / Light)"
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>
 
@@ -433,7 +434,7 @@ export default function Navbar({
               onOpenMissionControl?.();
             }}
           >
-            <span>🎯</span> Mission Control
+            <Target size={13} /> Mission Control
           </button>
           {onOpenKhansaChat && (
             <button
@@ -449,7 +450,8 @@ export default function Navbar({
                 onOpenKhansaChat();
               }}
             >
-              <span>👑</span> Chat Khansaku
+              <Crown size={14} />
+              <span>Chat Khansaku</span>
             </button>
           )}
           <button
@@ -460,7 +462,7 @@ export default function Navbar({
               onOpenTeamDirectory?.();
             }}
           >
-            <span>👥</span> Tim Karyawan
+            <Users size={13} /> Tim Karyawan
           </button>
           <button
             type="button"
@@ -470,7 +472,7 @@ export default function Navbar({
               onToggleTerminal?.();
             }}
           >
-            <span>💻</span> Terminal Log
+            <TerminalSquare size={13} /> Terminal Log
           </button>
         </div>
       )}

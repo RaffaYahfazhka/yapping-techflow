@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireApiToken } from '@/lib/server/apiGate';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -32,9 +33,17 @@ const CANDIDATE_MODELS = [
 ];
 
 export async function POST(request: Request) {
+  const denied = requireApiToken(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { messages = [], activeTicket, allTickets = [] } = body;
+    if (!Array.isArray(messages) || messages.length > 50 || messages.some((m: { content?: unknown }) => typeof m.content !== 'string' || m.content.length > 4000)) {
+      return NextResponse.json({ error: 'messages tidak valid atau terlalu banyak' }, { status: 400 });
+    }
+    if (JSON.stringify(allTickets).length > 200_000) {
+      return NextResponse.json({ error: 'allTickets terlalu besar' }, { status: 413 });
+    }
 
     const apiKey = process.env.GEMINI_API_KEY || '';
 
@@ -178,10 +187,10 @@ ${backlogSummary}
     for (const modelName of CANDIDATE_MODELS) {
       try {
         const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify(payload),
             cache: 'no-store',
             signal: AbortSignal.timeout(3500),

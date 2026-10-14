@@ -164,17 +164,26 @@ export function persistPaperLedger(ledger: PaperLedger, store?: KeyValueStore): 
   }
 }
 
-export function resetPaperLedger(store?: KeyValueStore): PaperLedger {
+export interface PaperResetResult {
+  ledger: PaperLedger;
+  /** false when the reset could not be written; the old durable portfolio may return after reload. */
+  persisted: boolean;
+}
+
+export function resetPaperLedgerWithResult(store?: KeyValueStore): PaperResetResult {
   const fresh = createPaperLedger();
   const targetStore = store || (typeof window !== 'undefined' ? window.localStorage : null);
-  if (targetStore) {
-    try {
-      targetStore.setItem(PAPER_STORAGE_KEY, JSON.stringify(fresh));
-    } catch {
-      // ignore
-    }
+  if (!targetStore) return { ledger: fresh, persisted: false };
+  try {
+    targetStore.setItem(PAPER_STORAGE_KEY, JSON.stringify(fresh));
+    return { ledger: fresh, persisted: true };
+  } catch {
+    return { ledger: fresh, persisted: false };
   }
-  return fresh;
+}
+
+export function resetPaperLedger(store?: KeyValueStore): PaperLedger {
+  return resetPaperLedgerWithResult(store).ledger;
 }
 
 export function openPaperTrade(
@@ -794,9 +803,9 @@ export function savePaperState(state: PaperState): void {
   persistPaperLedger(ledger);
 }
 
-export function resetPaperState(): PaperState {
-  resetPaperLedger();
-  return createInitialState();
+export function resetPaperState(): { state: PaperState; persisted: boolean } {
+  const { persisted } = resetPaperLedgerWithResult();
+  return { state: createInitialState(), persisted };
 }
 
 export function submitPolymarketTrade(

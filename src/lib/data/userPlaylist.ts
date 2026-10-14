@@ -8,6 +8,18 @@ export interface PlaylistTrack {
   [key: string]: any;
 }
 
+export const DEFAULT_PLAYLIST_ID = 'PLZVXIrT2s1CE';
+export const DEFAULT_PLAYLIST_URL = 'https://music.youtube.com/playlist?list=PLZVXIrT2s1CE&si=ALpq_uRyS-RVagad&drli=1';
+
+export interface OfficePlaylistInfo {
+  id: string;
+  name: string;
+  subtitle: string;
+  type: 'youtube-playlist' | 'track-list';
+  playlistId?: string;
+  tracks?: PlaylistTrack[];
+}
+
 export const USER_PLAYLIST: PlaylistTrack[] = [
   {
     "videoId": "NA7hmTexZ0E",
@@ -358,3 +370,21 @@ export const USER_PLAYLIST: PlaylistTrack[] = [
     "cover": "https://i.ytimg.com/vi/0vlctypM4I0/mqdefault.jpg"
   }
 ];
+
+export const PLAYLISTS: OfficePlaylistInfo[] = [
+  {
+    id: 'executive-lofi',
+    name: 'Executive Lo-Fi & Focus Beats',
+    subtitle: 'YouTube Music Playlist (Default Utama)',
+    type: 'youtube-playlist',
+    playlistId: DEFAULT_PLAYLIST_ID,
+  },
+  {
+    id: 'dj-scbd',
+    name: 'Midnight SCBD DJ Mix',
+    subtitle: 'High-Energy Synth & Bootleg Sets (Secondary)',
+    type: 'track-list',
+    tracks: USER_PLAYLIST,
+  },
+];
+

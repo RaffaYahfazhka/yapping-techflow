@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { TICKETS } from '@/lib/data/tickets';
+import { requireApiToken } from '@/lib/server/apiGate';
 
 export async function GET(request: Request) {
+  const denied = requireApiToken(request);
+  if (denied) return denied;
   const domain = process.env.JIRA_DOMAIN || 'etbteam.atlassian.net';
   const email = process.env.JIRA_EMAIL || 'raffa.yahfazhka@etb.co.id';
   const apiToken = process.env.JIRA_API_TOKEN;

@@ -3,7 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import { css, keyframes } from '@emotion/css';
 import Modal, { scrollbar } from '../../ui/Modal';
-import { USER_PLAYLIST } from '../../../lib/data/userPlaylist';
+import { USER_PLAYLIST, DEFAULT_PLAYLIST_ID, DEFAULT_PLAYLIST_URL } from '../../../lib/data/userPlaylist';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Volume1, VolumeX, Shuffle, Repeat, Music, Link2, Sparkles } from 'lucide-react';
 import type { AudioState, AudioTimeState, TrackMeta } from '../MusicPlayerWidget/MusicPlayerWidget';
 
 export type RepeatMode = 'off' | 'all' | 'one';
@@ -608,10 +609,10 @@ export default function MusicPlayerModal({
               title={isShuffle ? 'Shuffle: aktif' : 'Shuffle: nonaktif'}
               aria-pressed={isShuffle}
             >
-              🔀
+              <Shuffle size={16} />
             </button>
             <button type="button" className={styles.iconBtn()} onClick={onPrevTrack} title="Sebelumnya">
-              ⏮
+              <SkipBack size={16} />
             </button>
             <button
               type="button"
@@ -620,18 +621,19 @@ export default function MusicPlayerModal({
               title={status === 'playing' ? 'Jeda (P)' : 'Putar (P)'}
               aria-label={status === 'playing' ? 'Jeda' : 'Putar'}
             >
-              {isBusy ? <span className={styles.spinner} /> : status === 'playing' ? '⏸' : '▶'}
+              {isBusy ? <span className={styles.spinner} /> : status === 'playing' ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
             </button>
             <button type="button" className={styles.iconBtn()} onClick={onNextTrack} title="Berikutnya">
-              ⏭
+              <SkipForward size={16} />
             </button>
             <button
+
               type="button"
               className={styles.iconBtn(repeatMode !== 'off')}
               onClick={onCycleRepeat}
               title={`Repeat: ${repeatMode === 'off' ? 'mati' : repeatMode === 'all' ? 'semua' : 'satu lagu'}`}
             >
-              🔁
+              <Repeat size={16} />
               {repeatMode === 'one' && <span className={styles.repeatOne}>1</span>}
             </button>
           </div>
@@ -644,7 +646,7 @@ export default function MusicPlayerModal({
               title={audioState.isMuted ? 'Nyalakan suara (M)' : 'Bisukan (M)'}
               style={{ width: 34, height: 34 }}
             >
-              {audioState.isMuted || volume === 0 ? '🔇' : volume < 50 ? '🔉' : '🔊'}
+              {audioState.isMuted || volume === 0 ? <VolumeX size={16} /> : volume < 50 ? <Volume1 size={16} /> : <Volume2 size={16} />}
             </button>
             <input
               type="range"
@@ -663,10 +665,29 @@ export default function MusicPlayerModal({
         <section className={styles.side} aria-label="Playlist">
           <div className={styles.tabs} role="tablist">
             <button type="button" role="tab" className={styles.tab(tab === 'playlist')} onClick={() => setTab('playlist')}>
-              🎶 Playlist ({USER_PLAYLIST.length})
+              <Music size={14} style={{ display: 'inline', marginRight: 6 }} />
+              Playlist ({USER_PLAYLIST.length})
             </button>
             <button type="button" role="tab" className={styles.tab(tab === 'custom')} onClick={() => setTab('custom')}>
-              🔗 URL YouTube
+              <Link2 size={14} style={{ display: 'inline', marginRight: 6 }} />
+              URL YouTube
+            </button>
+          </div>
+          <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 12, background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#6ee7b7', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={13} /> Default: Executive Lo-Fi Focus
+              </div>
+              <div style={{ fontSize: 11, color: '#a1a1aa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                YouTube Music Playlist ({DEFAULT_PLAYLIST_ID})
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onPlayCustomUrl(DEFAULT_PLAYLIST_URL, 'Executive Lo-Fi & Focus Beats', 'YouTube Music')}
+              style={{ padding: '5px 12px', fontSize: 11, fontWeight: 600, background: '#10b981', color: '#04241a', border: 'none', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Play size={11} /> Putar Default
             </button>
           </div>
 
