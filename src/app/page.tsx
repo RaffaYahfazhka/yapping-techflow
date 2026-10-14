@@ -21,6 +21,10 @@ import SplashScreen from '../components/ui/SplashScreen';
 import OfficeClientBoundary from '@/components/office/OfficeClientBoundary';
 import OfficeMinimap, { blipsFromScene, type Blip } from '@/components/map/OfficeMinimap';
 import OfficeGroupChatModal from '@/components/chat/OfficeGroupChatModal';
+import SkyDartsModal from '@/components/minigames/SkyDartsModal';
+import RetroArcadeModal from '@/components/minigames/RetroArcadeModal';
+import BossWardrobeModal, { type WardrobePreset } from '@/components/executive/BossWardrobeModal';
+import PhotoModeController from '@/components/executive/PhotoModeController';
 import { createEmployeeSim, employeeStateTick, applyEmployeeTreat, applyWeatherToSim, visibleBubble, type EmployeeSim, type OfficeEvent } from '@/lib/engine/socialEngine';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 import SubordinateModal from '../components/SubordinateModal';
@@ -85,6 +89,10 @@ export default function OfficePage() {
   const [employeeSim, setEmployeeSim] = useState<EmployeeSim>(() => createEmployeeSim({ x: -2.5, z: 2.6 }));
   const simTickRef = useRef(0);
   const [officeEvents, setOfficeEvents] = useState<OfficeEvent[]>([]);
+  const [isWardrobeOpen, setIsWardrobeOpen] = useState(false);
+  const [isDartsOpen, setIsDartsOpen] = useState(false);
+  const [isArcadeOpen, setIsArcadeOpen] = useState(false);
+  const [isPhotoActive, setIsPhotoActive] = useState(false);
   const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
@@ -326,9 +334,15 @@ export default function OfficePage() {
       } else if (e.code === 'KeyC' && !e.repeat) {
         scene.resetCamera();
       } else if (e.code === 'KeyP' && !e.repeat) {
-        audio.togglePlay();
+        setIsPhotoActive((o) => !o);
       } else if (e.code === 'KeyM' && !e.repeat) {
         setIsMinimapOpen((o) => !o);
+      } else if (e.code === 'KeyW' && !e.repeat) {
+        setIsWardrobeOpen((o) => !o);
+      } else if (e.code === 'KeyG' && !e.repeat) {
+        setIsDartsOpen((o) => !o);
+      } else if (e.code === 'KeyB' && !e.repeat) {
+        setIsArcadeOpen((o) => !o);
       } else if (e.code === 'KeyK' && !e.repeat) {
         openKhansaChatRef.current?.();
       } else if (e.code === 'KeyE' && !e.repeat) {
@@ -794,6 +808,18 @@ export default function OfficePage() {
           setIsOfficeChatOpen(false);
           setIsKhansaChatOpen(true);
         }}
+      />
+
+      <BossWardrobeModal isOpen={isWardrobeOpen && booted} onClose={() => setIsWardrobeOpen(false)} />
+
+      <SkyDartsModal isOpen={isDartsOpen && booted} onClose={() => setIsDartsOpen(false)} />
+
+      <RetroArcadeModal isOpen={isArcadeOpen && booted} onClose={() => setIsArcadeOpen(false)} />
+
+      <PhotoModeController
+        active={isPhotoActive && booted}
+        onEnter={() => setIsPhotoActive(true)}
+        onExit={() => setIsPhotoActive(false)}
       />
 
       {/* YouTube Iframe Audio Host (Hidden unobtrusively without zero-dimension throttling) */}

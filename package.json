@@ -19,7 +19,10 @@
     "test:paper-polymarket": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-polymarket.mjs",
     "test:sky": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-sky.mjs",
     "test:social": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-social.mjs",
-    "test:delegation": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-delegation.mjs"
+    "test:delegation": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-delegation.mjs",
+    "test:backtest": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-backtest.mjs",
+    "test:weather": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-weather.mjs",
+    "test:minigames": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-minigames.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
