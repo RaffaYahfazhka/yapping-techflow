@@ -12,7 +12,8 @@
     "test:movement": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-movement.mjs",
     "test:paper-bots": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-bots.mjs",
     "test:paper-ledger-v2": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-ledger-v2.mjs",
-    "test:paper-reset": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-reset.mjs"
+    "test:paper-reset": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-reset.mjs",
+    "test:paper-migrate": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-migrate.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
