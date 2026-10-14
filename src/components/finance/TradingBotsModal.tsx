@@ -483,10 +483,13 @@ export default function TradingBotsModal({
     [paperState, activeBotId]
   );
 
+  const [resetNotPersisted, setResetNotPersisted] = useState(false);
+
   const handleResetStorage = () => {
-    const fresh = resetPaperState();
+    const { state: fresh, persisted } = resetPaperState();
     setPaperState(fresh);
     setStateCorrupt(false);
+    setResetNotPersisted(!persisted);
   };
 
   const handlePolyOrder = (side: 'up' | 'down', market: PolymarketMarket) => {
@@ -562,6 +565,13 @@ export default function TradingBotsModal({
             >
               Reset Saldo ke Default
             </button>
+          </div>
+        )}
+
+        {resetNotPersisted && (
+          <div className={styles.alertBanner(true)} role="alert">
+            Saldo sudah di-reset untuk sesi ini, tetapi penyimpanan gagal. Setelah reload, portofolio lama
+            bisa muncul kembali.
           </div>
         )}
 
