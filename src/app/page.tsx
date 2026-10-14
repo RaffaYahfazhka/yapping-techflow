@@ -19,6 +19,7 @@ import MusicPlayerWidget from '../components/music/MusicPlayerWidget';
 import MusicPlayerModal, { RepeatMode } from '../components/music/MusicPlayerModal';
 import SplashScreen from '../components/ui/SplashScreen';
 import OfficeMinimap, { blipsFromScene, type Blip } from '@/components/map/OfficeMinimap';
+import { type SkyPhase } from '@/lib/engine/skyEngine';
 import OfficeGroupChatModal from '@/components/chat/OfficeGroupChatModal';
 import SkyDartsModal from '@/components/minigames/SkyDartsModal';
 import RetroArcadeModal from '@/components/minigames/RetroArcadeModal';
@@ -88,7 +89,14 @@ export default function OfficePage() {
   const [isTeamDirectoryOpen, setIsTeamDirectoryOpen] = useState(false);
   const [isMinimapOpen, setIsMinimapOpen] = useState(false);
   const [isOfficeChatOpen, setIsOfficeChatOpen] = useState(false);
-  const [officeBlips, setOfficeBlips] = useState<Blip[]>([]);
+  const [officeBlips, setOfficeBlips] = useState<Blip[]>(() =>
+    blipsFromScene(
+      { x: BOSS.spawn.x, z: BOSS.spawn.z },
+      { x: BOSS.spawn.x + 1.25, z: BOSS.spawn.z + 0.6 },
+      AGENTS.map((a) => ({ id: a.id, x: a.desk.x, z: a.desk.z, name: a.name, color: a.color }))
+    )
+  );
+  const [skyPhase, setSkyPhase] = useState<SkyPhase | 'auto'>('auto');
   const [employeeSim, setEmployeeSim] = useState<EmployeeSim>(() => createEmployeeSim({ x: -2.5, z: 2.6 }));
   const simTickRef = useRef(0);
   const [officeEvents, setOfficeEvents] = useState<OfficeEvent[]>([]);
@@ -264,6 +272,29 @@ export default function OfficePage() {
     }, 15_000);
     return () => { cancelled = true; clearInterval(poll); };
   }, [booted]);
+
+  // Real-time Minimap Blip Tracker (live 80ms sync when minimap is open, 300ms idle)
+  useEffect(() => {
+    if (!booted) return;
+    const updateLiveBlips = () => {
+      const sc = sceneRef.current as any;
+      if (sc?.getLiveBlips) {
+        setOfficeBlips(sc.getLiveBlips(employeeSim.states));
+      } else if (sc?.playerPos && sc?.khansaPos) {
+        setOfficeBlips(
+          blipsFromScene(
+            sc.playerPos,
+            sc.khansaPos,
+            AGENTS.map((a) => ({ id: a.id, x: a.desk.x, z: a.desk.z, name: a.name, color: a.color }))
+          )
+        );
+      }
+    };
+
+    updateLiveBlips();
+    const interval = setInterval(updateLiveBlips, 80);
+    return () => clearInterval(interval);
+  }, [booted, isMinimapOpen, employeeSim.states]);
 
   // Initialize 3D Engine, Audio, and Pipeline Runner ONCE
   useEffect(() => {
@@ -819,14 +850,42 @@ export default function OfficePage() {
       {!booted && <SplashScreen minDurationMs={1800} onFinish={handleEnterOffice} />}
 
       {/* Office Minimap radar + Warung Kopi office chat (post-boot overlays) */}
-      <OfficeMinimap
-        open={isMinimapOpen && booted}
-        onClose={() => setIsMinimapOpen(false)}
-        onFocusZone={(z) => sceneRef.current?.focusOn(null)}
-        onFocusAgent={(agentId) => sceneRef.current?.focusOn(agentId)}
-        blips={officeBlips}
-        clockStr={clockStr}
-      />
+      {booted && !isPhotoActive && (
+        <OfficeMinimap
+          open={isMinimapOpen}
+          onClose={() => setIsMinimapOpen(false)}
+          onToggleOpen={() => setIsMinimapOpen((o) => !o)}
+          onFocusZone={(z) => {
+            const sc = sceneRef.current as any;
+            if (sc?.focusOnZone) sc.focusOnZone(z);
+            else if (sc?.focusOn) sc.focusOn(z.focus);
+          }}
+          onFocusAgent={(agentId) => {
+            const sc = sceneRef.current as any;
+            if (sc?.focusOn) sc.focusOn(agentId);
+          }}
+          onPanToLocation={(x, z) => {
+            const sc = sceneRef.current as any;
+            if (sc?.panTo) sc.panTo(x, z);
+            else if (sc?.focusOn) sc.focusOn([x, 0, z]);
+          }}
+          onRecenterCamera={() => {
+            const sc = sceneRef.current as any;
+            if (sc?.resetCamera) sc.resetCamera();
+          }}
+          blips={officeBlips}
+          clockStr={clockStr}
+          skyPhase={skyPhase}
+          onSelectSkyPhase={(phase) => {
+            setSkyPhase(phase);
+            const sc = sceneRef.current as any;
+            if (sc?.setSkyPhase) sc.setSkyPhase(phase);
+          }}
+          employeeStates={employeeSim.states}
+          employeeStamina={employeeSim.stamina}
+          employeeFocus={employeeSim.focus}
+        />
+      )}
 
       <OfficeGroupChatModal
         isOpen={isOfficeChatOpen && booted}

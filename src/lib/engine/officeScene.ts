@@ -26,7 +26,16 @@ export class OfficeScene {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
-    this.clock = new THREE.Clock();
+    this.lastTime = performance.now();
+    this.elapsedTime = 0;
+    this.currentSkyPhase = 'auto';
+
+    // Lighting references for dynamic WIB sky engine
+    this.ambientLight = null;
+    this.keyLight = null;
+    this.fillLight = null;
+    this.holoLight = null;
+    this.violetLight = null;
 
     // Camera control & Drag-Pan
     this.camTarget = new THREE.Vector3(0, 0, 0);
@@ -152,40 +161,70 @@ export class OfficeScene {
   }
 
   setupLighting() {
+    // Initial dynamic sky phase
+    const wibMins = wibMinutesNow();
+    const phase = phaseFromMinutes(wibMins);
+    const palette = skyPaletteFor(phase);
+
     // Soft ambient
-    const ambient = new THREE.AmbientLight('#cdc7c0', 0.85);
-    this.scene.add(ambient);
+    this.ambientLight = new THREE.AmbientLight(palette.ambientColor, palette.ambientIntensity);
+    this.scene.add(this.ambientLight);
 
     // Main Studio Key Light (directional)
-    const keyLight = new THREE.DirectionalLight('#fff5eb', 1.8);
-    keyLight.position.set(16, 26, 12);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 2048;
-    keyLight.shadow.mapSize.height = 2048;
-    keyLight.shadow.camera.near = 1;
-    keyLight.shadow.camera.far = 70;
+    this.keyLight = new THREE.DirectionalLight(palette.keyColor, palette.keyIntensity);
+    this.keyLight.position.set(...palette.keyPosition);
+    this.keyLight.castShadow = true;
+    this.keyLight.shadow.mapSize.width = 2048;
+    this.keyLight.shadow.mapSize.height = 2048;
+    this.keyLight.shadow.camera.near = 1;
+    this.keyLight.shadow.camera.far = 70;
     const shadowD = 22;
-    keyLight.shadow.camera.left = -shadowD;
-    keyLight.shadow.camera.right = shadowD;
-    keyLight.shadow.camera.top = shadowD;
-    keyLight.shadow.camera.bottom = -shadowD;
-    keyLight.shadow.bias = -0.0005;
-    this.scene.add(keyLight);
+    this.keyLight.shadow.camera.left = -shadowD;
+    this.keyLight.shadow.camera.right = shadowD;
+    this.keyLight.shadow.camera.top = shadowD;
+    this.keyLight.shadow.camera.bottom = -shadowD;
+    this.keyLight.shadow.bias = -0.0005;
+    this.scene.add(this.keyLight);
 
     // Warm Fill Light (opposite side)
-    const fillLight = new THREE.DirectionalLight('#93c5fd', 0.6);
-    fillLight.position.set(-18, 14, -14);
-    this.scene.add(fillLight);
+    this.fillLight = new THREE.DirectionalLight('#93c5fd', 0.6);
+    this.fillLight.position.set(-18, 14, -14);
+    this.scene.add(this.fillLight);
 
     // Holotable teal/violet accent light
-    const holoLight = new THREE.PointLight('#10b981', 2.0, 10);
-    holoLight.position.set(9.5, 2.5, 0);
-    this.scene.add(holoLight);
+    this.holoLight = new THREE.PointLight('#10b981', 2.0, 10);
+    this.holoLight.position.set(9.5, 2.5, 0);
+    this.scene.add(this.holoLight);
 
     // Violet accent wash
-    const violetLight = new THREE.PointLight('#8b5cf6', 1.5, 12);
-    violetLight.position.set(-8, 3, -6.5);
-    this.scene.add(violetLight);
+    this.violetLight = new THREE.PointLight('#8b5cf6', 1.5, 12);
+    this.violetLight.position.set(-8, 3, -6.5);
+    this.scene.add(this.violetLight);
+  }
+
+  setSkyPhase(phase) {
+    this.currentSkyPhase = phase;
+    const effectivePhase = phase === 'auto' ? phaseFromMinutes(wibMinutesNow()) : phase;
+    const palette = skyPaletteFor(effectivePhase);
+
+    if (this.scene) {
+      this.scene.background = new THREE.Color(palette.background);
+      this.scene.fog = new THREE.FogExp2(palette.background, palette.fogDensity || 0.015);
+    }
+    if (this.keyLight) {
+      this.keyLight.color.set(palette.keyColor);
+      this.keyLight.intensity = palette.keyIntensity;
+      this.keyLight.position.set(...palette.keyPosition);
+    }
+    if (this.ambientLight) {
+      this.ambientLight.color.set(palette.ambientColor);
+      this.ambientLight.intensity = palette.ambientIntensity;
+    }
+    if (this.fillLight) {
+      const fillColors = { morning: '#ffd7aa', day: '#93c5fd', sunset: '#c084fc', night: '#1e1b4b' };
+      this.fillLight.color.set(fillColors[effectivePhase] || '#93c5fd');
+      this.fillLight.intensity = effectivePhase === 'night' ? 0.35 : 0.6;
+    }
   }
 
   setupArchitecture() {
@@ -1511,26 +1550,103 @@ export class OfficeScene {
   }
 
   /**
-   * Focus camera smoothly on a specific agent or return to Boss
+   * Focus camera smoothly on a specific agent or coordinate or return to Boss
    */
-  focusOn(agentId) {
-    if (!agentId || agentId === 'raffa') {
+  focusOn(target) {
+    if (!target) {
       this.focusingOnAgent = null;
+      this.userPanOffset.set(0, 0, 0);
       return;
     }
-    if (agentId === 'tara') {
+    if (Array.isArray(target)) {
+      this.focusingOnAgent = new THREE.Vector3(target[0], target[1] || 0, target[2]);
+      this.userPanOffset.set(0, 0, 0);
+      return;
+    }
+    if (target instanceof THREE.Vector3) {
+      this.focusingOnAgent = target;
+      this.userPanOffset.set(0, 0, 0);
+      return;
+    }
+    if (target === 'raffa') {
+      this.focusingOnAgent = this.playerPos;
+      this.userPanOffset.set(0, 0, 0);
+      return;
+    }
+    if (target === 'tara' || target === 'khansaku') {
       this.focusingOnAgent = this.khansaPos;
+      this.userPanOffset.set(0, 0, 0);
       return;
     }
-    const item = this.agentMeshes.get(agentId);
+    const item = this.agentMeshes.get(target);
     if (item) {
       this.focusingOnAgent = item.deskPos;
+      this.userPanOffset.set(0, 0, 0);
+    }
+  }
+
+  focusOnZone(zone) {
+    if (zone && zone.focus) {
+      this.focusOn(zone.focus);
     }
   }
 
   resetCamera() {
     this.focusingOnAgent = null;
+    this.userPanOffset.set(0, 0, 0);
     this.targetZoom = 1.0;
+  }
+
+  panTo(x, z) {
+    this.focusingOnAgent = new THREE.Vector3(x, 0, z);
+    this.userPanOffset.set(0, 0, 0);
+  }
+
+  /**
+   * Read live coordinates for Radar Minimap tracking
+   */
+  getLiveBlips(employeeStates) {
+    const list = [
+      {
+        id: 'raffa',
+        x: this.playerPos.x,
+        z: this.playerPos.z,
+        facing: this.playerFacing,
+        label: `${BOSS.name} (Bos Raffa)`,
+        color: '#fbbf24',
+      },
+      {
+        id: 'tara',
+        x: this.khansaPos.x,
+        z: this.khansaPos.z,
+        facing: this.khansaFacing,
+        label: 'Khansaku (First Lady)',
+        color: '#f43f5e',
+      },
+    ];
+
+    AGENTS.forEach((agent) => {
+      if (agent.id === 'tara') return; // Khansaku is already added as the roaming royal companion!
+      let x = agent.desk.x;
+      let z = agent.desk.z;
+      const state = employeeStates ? employeeStates[agent.id] : undefined;
+      if (state === 'pantry' || state === 'walking-pantry') {
+        x = 8.5;
+        z = 8.5;
+      } else if (state === 'terrace' || state === 'walking-terrace') {
+        x = 0;
+        z = 19;
+      }
+      list.push({
+        id: agent.id,
+        x,
+        z,
+        label: `${agent.name} (${agent.employeeId})`,
+        color: agent.color || '#38bdf8',
+      });
+    });
+
+    return list;
   }
 
   /**
@@ -1540,8 +1656,11 @@ export class OfficeScene {
     if (this.disposed) return;
     this.animId = requestAnimationFrame(this.animate);
 
-    const dt = Math.min(this.clock.getDelta(), 0.1);
-    const elapsed = this.clock.getElapsedTime();
+    const now = performance.now();
+    const dt = Math.min((now - this.lastTime) / 1000, 0.1);
+    this.lastTime = now;
+    this.elapsedTime += dt;
+    const elapsed = this.elapsedTime;
 
     // 1. Update Boss (WASD or Click-to-move)
     this.updatePlayerMovement(dt, elapsed);
@@ -1699,6 +1818,9 @@ export class OfficeScene {
     if (this.disposed || !this.player) return;
 
     if (Math.abs(screenMoveX) > 0.01 || Math.abs(screenMoveZ) > 0.01) {
+      // Clear locked zone / agent camera focus so camera smoothly tracks Raffa as he walks
+      this.focusingOnAgent = null;
+
       // Convert screen-relative WASD to world coordinates
       const world = screenToWorld(screenMoveX, screenMoveZ, CAMERA_YAW);
 

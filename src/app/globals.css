@@ -1573,7 +1573,7 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
-/* ==================== MINIMAP COMPASS SLOW SPIN ==================== */
+/* ==================== MINIMAP COMPASS SLOW SPIN & RADAR SWEEP ==================== */
 .animate-spin-slow {
   animation: spin 6s linear infinite;
 }
@@ -1581,4 +1581,18 @@ input[type="range"]::-webkit-slider-thumb {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 3.5s linear infinite;
+  transform-origin: center;
 }
