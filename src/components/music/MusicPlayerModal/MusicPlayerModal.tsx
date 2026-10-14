@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { css, keyframes } from '@emotion/css';
 import Modal, { scrollbar } from '../../ui/Modal';
 import { USER_PLAYLIST, DEFAULT_PLAYLIST_ID, DEFAULT_PLAYLIST_URL } from '../../../lib/data/userPlaylist';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Volume1, VolumeX, Shuffle, Repeat, Music, Link2, Sparkles, ExternalLink } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Volume1, VolumeX, Shuffle, Repeat, Music, Link2, Sparkles } from 'lucide-react';
 import type { AudioState, AudioTimeState, TrackMeta } from '../MusicPlayerWidget/MusicPlayerWidget';
 
 export type RepeatMode = 'off' | 'all' | 'one';
@@ -679,7 +679,7 @@ export default function MusicPlayerModal({
                 <Sparkles size={13} /> Default: Executive Lo-Fi Focus
               </div>
               <div style={{ fontSize: 11, color: '#a1a1aa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                YouTube Music Playlist (PLZVXIrT2s1CE)
+                YouTube Music Playlist ({DEFAULT_PLAYLIST_ID})
               </div>
             </div>
             <button

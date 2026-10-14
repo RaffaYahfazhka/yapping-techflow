@@ -1,4 +1,4 @@
-import type { PaperLedgerV2, PaperAccountId } from './paperLedgerV2';
+import { CURRENCY_SCALE, type PaperLedgerV2, type PaperAccountId } from './paperLedgerV2';
 import { openPositionV2, settlePositionV2, type V2Position } from './paperLedgerOrders';
 
 /**
@@ -42,7 +42,7 @@ export function settlePolymarketOrderV2(
   now: number,
 ) {
   const won = side === winningSide;
-  const stake = position.stakeMinor / 1_000_000;
+  const stake = position.stakeMinor / CURRENCY_SCALE.USDC;
   const payout = won ? stake / price : 0;
   return settlePositionV2(ledger, position, { pnlMajor: payout - stake, now });
 }

@@ -1,17 +1,6 @@
-import { PAPER_ACCOUNT_SPECS, majorToMinor, validateLedgerV2, type PaperLedgerV2, type PaperPositionV2, type PaperAccountId, type Currency } from './paperLedgerV2';
+import { majorToMinor, validateLedgerV2, type PaperLedgerV2, type PaperPositionV2, type PaperAccountId, type Currency } from './paperLedgerV2';
 
-export interface V2Position {
-  id: string;
-  accountId: PaperAccountId;
-  currency: Currency;
-  /** Reserved stake in minor units; moved from `available` to `reserved` on open. */
-  stakeMinor: number;
-  status: 'OPEN' | 'SETTLED';
-  openedAt: number;
-  settledAt?: number;
-  /** Realized P&L in minor units of the account currency (settled only). */
-  pnlMinor?: number;
-}
+export type V2Position = PaperPositionV2;
 
 export type OrderResult =
   | { ok: true; ledger: PaperLedgerV2; position: V2Position }
@@ -61,7 +50,7 @@ export function openPositionV2(
     positions: [...(ledger.positions ?? []), position],
   };
   if (validateLedgerV2(next).length > 0) return { ok: false, reason: 'invariant-broken' };
-  return { ok: true, ledger: next, position: position as V2Position };
+  return { ok: true, ledger: next, position: position };
 }
 
 /**
@@ -105,7 +94,6 @@ export function settlePositionV2(
     positions: (ledger.positions ?? []).map((p) => (p.id === stored.id ? settled : p)),
   };
   if (validateLedgerV2(next).length > 0) return { ok: false, reason: 'invariant-broken' };
-  return { ok: true, ledger: next, position: settled as V2Position };
+  return { ok: true, ledger: next, position: settled };
 }
 
-export { PAPER_ACCOUNT_SPECS };

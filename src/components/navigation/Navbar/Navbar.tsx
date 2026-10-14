@@ -322,7 +322,7 @@ export default function Navbar({
           onClick={onOpenMissionControl}
           title="Buka Mission Control Board (Shortcut: J)"
         >
-          <span><Target size={13} /></span>
+          <Target size={13} />
           <span>Mission Control</span>
         </button>
 
@@ -367,7 +367,7 @@ export default function Navbar({
           onClick={onOpenTeamDirectory}
           title="Daftar Profil Tim Karyawan AI"
         >
-          <span><Users size={13} /></span>
+          <Users size={13} />
           <span>Tim Karyawan</span>
         </button>
 
@@ -377,7 +377,7 @@ export default function Navbar({
           onClick={onToggleTerminal}
           title="Buka Terminal & Log Stream (Shortcut: T)"
         >
-          <span><TerminalSquare size={13} /></span>
+          <TerminalSquare size={13} />
           <span>Terminal</span>
         </button>
 
@@ -434,7 +434,7 @@ export default function Navbar({
               onOpenMissionControl?.();
             }}
           >
-            <span><Target size={13} /></span> Mission Control
+            <Target size={13} /> Mission Control
           </button>
           {onOpenKhansaChat && (
             <button
@@ -462,7 +462,7 @@ export default function Navbar({
               onOpenTeamDirectory?.();
             }}
           >
-            <span><Users size={13} /></span> Tim Karyawan
+            <Users size={13} /> Tim Karyawan
           </button>
           <button
             type="button"
@@ -472,7 +472,7 @@ export default function Navbar({
               onToggleTerminal?.();
             }}
           >
-            <span><TerminalSquare size={13} /></span> Terminal Log
+            <TerminalSquare size={13} /> Terminal Log
           </button>
         </div>
       )}

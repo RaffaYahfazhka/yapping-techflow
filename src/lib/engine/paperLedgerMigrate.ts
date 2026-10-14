@@ -2,9 +2,7 @@ import {
   createSeedLedgerV2,
   classifyLegacyPayload,
   validateLedgerV2,
-  majorToMinor,
   LEGACY_BOT_TO_ACCOUNT,
-  PAPER_ACCOUNT_SPECS,
   type PaperLedgerV2,
   type PaperAccountId,
 } from './paperLedgerV2';
@@ -62,4 +60,3 @@ export function migrateLegacyLedger(raw: string | null): MigrationOutcome {
   return { kind: 'migrated', ledger, source: 'canonical-ledger-v1' };
 }
 
-export { PAPER_ACCOUNT_SPECS, majorToMinor };

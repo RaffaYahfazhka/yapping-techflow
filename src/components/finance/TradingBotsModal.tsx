@@ -1,18 +1,25 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { StoreLike } from '@/lib/engine/paperLedgerStore';
 import type { PaperTrade } from '@/lib/engine/paperTrading';
 
-const ACCOUNT_FOR_BOT: Record<string, 'altair-sol' | 'kenzo-usdc' | 'damian-usd'> = {
+function getLocalStorage(): StoreLike | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+const ACCOUNT_FOR_BOT: Record<string, PaperAccountId> = {
   'altair-raditya': 'altair-sol',
   'kenzo-danendra': 'kenzo-usdc',
   'damian-prasetya': 'damian-usd',
 };
-import { useVenueFeed } from '@/components/trading/useVenueFeed';
-import { loadPaperLedgerV2, savePaperLedgerV2, resetPaperLedgerV2, type LoadResult } from '@/lib/engine/paperLedgerStore';
+import { loadPaperLedgerV2, savePaperLedgerV2, resetPaperLedgerV2, type StoreLike } from '@/lib/engine/paperLedgerStore';
 import { placePolymarketOrderV2 } from '@/lib/engine/paperPolymarketV2';
-import type { PaperLedgerV2 } from '@/lib/engine/paperLedgerV2';
+import { CURRENCY_SCALE, type PaperLedgerV2, type PaperAccountId } from '@/lib/engine/paperLedgerV2';
 import type { MarketFeedEnvelope, MeteoraFeedData, PolymarketFeedData, ExnessFeedData } from '@/lib/data/markets';
 import { css } from '@emotion/css';
 import Modal from '@/components/ui/Modal';
@@ -378,10 +385,8 @@ export default function TradingBotsModal({
 
   const [activeBotId, setActiveBotId] = useState(initialBotId);
   const [ledgerV2, setLedgerV2] = useState<PaperLedgerV2 | null>(null);
-  const [loadInfo, setLoadInfo] = useState<LoadResult | null>(null);
   const orderSeq = useRef(0);
   const nextOrderId = () => `poly-${++orderSeq.current}-${Date.now()}`;
-  const localStore = () => (typeof window !== 'undefined' ? window.localStorage : null) as StoreLike;
   const [stateCorrupt, setStateCorrupt] = useState(false);
 
   // Meteora state
@@ -412,10 +417,9 @@ export default function TradingBotsModal({
   // Load paper state on mount
   useEffect(() => {
     if (!isOpen) return;
-    const store = typeof window !== 'undefined' ? window.localStorage : null;
+    const store = getLocalStorage();
     if (!store) return;
     const result = loadPaperLedgerV2(store);
-    setLoadInfo(result);
     if (result.status === 'ready') {
       setLedgerV2(result.ledger);
       setStateCorrupt(false);
@@ -493,12 +497,14 @@ export default function TradingBotsModal({
     [activeBotId, tradingBots]
   );
 
-  const currentBalance = ledgerV2 ? Number(ledgerV2.accounts[ACCOUNT_FOR_BOT[activeBotId] ?? 'kenzo-usdc'].available) : 0;
+  const activeAccountId = ledgerV2 ? (ACCOUNT_FOR_BOT[activeBotId] ?? 'kenzo-usdc') : null;
+  const activeAccount = ledgerV2 && activeAccountId ? ledgerV2.accounts[activeAccountId] : null;
+  const currentBalance = activeAccount ? activeAccount.available / CURRENCY_SCALE[activeAccount.currency] : 0;
   const recentTrades = useMemo<PaperTrade[]>(() => {
     if (!ledgerV2) return [];
-    const accountId = ACCOUNT_FOR_BOT[activeBotId] ?? 'kenzo-usdc';
+    const accountId = activeAccountId ?? 'kenzo-usdc';
     const currency = ledgerV2.accounts[accountId].currency;
-    const scale = currency === 'SOL' ? 1e9 : currency === 'USDC' ? 1e6 : 100;
+    const scale = CURRENCY_SCALE[currency];
     return ledgerV2.positions
       .filter((p) => p.accountId === accountId)
       .slice()
@@ -524,7 +530,9 @@ export default function TradingBotsModal({
   const [resetNotPersisted, setResetNotPersisted] = useState(false);
 
   const handleResetStorage = () => {
-    const { ledger, persisted } = resetPaperLedgerV2(localStore());
+    const store = getLocalStorage();
+    if (!store) return;
+    const { ledger, persisted } = resetPaperLedgerV2(store);
     setLedgerV2(ledger);
     setStateCorrupt(false);
     setResetNotPersisted(!persisted);
@@ -541,9 +549,8 @@ export default function TradingBotsModal({
     const token = market.tokens?.find((t) => t.outcome.toLowerCase() === side);
     const price = token ? token.price : 0.5;
 
-    const ledger = ledgerV2;
-    if (!ledger) return;
-    const res = placePolymarketOrderV2(ledger, {
+    if (!ledgerV2) return;
+    const res = placePolymarketOrderV2(ledgerV2, {
       id: nextOrderId(),
       side,
       stakeUsdc: stakeNum,
@@ -558,7 +565,7 @@ export default function TradingBotsModal({
       return;
     }
     setLedgerV2(res.ledger);
-    savePaperLedgerV2(localStore(), res.ledger);
+    savePaperLedgerV2(getLocalStorage(), res.ledger);
   };
 
   if (!isOpen) return null;
