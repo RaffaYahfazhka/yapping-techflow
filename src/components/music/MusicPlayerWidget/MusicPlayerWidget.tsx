@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Play, Pause, SkipForward, Maximize2 } from 'lucide-react';
 import { css, keyframes } from '@emotion/css';
 
 export interface AudioTimeState {
@@ -214,15 +215,15 @@ export default function MusicPlayerWidget({
           className={styles.btn(true)}
           onClick={onTogglePlay}
           aria-label={playing ? 'Jeda' : 'Putar'}
-          title={playing ? 'Jeda (P)' : 'Putar (P)'}
+          title={playing ? 'Jeda' : 'Putar'}
         >
-          {busy ? <span className={styles.spinner} /> : playing ? '⏸' : '▶'}
+          {busy ? <span className={styles.spinner} /> : playing ? <Pause size={15} /> : <Play size={15} />}
         </button>
         <button type="button" className={styles.btn()} onClick={onNextTrack} aria-label="Lagu berikutnya" title="Berikutnya">
-          ⏭
+          <SkipForward size={14} />
         </button>
         <button type="button" className={styles.btn()} onClick={onOpenPlayer} aria-label="Buka player" title="Buka player">
-          ⤢
+          <Maximize2 size={13} />
         </button>
       </div>
 
