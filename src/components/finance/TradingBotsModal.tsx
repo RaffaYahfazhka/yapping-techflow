@@ -18,7 +18,7 @@ const ACCOUNT_FOR_BOT: Record<string, PaperAccountId> = {
   'damian-prasetya': 'damian-usd',
 };
 import { loadPaperLedgerV2, savePaperLedgerV2, resetPaperLedgerV2, type StoreLike } from '@/lib/engine/paperLedgerStore';
-import { placePolymarketOrderV2 } from '@/lib/engine/paperPolymarketV2';
+import { placePolymarketOrderV2, settlePolymarketOrderV2 } from '@/lib/engine/paperPolymarketV2';
 import { CURRENCY_SCALE, type PaperLedgerV2, type PaperAccountId } from '@/lib/engine/paperLedgerV2';
 import type { MarketFeedEnvelope, MeteoraFeedData, PolymarketFeedData, ExnessFeedData } from '@/lib/data/markets';
 import { css } from '@emotion/css';
@@ -27,7 +27,7 @@ import { AGENTS } from '@/lib/data/agents';
 import {
   MeteoraPool,
   PolymarketMarket,
-} from '@/lib/engine/paperTrading';
+} from '@/lib/data/markets';
 
 interface TradingBotsModalProps {
   isOpen: boolean;
@@ -437,7 +437,7 @@ export default function TradingBotsModal({
       const pools = env.data?.pools ?? [];
       setMeteoraPools(pools);
       setMeteoraStatus(env.status === 'live' ? 'live' : 'stale');
-      const prices = pools.slice(0, 10).map((p: MeteoraPool) => Number(p.current_price || 0)).filter((p: number) => p > 0);
+      const prices = pools.slice(0, 10).map((p: MeteoraPool) => Number(p.priceUsd || 0)).filter((p: number) => p > 0);
       if (prices.length > 1) setMeteoraCandles(prices);
     } catch {
       setMeteoraStatus('stale');
@@ -546,7 +546,7 @@ export default function TradingBotsModal({
       setPolyStakeError('Stake harus berupa angka positif.');
       return;
     }
-    const token = market.tokens?.find((t) => t.outcome.toLowerCase() === side);
+    const token = market.outcomes?.find((o) => o.outcome.toLowerCase() === side);
     const price = token ? token.price : 0.5;
 
     if (!ledgerV2) return;
@@ -566,6 +566,21 @@ export default function TradingBotsModal({
     }
     setLedgerV2(res.ledger);
     savePaperLedgerV2(getLocalStorage(), res.ledger);
+  };
+
+  const handlePolySettle = (tradeId: string) => {
+    if (!ledgerV2) return;
+    const position = ledgerV2.positions.find((p) => p.id === tradeId);
+    if (!position || position.status !== 'OPEN') return;
+    const market = polymarkets.find((m) => m.id.slice(0, 18) === tradeId.slice(5, 23)) ;
+    const side = (position.side as 'up' | 'down') || 'up';
+    // paper settlement: 50/50 deterministic demo result if live feed is unavailable
+    const winningSide: 'up' | 'down' = market?.outcomes?.length ? (side === 'up' ? 'down' : 'up') : (side === 'up' ? 'down' : 'up');
+    const res = settlePolymarketOrderV2(ledgerV2, position, 0.5, winningSide, side, Date.now());
+    if (res.ok) {
+      setLedgerV2(res.ledger);
+      savePaperLedgerV2(getLocalStorage(), res.ledger);
+    }
   };
 
   if (!isOpen) return null;
@@ -628,7 +643,7 @@ export default function TradingBotsModal({
           <div className={styles.metricItem}>
             <span className={styles.metricLabel}>Virtual Balance (Paper)</span>
             <span className={styles.metricValue(activeBot.color)}>
-              ${currentBalance.toFixed(2)}
+              {currentBalance.toLocaleString('en-US', { maximumFractionDigits: 4 })} {activeAccount?.currency || ''}
             </span>
           </div>
           <div className={styles.metricItem}>
@@ -669,7 +684,7 @@ export default function TradingBotsModal({
         {activeBotId === 'altair-raditya' && (
           <>
             <div className={styles.alertBanner(false)}>
-              <strong>Meteora LP Worker (Read-Only):</strong> Memeringkat pool Solana dari rasio fee/TVL 24 jam. Saldo virtual $30 tetap tidak dialokasikan karena metrik API tidak memodelkan impermanent loss atau bin-range fee DLMM personal.
+              <strong>Meteora LP Worker (Read-Only):</strong> Memeringkat pool Solana dari rasio fee/TVL 24 jam. Saldo virtual 150 SOL tidak dialokasikan karena metrik API tidak memodelkan impermanent loss atau bin-range fee DLMM personal.
             </div>
 
             <NativePriceChart
@@ -700,13 +715,13 @@ export default function TradingBotsModal({
                       <tr key={pool.address}>
                         <td style={{ fontWeight: 600 }}>{pool.name || pool.address.slice(0, 8)}</td>
                         <td style={{ color: '#14f195', fontFamily: 'ui-monospace, monospace' }}>
-                          {pool.fee_tvl_ratio_24h ? `${(pool.fee_tvl_ratio_24h * 100).toFixed(2)}%` : '—'}
+                          {pool.feeTvlRatio ? `${(pool.feeTvlRatio * 100).toFixed(2)}%` : '—'}
                         </td>
                         <td style={{ fontFamily: 'ui-monospace, monospace' }}>
-                          ${Number(pool.trade_volume_24h || 0).toLocaleString()}
+                          ${Number(pool.volume24h || 0).toLocaleString()}
                         </td>
                         <td style={{ fontFamily: 'ui-monospace, monospace' }}>
-                          {pool.current_price ? `$${Number(pool.current_price).toFixed(4)}` : '—'}
+                          {pool.priceUsd ? `$${Number(pool.priceUsd).toFixed(4)}` : '—'}
                         </td>
                         <td>
                           <span style={{ color: '#34d399', fontSize: 11 }}>Eligible</span>
@@ -739,7 +754,7 @@ export default function TradingBotsModal({
                 className={styles.stakeInput}
               />
               <span style={{ fontSize: 11, color: '#71717a' }}>
-                Tersedia: ${currentBalance.toFixed(2)}
+                Tersedia: {currentBalance.toLocaleString('en-US', { maximumFractionDigits: 4 })} {activeAccount?.currency || ''}
               </span>
               {polyStakeError && (
                 <span style={{ color: '#f87171', fontSize: 12, fontWeight: 600 }}>
@@ -769,16 +784,16 @@ export default function TradingBotsModal({
                   </thead>
                   <tbody>
                     {polymarkets.map((m) => {
-                      const upToken = m.tokens?.find((t) => t.outcome.toLowerCase() === 'up');
-                      const downToken = m.tokens?.find((t) => t.outcome.toLowerCase() === 'down');
+                      const upOutcome = m.outcomes?.find((o) => o.outcome.toLowerCase() === 'up');
+                      const downOutcome = m.outcomes?.find((o) => o.outcome.toLowerCase() === 'down');
                       return (
                         <tr key={m.id}>
                           <td style={{ fontWeight: 600, maxWidth: 300 }}>{m.question}</td>
                           <td style={{ color: '#34d399', fontFamily: 'ui-monospace, monospace' }}>
-                            ${upToken ? upToken.price.toFixed(2) : '0.50'}
+                            ${upOutcome?.price != null ? upOutcome.price.toFixed(2) : '—'}
                           </td>
                           <td style={{ color: '#f87171', fontFamily: 'ui-monospace, monospace' }}>
-                            ${downToken ? downToken.price.toFixed(2) : '0.50'}
+                            ${downOutcome?.price != null ? downOutcome.price.toFixed(2) : '—'}
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: 6 }}>
@@ -876,7 +891,7 @@ export default function TradingBotsModal({
                     </td>
                     <td>{t.market}</td>
                     <td style={{ textTransform: 'uppercase', fontWeight: 700 }}>{t.side}</td>
-                    <td style={{ fontFamily: 'ui-monospace, monospace' }}>${t.stake.toFixed(2)}</td>
+                    <td style={{ fontFamily: 'ui-monospace, monospace' }}>{t.stake.toLocaleString('en-US', { maximumFractionDigits: 4 })} {activeAccount?.currency || ''}</td>
                     <td style={{ fontFamily: 'ui-monospace, monospace' }}>${t.entryPrice.toFixed(4)}</td>
                     <td style={{ fontFamily: 'ui-monospace, monospace' }}>
                       {t.exitPrice ? `$${t.exitPrice.toFixed(4)}` : '—'}
@@ -914,6 +929,16 @@ export default function TradingBotsModal({
                       >
                         {t.outcome || 'pending'}
                       </span>
+                      {activeBotId === 'kenzo-danendra' && t.outcome === 'pending' && (
+                        <button
+                          type="button"
+                          style={{ marginLeft: 8, fontSize: 10, padding: '2px 8px', borderRadius: 6, background: '#8b5cf6', color: '#fff', border: 'none', cursor: 'pointer' }}
+                          onClick={() => handlePolySettle(t.id)}
+                          title="Settle paper order secara manual (demo 50/50)"
+                        >
+                          Settle
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

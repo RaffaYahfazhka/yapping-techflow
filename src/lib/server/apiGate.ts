@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 
 /**
  * Opt-in gate for routes that spend server-side provider credentials (Jira, Gemini).
@@ -14,9 +14,9 @@ export function requireApiToken(request: Request): NextResponse | null {
   if (!expected) return null;
   const header = request.headers.get('authorization') || '';
   const given = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const a = Buffer.from(given);
-  const b = Buffer.from(expected);
-  const ok = a.length === b.length && timingSafeEqual(a, b);
+  const a = createHash('sha256').update(given).digest();
+  const b = createHash('sha256').update(expected).digest();
+  const ok = timingSafeEqual(a, b);
   if (!ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   return null;
 }

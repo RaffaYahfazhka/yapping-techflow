@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireApiToken } from '@/lib/server/apiGate';
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
@@ -7,7 +8,8 @@ import { execFileSync } from 'child_process';
 // It is inert unless the operator explicitly opts in on their own machine.
 const LOCAL_MODE = process.env.KANTOR_LOCAL_MODE === '1';
 const BRANCH_RE = /^[A-Za-z0-9._/-]{1,100}$/;
-const REMOTE_URL_RE = /^(https:\/\/|git@|ssh:\/\/)[A-Za-z0-9._@:/~-]{1,300}$/;
+// https-only to well-known git hosts; blocks ssh option injection and typosquats.
+const SAFE_REMOTE_RE = /^https:\/\/(github\.com|gitlab\.com)\/[A-Za-z0-9._~-]+\/[A-Za-z0-9._~-]+(\.git)?$|^git@(github\.com|gitlab\.com):[A-Za-z0-9._~-]+\/[A-Za-z0-9._~-]+(\.git)?$/;
 
 function localOnly() {
   return NextResponse.json({ error: 'Local-only: set KANTOR_LOCAL_MODE=1' }, { status: 403 });
@@ -17,8 +19,20 @@ function isSafeBranch(name) {
   return typeof name === 'string' && BRANCH_RE.test(name) && !name.includes('..') && !name.startsWith('-');
 }
 
-const DEFAULT_WORKSPACE = '/Users/raffayahfazhka/Downloads/master/yapping-techflow';
-const MASTER_DIR = '/Users/raffayahfazhka/Downloads/master';
+function isConfinedToSafeRoots(resolved) {
+  for (const root of SAFE_ROOTS) {
+    if (resolved === root) return true;
+    if (resolved.startsWith(root + path.sep)) return true;
+  }
+  return false;
+}
+
+const DEFAULT_WORKSPACE = process.env.KANTOR_WORKSPACE_ROOT || process.cwd();
+const MASTER_DIR = process.env.KANTOR_WORKSPACE_ROOT || path.dirname(process.cwd());
+const SAFE_ROOTS = [
+  fs.realpathSync(DEFAULT_WORKSPACE),
+  fs.realpathSync(MASTER_DIR),
+];
 
 // Helper to safely execute git commands in a target directory
 function runGit(cmd, cwd) {
@@ -167,12 +181,18 @@ function inspectDirectory(targetPath) {
 
 export async function GET(request) {
   if (!LOCAL_MODE) return localOnly();
+  const denied = requireApiToken(request);
+  if (denied) return denied;
   try {
     const { searchParams } = new URL(request.url);
     const targetPath = searchParams.get('path');
 
     if (targetPath) {
-      const inspection = inspectDirectory(targetPath);
+      const rp = fs.realpathSync(path.resolve(targetPath));
+      if (!isConfinedToSafeRoots(rp)) {
+        return NextResponse.json({ error: 'Path di luar workspace yang diizinkan' }, { status: 403 });
+      }
+      const inspection = inspectDirectory(rp);
       return NextResponse.json(inspection);
     }
 
@@ -218,7 +238,7 @@ export async function GET(request) {
     });
   } catch (err) {
     console.error('[local-inspect API Error]', err);
-    return NextResponse.json({ error: err.message, stack: err.stack }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
@@ -226,6 +246,8 @@ export async function GET(request) {
 // POST endpoint to checkout or create dev branch if user requests
 export async function POST(request) {
   if (!LOCAL_MODE) return localOnly();
+  const denied = requireApiToken(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { folderPath, action, targetBranch = 'dev' } = body;
@@ -233,9 +255,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'targetBranch tidak valid' }, { status: 400 });
     }
 
-    const resolved = path.resolve(folderPath || DEFAULT_WORKSPACE);
-    if (!fs.existsSync(resolved)) {
-      return NextResponse.json({ error: 'Folder tidak ditemukan' }, { status: 404 });
+    const resolved = fs.realpathSync(path.resolve(folderPath || DEFAULT_WORKSPACE));
+    if (!isConfinedToSafeRoots(resolved)) {
+      return NextResponse.json({ error: 'Path di luar workspace yang diizinkan' }, { status: 403 });
     }
 
     if (action === 'checkout_dev') {
@@ -260,7 +282,7 @@ export async function POST(request) {
       if (!newRemoteUrl) {
         return NextResponse.json({ error: 'remoteUrl wajib diisi' }, { status: 400 });
       }
-      if (!REMOTE_URL_RE.test(newRemoteUrl)) {
+      if (!SAFE_REMOTE_RE.test(newRemoteUrl)) {
         return NextResponse.json({ error: 'remoteUrl tidak valid' }, { status: 400 });
       }
       try {
