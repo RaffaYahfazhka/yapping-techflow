@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useRef, useEffect, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sparkles, Html, Float, Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { AGENTS, BOSS } from '@/lib/data/agents';
@@ -301,15 +301,88 @@ function PlayerMarker({ position, color, label }: { position: [number, number, n
   );
 }
 
+// ─── Photo capture (R3F-owned: render target → PNG download) ───────────────
+
+type CaptureFn = () => Promise<{ width: number; height: number }>;
+
+const PHOTO_MAX_MEGAPIXELS = 8.3;
+
+function CaptureBridge({ registerRef }: { registerRef?: OfficeCaptureRef }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+
+  useEffect(() => {
+    if (!registerRef) return;
+    const capture: CaptureFn = async () => {
+      const srcW = gl.domElement.width;
+      const srcH = gl.domElement.height;
+      const scale = Math.min(1, Math.sqrt((PHOTO_MAX_MEGAPIXELS * 1_000_000) / (srcW * srcH)));
+      const w = Math.max(1, Math.floor(srcW * scale));
+      const h = Math.max(1, Math.floor(srcH * scale));
+
+      const target = new THREE.WebGLRenderTarget(w, h);
+      target.texture.colorSpace = THREE.SRGBColorSpace;
+      const prevTarget = gl.getRenderTarget();
+      const buffer = new Uint8Array(w * h * 4);
+      try {
+        gl.setRenderTarget(target);
+        gl.render(scene, camera);
+        gl.setRenderTarget(prevTarget);
+        gl.readRenderTargetPixels(target, 0, 0, w, h, buffer);
+      } finally {
+        gl.setRenderTarget(prevTarget);
+        target.dispose();
+      }
+
+      // readRenderTargetPixels is bottom-up; flip rows for a 2D canvas.
+      const out = document.createElement('canvas');
+      out.width = w;
+      out.height = h;
+      const ctx = out.getContext('2d');
+      if (!ctx) throw new Error('2D canvas unavailable for capture');
+      const image = ctx.createImageData(w, h);
+      const rowBytes = w * 4;
+      for (let y = 0; y < h; y++) {
+        const src = (h - 1 - y) * rowBytes;
+        image.data.set(buffer.subarray(src, src + rowBytes), y * rowBytes);
+      }
+      ctx.putImageData(image, 0, 0);
+
+      const blob = await new Promise<Blob | null>((resolve) => out.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('PNG export failed');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `kantor-raffa-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return { width: w, height: h };
+    };
+    registerRef.current = capture;
+    return () => {
+      if (registerRef.current === capture) registerRef.current = null;
+    };
+  }, [gl, scene, camera, registerRef]);
+
+  return null;
+}
+
 // ─── Canvas root ────────────────────────────────────────────────────────────
+
+export type OfficeCaptureRef = { current: CaptureFn | null };
 
 export interface OfficeCanvasProps {
   /** Paper equity percent for the wallboard (from the v2 ledger). */
   equityPct: number;
   onClose?: () => void;
+  /** Receives the R3F PNG capture function while mounted; cleared on unmount. */
+  captureRef?: OfficeCaptureRef;
 }
 
-export default function OfficeCanvas({ equityPct }: OfficeCanvasProps) {
+export default function OfficeCanvas({ equityPct, captureRef }: OfficeCanvasProps) {
   const { palette } = useWibPhase();
   const shadows = true;
   const dpr: [number, number] = [1, 1.5];
@@ -333,6 +406,7 @@ export default function OfficeCanvas({ equityPct }: OfficeCanvasProps) {
       <Architecture palette={palette} />
       <Desks />
       <Wallboard equity={equityPct} />
+      <CaptureBridge registerRef={captureRef} />
       <PlayerMarker position={[BOSS.spawn.x, 0, BOSS.spawn.z]} color={BOSS.color} label="Bos Raffa 👑" />
       <PlayerMarker position={[BOSS.spawn.x + 1.25, 0, BOSS.spawn.z + 0.6]} color="#f43f5e" label="Khansaku 💖" />
       {/* keep pointer events off the canvas surface; the DOM overlay owns input */}

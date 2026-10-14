@@ -1,17 +1,51 @@
 'use client';
 
 /**
- * RetroArcadeModal - kabinet arcade retro di teras.
- * Mode A: Crypto Candle Runner (canvas 2D, arrow-key dodge)
- * Mode B: Boss Whack-A-Bug (click bugs, avoid Khansaku/prod)
- * Deterministic scoring via minigames engine; leaderboard persisted per round.
+ * RetroArcadeModal: two playable games on one canvas cabinet.
+ *   Crypto Candle Runner: dodge wicks, collect coins, 60 s of elapsed time.
+ *   Boss Whack-A-Bug: hit bugs, avoid friendly Khansaku bugs, 30 s.
+ * Mechanics live in `lib/engine/minigames`; this file owns the rAF loop,
+ * input and drawing. Only completed rounds are persisted.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Gamepad2, Trophy, X, RotateCcw } from 'lucide-react';
-import { scoreRunner, scoreWhack, submitScore, type ScoreRecord, type ScoreRecord as Rec } from '@/lib/engine/minigames';
-
-const SCORE_KEY = 'kantor-raffa.minigame-scores';
+import { Gamepad2, Trophy, X, RotateCcw, Pause, Play } from 'lucide-react';
+import {
+  GAME_LABELS,
+  RUNNER_HEIGHT,
+  RUNNER_PLAYER_HALF_H,
+  RUNNER_PLAYER_HALF_W,
+  RUNNER_PLAYER_X,
+  RUNNER_ROUND_MS,
+  RUNNER_WIDTH,
+  WHACK_BUG_RADIUS,
+  WHACK_ROUND_MS,
+  createRunnerState,
+  createWhackState,
+  runnerObjectX,
+  runnerScore,
+  runnerSpeed,
+  scoreRunner,
+  scoreWhack,
+  stepRunner,
+  stepWhack,
+  whackAt,
+  whackScore,
+  type GameId,
+  type RunnerInput,
+  type RunnerState,
+  type ScoreRecord,
+  type WhackState,
+} from '@/lib/engine/minigames';
+import {
+  loadGameBoards,
+  nextRecordId,
+  resetGameBoard,
+  RULESETS,
+  submitCompletedScore,
+  withSessionRecords,
+  type GameBoards,
+} from '@/lib/storage/gameScores';
 
 export interface RetroArcadeModalProps {
   isOpen: boolean;
@@ -21,202 +55,540 @@ export interface RetroArcadeModalProps {
 }
 
 type Mode = 'candle-runner' | 'whack-a-bug';
+type Phase = 'menu' | 'running' | 'paused' | 'finished';
 
-interface GameState {
-  coins: number;
-  wick: number;
-  bug: number;
-  friendly: number;
-  running: boolean;
-  t0: number;
-  finished: boolean;
-  failed: boolean;
+/** Static mode → leaderboard mapping. */
+const MODE_BOARD: Record<Mode, GameId> = {
+  'candle-runner': 'crypto-runner',
+  'whack-a-bug': 'whack-a-bug',
+};
+
+const W = RUNNER_WIDTH;
+const H = RUNNER_HEIGHT;
+/** Frame dt clamp: a stalled tab must not teleport the game. */
+const MAX_FRAME_DT_MS = 100;
+
+interface LastSaved {
+  score: number;
+  persisted: boolean;
 }
 
-interface Bug {
-  id: number;
-  x: number;
-  y: number;
-  spawnAt: number;
-  isFriendly: boolean;
+function getStorage(): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
 
-const W = 440;
-const H = 260;
+function makeNonce(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  return `${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function seedFromClock(): number {
+  return (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0 || 1;
+}
+
+/** Canvas-space point of a pointer event (intrinsic canvas size, not CSS size). */
+function toCanvasPoint(canvas: HTMLCanvasElement, event: { clientX: number; clientY: number }): { x: number; y: number } | null {
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+    y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+  };
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+}
+
+function drawRunner(ctx: CanvasRenderingContext2D, state: RunnerState) {
+  ctx.fillStyle = '#0b1020';
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+  ctx.lineWidth = 1;
+  for (let y = 0; y <= H; y += 26) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  for (const obj of state.objects) {
+    if (obj.consumed) continue;
+    const x = runnerObjectX(obj, state.distance);
+    if (obj.kind === 'coin') {
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(x, obj.y, obj.halfW, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#854d0e';
+      ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', x, obj.y);
+    } else {
+      ctx.strokeStyle = '#f43f5e';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, obj.y - obj.halfH);
+      ctx.lineTo(x, obj.y + obj.halfH);
+      ctx.stroke();
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillRect(x - obj.halfW, obj.y - 6, obj.halfW * 2, 12);
+    }
+  }
+  const invulnerable = state.elapsedMs < state.invulnUntilMs;
+  ctx.fillStyle = invulnerable ? 'rgba(52,211,153,0.5)' : '#34d399';
+  ctx.fillRect(RUNNER_PLAYER_X - RUNNER_PLAYER_HALF_W, state.playerY - RUNNER_PLAYER_HALF_H, RUNNER_PLAYER_HALF_W * 2, RUNNER_PLAYER_HALF_H * 2);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${Math.max(0, Math.ceil((RUNNER_ROUND_MS - state.elapsedMs) / 1000))}s`, 8, 6);
+  ctx.fillText(`speed ${Math.round(runnerSpeed(state.elapsedMs))}`, 8, 20);
+}
+
+function drawWhack(ctx: CanvasRenderingContext2D, state: WhackState) {
+  ctx.fillStyle = '#140b14';
+  ctx.fillRect(0, 0, W, H);
+  for (const bug of state.bugs) {
+    const life = 1 - (state.elapsedMs - bug.spawnedAtMs) / bug.ttlMs;
+    ctx.globalAlpha = Math.max(0.25, Math.min(1, life * 1.5));
+    ctx.fillStyle = bug.isFriendly ? '#38bdf8' : '#f43f5e';
+    ctx.beginPath();
+    ctx.arc(bug.x, bug.y, WHACK_BUG_RADIUS - 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 10px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(bug.isFriendly ? 'KH' : 'BUG', bug.x, bug.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '10px ui-monospace, monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${Math.max(0, Math.ceil((WHACK_ROUND_MS - state.elapsedMs) / 1000))}s`, 8, 6);
+}
 
 export default function RetroArcadeModal({ isOpen, onClose, onSelectMode, playerName = 'raffa' }: RetroArcadeModalProps) {
-  const [menu, setMenu] = useState(true);
+  const [phase, setPhase] = useState<Phase>('menu');
   const [mode, setMode] = useState<Mode | null>(null);
-  const [gs, setGs] = useState<GameState>({ coins: 0, wick: 0, bug: 0, friendly: 0, running: false, t0: 0, finished: false, failed: false });
-  const [playerY, setPlayerY] = useState(H - 40);
-  const [bugs, setBugs] = useState<Bug[]>([]);
-  const [candles, setCandles] = useState<{ x: number; h: number; down: boolean }[]>([]);
+  const [runnerView, setRunnerView] = useState<RunnerState>(() => createRunnerState(1));
+  const [whackView, setWhackView] = useState<WhackState>(() => createWhackState(1));
+  const [boards, setBoards] = useState<GameBoards>(() => loadGameBoards(null).boards);
+  const [boardView, setBoardView] = useState<GameId>('crypto-runner');
+  const [pendingCount, setPendingCount] = useState(0);
+  const [storageFailed, setStorageFailed] = useState(false);
+  const [invalidStored, setInvalidStored] = useState(false);
+  const [lastSaved, setLastSaved] = useState<LastSaved | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const raf = useRef<number | null>(null);
+  const phaseRef = useRef<Phase>('menu');
+  const modeRef = useRef<Mode | null>(null);
+  const runnerRef = useRef<RunnerState>(createRunnerState(1));
+  const whackRef = useRef<WhackState>(createWhackState(1));
+  const keysRef = useRef({ up: false, down: false });
+  const targetYRef = useRef<number | null>(null);
+  const pendingRef = useRef<ScoreRecord[]>([]);
 
-  const resetRun = useCallback(() => {
-    setGs({ coins: 0, wick: 0, bug: 0, friendly: 0, running: true, t0: Date.now(), finished: false, failed: false });
-    setPlayerY(H - 40);
-    setBugs([]);
-    setCandles([]);
+  const setPhaseBoth = useCallback((next: Phase) => {
+    phaseRef.current = next;
+    setPhase(next);
   }, []);
 
-  const pick = useCallback((m: Mode) => {
-    setMode(m);
-    setMenu(false);
-    resetRun();
-    onSelectMode?.(m);
-  }, [resetRun, onSelectMode]);
+  const drawCurrent = useCallback(() => {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    if (modeRef.current === 'candle-runner') drawRunner(ctx, runnerRef.current);
+    else if (modeRef.current === 'whack-a-bug') drawWhack(ctx, whackRef.current);
+  }, []);
 
-  // main game tick
+  const refreshScores = useCallback(() => {
+    const loaded = loadGameBoards(getStorage());
+    setBoards(withSessionRecords(loaded.boards, pendingRef.current));
+    setInvalidStored(loaded.invalid);
+    setStorageFailed(loaded.readFailed || pendingRef.current.length > 0);
+  }, []);
+
+  const finishRound = useCallback((m: Mode) => {
+    if (phaseRef.current !== 'running') return;
+    const score = m === 'candle-runner' ? runnerScore(runnerRef.current) : whackScore(whackRef.current);
+    const gameId = MODE_BOARD[m];
+    const completedAt = Date.now();
+    const record: ScoreRecord = {
+      gameId,
+      recordId: nextRecordId(gameId, completedAt, makeNonce()),
+      playerId: playerName.trim() || 'raffa',
+      score,
+      completedAt,
+      ruleset: RULESETS[gameId],
+    };
+    const outcome = submitCompletedScore(getStorage(), record, true, pendingRef.current);
+    pendingRef.current = outcome.unsaved;
+    setPendingCount(outcome.unsaved.length);
+    setBoards(outcome.boards);
+    setStorageFailed(!outcome.persisted);
+    setLastSaved({ score, persisted: outcome.persisted });
+    setPhaseBoth('finished');
+  }, [playerName, setPhaseBoth]);
+
+  // The only RAF loop. It exists only while phase === 'running' and is torn down on
+  // pause, finish, menu or close. Elapsed time is measured per frame and clamped.
   useEffect(() => {
-    if (!isOpen || !gs.running || gs.finished) {
-      if (raf.current) cancelAnimationFrame(raf.current);
-      return;
-    }
-    const tick = () => {
-      const now = Date.now();
-      const elapsed = (now - gs.t0) / 1000;
-
-      if (mode === 'candle-runner') {
-        // spawn a candle every ~0.5s, random red/green
-        if (Math.random() < 0.06) {
-          const down = Math.random() < 0.35;
-          const h = 20 + Math.random() * 70;
-          setCandles((prev) => [...prev.slice(-8), { x: W, h, down }]);
+    if (phase !== 'running') return undefined;
+    let last: number | null = null;
+    let frameId: number | null = null;
+    const frame = (now: number) => {
+      const dt = last === null ? 0 : Math.min(MAX_FRAME_DT_MS, Math.max(0, now - last));
+      last = now;
+      const current = modeRef.current;
+      if (current === 'candle-runner') {
+        const input: RunnerInput = targetYRef.current !== null
+          ? { targetY: targetYRef.current }
+          : { moveY: (keysRef.current.down ? 1 : 0) - (keysRef.current.up ? 1 : 0) };
+        const step = stepRunner(runnerRef.current, dt, input);
+        runnerRef.current = step.state;
+        setRunnerView(step.state);
+        drawCurrent();
+        if (step.state.runOver) {
+          finishRound('candle-runner');
+          return;
         }
-        setCandles((prev) => prev.map((c) => ({ ...c, x: c.x - 2.2 })).filter((c) => c.x > -30));
-        setGs((prev) => ({ ...prev, coins: prev.coins + 1 }));
-        // auto-finish after a fixed 60s round
-        if (elapsed >= 60) {
-          const score = scoreRunner({ coins: gs.coins, wickHits: gs.wick, completed: true, durationMs: elapsed * 1000 });
-          submitLeaderboard({ gameId: 'crypto-runner', recordId: `cr-${Date.now()}`, playerId: playerName, score, completedAt: Date.now(), ruleset: 'runner-v1' });
-          setGs((prev) => ({ ...prev, running: false, finished: true }));
-        }
-      } else if (mode === 'whack-a-bug') {
-        if (Math.random() < 0.05) {
-          const isFriendly = Math.random() < 0.18;
-          setBugs((prev) => [...prev.slice(-7), { id: now, x: 20 + Math.random() * (W - 40), y: 20 + Math.random() * (H - 60), spawnAt: now, isFriendly }]);
-        }
-        setBugs((prev) => prev.filter((b) => now - b.spawnAt < 2500));
-        if (elapsed >= 30) {
-          const score = scoreWhack({ bugsWhacked: gs.bug, friendlyFire: gs.friendly, completed: true });
-          submitLeaderboard({ gameId: 'whack-a-bug', recordId: `wb-${Date.now()}`, playerId: playerName, score, completedAt: Date.now(), ruleset: 'whack-v1' });
-          setGs((prev) => ({ ...prev, running: false, finished: true }));
+      } else if (current === 'whack-a-bug') {
+        const step = stepWhack(whackRef.current, dt);
+        whackRef.current = step.state;
+        setWhackView(step.state);
+        drawCurrent();
+        if (step.state.runOver) {
+          finishRound('whack-a-bug');
+          return;
         }
       }
-      raf.current = requestAnimationFrame(tick);
+      frameId = requestAnimationFrame(frame);
     };
-    raf.current = requestAnimationFrame(tick);
+    frameId = requestAnimationFrame(frame);
     return () => {
-      if (raf.current) cancelAnimationFrame(raf.current);
+      if (frameId !== null) cancelAnimationFrame(frameId);
     };
-  }, [gs.running, gs.finished, gs.t0, gs.coins, gs.bug, gs.wick, mode, isOpen, playerName]);
+  }, [phase, drawCurrent, finishRound]);
 
-  const submitLeaderboard = useCallback((rec: ScoreRecord) => {
-    try {
-      const raw = window.localStorage.getItem(SCORE_KEY);
-      const list: Rec[] = raw ? (JSON.parse(raw) as Rec[]) : [];
-      const filtered = list.filter((e) => e.gameId === rec.gameId);
-      const r = submitScore(filtered, rec);
-      if (r.ok) {
-        // merge back with other games
-        const others = list.filter((e) => e.gameId !== rec.gameId);
-        window.localStorage.setItem(SCORE_KEY, JSON.stringify([...others, ...r.entries]));
-      }
-    } catch {
-      /* session-only */
-    }
-  }, []);
-
-  // keyboard controls for runner
+  // Redraw the frozen frame when the loop is not running (pause / finished).
   useEffect(() => {
-    if (!isOpen || mode !== 'candle-runner') return;
+    if (phase === 'paused' || phase === 'finished') drawCurrent();
+  }, [phase, drawCurrent]);
+
+  const beginRound = useCallback((m: Mode) => {
+    modeRef.current = m;
+    setMode(m);
+    const seed = seedFromClock();
+    if (m === 'candle-runner') {
+      runnerRef.current = createRunnerState(seed);
+      setRunnerView(runnerRef.current);
+    } else {
+      whackRef.current = createWhackState(seed);
+      setWhackView(whackRef.current);
+    }
+    keysRef.current = { up: false, down: false };
+    targetYRef.current = null;
+    setLastSaved(null);
+    setPhaseBoth('running');
+    onSelectMode?.(m);
+  }, [onSelectMode, setPhaseBoth]);
+
+  const pause = useCallback(() => {
+    if (phaseRef.current !== 'running') return;
+    keysRef.current = { up: false, down: false };
+    targetYRef.current = null;
+    setPhaseBoth('paused');
+  }, [setPhaseBoth]);
+
+  const resume = useCallback(() => {
+    if (phaseRef.current !== 'paused') return;
+    setPhaseBoth('running');
+  }, [setPhaseBoth]);
+
+  /** Leave a round without scoring it. Unfinished rounds are never persisted. */
+  const leaveToMenu = useCallback(() => {
+    keysRef.current = { up: false, down: false };
+    targetYRef.current = null;
+    modeRef.current = null;
+    setMode(null);
+    setLastSaved(null);
+    setPhaseBoth('menu');
+  }, [setPhaseBoth]);
+
+  // Visibility loss pauses the round.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') pause();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [pause]);
+
+  // Keyboard: arrows/W/S steer the runner; P toggles pause.
+  useEffect(() => {
+    if (!isOpen) return undefined;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'ArrowUp') setPlayerY((y) => Math.max(0, y - 14));
-      if (e.code === 'ArrowDown') setPlayerY((y) => Math.min(H - 40, y + 14));
+      if (isTypingTarget(e.target)) return;
+      if (e.code === 'KeyP' && !e.repeat) {
+        if (phaseRef.current === 'running') pause();
+        else resume();
+        return;
+      }
+      if (phaseRef.current !== 'running' || modeRef.current !== 'candle-runner') return;
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        keysRef.current.up = true;
+        targetYRef.current = null;
+      } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        keysRef.current.down = true;
+        targetYRef.current = null;
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') keysRef.current.up = false;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') keysRef.current.down = false;
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, mode]);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [isOpen, pause, resume]);
 
+  // Open: reload boards. Close: end any round without scoring it.
   useEffect(() => {
-    if (isOpen) return;
-    setMenu(true);
-    setMode(null);
-    setGs({ coins: 0, wick: 0, bug: 0, friendly: 0, running: false, t0: 0, finished: false, failed: false });
-  }, [isOpen]);
+    if (isOpen) {
+      refreshScores();
+      return;
+    }
+    leaveToMenu();
+    setResetConfirm(false);
+  }, [isOpen, refreshScores, leaveToMenu]);
+
+  const onCanvasPointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (phaseRef.current !== 'running') return;
+    const point = toCanvasPoint(event.currentTarget, event);
+    if (!point) return;
+    if (modeRef.current === 'candle-runner') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      targetYRef.current = point.y;
+      return;
+    }
+    if (modeRef.current === 'whack-a-bug') {
+      const result = whackAt(whackRef.current, point.x, point.y);
+      whackRef.current = result.state;
+      setWhackView(result.state);
+      drawCurrent();
+    }
+  }, [drawCurrent]);
+
+  const onCanvasPointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (phaseRef.current !== 'running' || modeRef.current !== 'candle-runner') return;
+    if (event.buttons === 0) return;
+    const point = toCanvasPoint(event.currentTarget, event);
+    if (point) targetYRef.current = point.y;
+  }, []);
+
+  const onCanvasPointerEnd = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    targetYRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const resetBoard = useCallback(() => {
+    if (!resetConfirm) {
+      setResetConfirm(true);
+      return;
+    }
+    const outcome = resetGameBoard(getStorage(), boardView, pendingRef.current);
+    pendingRef.current = outcome.unsaved;
+    setPendingCount(outcome.unsaved.length);
+    setBoards(outcome.boards);
+    setStorageFailed(!outcome.persisted);
+    setResetConfirm(false);
+  }, [boardView, resetConfirm]);
 
   if (!isOpen) return null;
 
-  const finalScore = mode === 'candle-runner'
-    ? scoreRunner({ coins: gs.coins, wickHits: gs.wick, completed: gs.finished, durationMs: 60_000 })
-    : scoreWhack({ bugsWhacked: gs.bug, friendlyFire: gs.friendly, completed: gs.finished });
+  const liveScore = mode === 'candle-runner'
+    ? scoreRunner({ coins: runnerView.coins, wickHits: runnerView.wickHits, completed: true, durationMs: runnerView.elapsedMs })
+    : mode === 'whack-a-bug'
+      ? scoreWhack({ bugsWhacked: whackView.hits, friendlyFire: whackView.friendlyFire, completed: true })
+      : 0;
+  const board = boards[boardView];
+  const inRound = phase !== 'menu' && mode !== null;
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-slate-950/60 p-4" role="dialog" aria-label="Retro Arcade">
-      <div className="w-full max-w-lg rounded-2xl border border-violet-500/25 bg-slate-950/95 p-5 shadow-2xl">
-        <header className="mb-4 flex items-center justify-between">
+    <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-slate-950/70 p-3" role="dialog" aria-label="Retro Arcade">
+      <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-violet-500/25 bg-slate-950/95 p-4 shadow-2xl sm:p-5">
+        <header className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-bold text-slate-200">
             <Gamepad2 size={16} className="text-violet-400" /> Retro Arcade · TechFlow Terminal
           </h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-slate-500 hover:bg-white/10 hover:text-slate-300" aria-label="Tutup arcade">
-            <X size={14} />
+          <button type="button" onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-200" aria-label="Close arcade">
+            <X size={16} />
           </button>
         </header>
 
-        {menu && (
-          <div className="grid gap-3">
-            <button type="button" onClick={() => pick('candle-runner')} className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-left hover:bg-emerald-500/20">
-              <span className="text-2xl">📈</span>
-              <div>
-                <strong className="text-xs text-emerald-300">Crypto Candle Runner</strong>
-                <p className="text-[10px] text-slate-400">Lompati jarum wick dan hindari candle merah; kumpulkan koin cuan selama 60 detik. ArrowUp/Down.</p>
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_230px]">
+          <section aria-label="Arcade game">
+            {phase === 'menu' && (
+              <div className="grid gap-3">
+                <button type="button" onClick={() => beginRound('candle-runner')} className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-left hover:bg-emerald-500/20">
+                  <span className="text-2xl">📈</span>
+                  <div>
+                    <strong className="text-xs text-emerald-300">{GAME_LABELS['crypto-runner']}</strong>
+                    <p className="text-[10px] text-slate-400">Kumpulkan koin $ dan hindari wick merah selama 60 detik. Arrow Up/Down, W/S, atau tahan dan geser pointer.</p>
+                  </div>
+                </button>
+                <button type="button" onClick={() => beginRound('whack-a-bug')} className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-left hover:bg-rose-500/20">
+                  <span className="text-2xl">🐛</span>
+                  <div>
+                    <strong className="text-xs text-rose-300">{GAME_LABELS['whack-a-bug']}</strong>
+                    <p className="text-[10px] text-slate-400">Pukul bug merah selama 30 detik; jangan pukul Khansaku biru (friendly fire −75). Klik atau sentuh layar.</p>
+                  </div>
+                </button>
               </div>
-            </button>
-            <button type="button" onClick={() => pick('whack-a-bug')} className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-left hover:bg-rose-500/20">
-              <span className="text-2xl">🐛</span>
-              <div>
-                <strong className="text-xs text-rose-300">Boss Whack-A-Bug</strong>
-                <p className="text-[10px] text-slate-400">Pukul bug Jira selama 30 detik; hindari Khansaku atau tiket prod (friendly fire -75 pts).</p>
-              </div>
-            </button>
-          </div>
-        )}
+            )}
 
-        {!menu && mode !== null && (
-          <>
-            <canvas ref={canvasRef} width={W} height={H} className="mb-3 w-full rounded-xl border border-white/10 bg-slate-900" aria-label={`Arcade game ${mode}`} />
-            <div className="mb-3 flex flex-wrap gap-3 text-[10px] text-slate-300">
-              <span className="font-mono">🕐 {mode === 'candle-runner' ? '60' : '30'}s</span>
-              {mode === 'candle-runner' ? (<>
-                <span>🪙 {gs.coins}</span>
-                <span>⚡ Wick hits {gs.wick}</span>
-              </>) : (<>
-                <span>🐛 Whacked {gs.bug}</span>
-                <span>🚫 Friendly {gs.friendly}</span>
-              </>)}
-              <span>Skor: <strong className="text-emerald-400">{finalScore}</strong></span>
+            {inRound && (
+              <>
+                <div className="relative mb-3">
+                  <canvas
+                    ref={canvasRef}
+                    width={W}
+                    height={H}
+                    className="w-full touch-none rounded-xl border border-white/10 bg-slate-900"
+                    style={{ cursor: mode === 'whack-a-bug' ? 'crosshair' : 'ns-resize' }}
+                    onPointerDown={onCanvasPointerDown}
+                    onPointerMove={onCanvasPointerMove}
+                    onPointerUp={onCanvasPointerEnd}
+                    onPointerCancel={onCanvasPointerEnd}
+                    role="img"
+                    aria-label={`${GAME_LABELS[MODE_BOARD[mode]]} playfield`}
+                  />
+                  {phase === 'paused' && (
+                    <div className="absolute inset-0 grid place-items-center rounded-xl bg-slate-950/70 text-xs text-slate-200" role="status">
+                      Paused. Tekan P atau klik Lanjut.
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-3 flex flex-wrap gap-3 text-[10px] text-slate-300">
+                  {mode === 'candle-runner' ? (
+                    <>
+                      <span>🪙 {runnerView.coins}</span>
+                      <span>⚡ Wick hits {runnerView.wickHits}</span>
+                      <span>Coin lewat {runnerView.misses}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🐛 Hit {whackView.hits}</span>
+                      <span>🚫 Friendly {whackView.friendlyFire}</span>
+                      <span>Meleset {whackView.misses}</span>
+                    </>
+                  )}
+                  <span>Skor sementara: <strong className="text-emerald-400">{liveScore}</strong></span>
+                </div>
+
+                {phase === 'finished' && lastSaved && (
+                  <div className={`mb-3 rounded-xl border p-3 ${lastSaved.persisted ? 'border-emerald-500/25 bg-emerald-500/10' : 'border-amber-500/25 bg-amber-500/10'}`} role="status">
+                    <p className="flex items-center gap-2 text-xs text-slate-200">
+                      <Trophy size={12} /> Ronde selesai! Skor <strong className="ml-1 font-mono">{lastSaved.score}</strong>{' '}
+                      {lastSaved.persisted ? 'masuk leaderboard.' : 'hanya untuk sesi ini (penyimpanan gagal).'}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {phase === 'running' && (
+                    <button type="button" onClick={pause} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10">
+                      <Pause size={12} /> Pause
+                    </button>
+                  )}
+                  {phase === 'paused' && (
+                    <button type="button" onClick={resume} className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-400">
+                      <Play size={12} /> Lanjut
+                    </button>
+                  )}
+                  {phase === 'finished' && mode !== null && (
+                    <button type="button" onClick={() => beginRound(mode)} className="flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">
+                      <RotateCcw size={12} /> Main lagi
+                    </button>
+                  )}
+                  <button type="button" onClick={leaveToMenu} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 hover:bg-white/10">
+                    Menu
+                  </button>
+                  {phase !== 'finished' && (
+                    <span className="text-[10px] text-slate-500">Keluar sebelum selesai tidak menyimpan skor.</span>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+
+          <aside className="rounded-xl border border-white/10 bg-white/[0.03] p-3" aria-label="Arcade leaderboard">
+            <header className="mb-2">
+              <h3 className="text-xs font-bold text-slate-200">Top 10 · {GAME_LABELS[boardView]}</h3>
+            </header>
+            <div className="mb-2 flex flex-wrap items-center gap-1" role="group" aria-label="Pilih papan skor">
+              {(['crypto-runner', 'whack-a-bug'] as const).map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => {
+                    setBoardView(g);
+                    setResetConfirm(false);
+                  }}
+                  aria-pressed={boardView === g}
+                  className={`rounded-lg border px-2 py-1 text-[10px] ${boardView === g ? 'border-violet-400 text-violet-200' : 'border-white/10 text-slate-400'}`}
+                >
+                  {g === 'crypto-runner' ? 'Runner' : 'Whack'}
+                </button>
+              ))}
             </div>
-
-            {gs.finished ? (
-              <div className="mb-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3">
-                <p className="flex items-center gap-2 text-xs text-emerald-300">
-                  <Trophy size={12} /> Ronde selesai! Skor <strong className="ml-1 font-mono">{finalScore}</strong> masuk leaderboard.
-                </p>
+            <button type="button" onClick={resetBoard} className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-rose-400/30 px-2 py-1 text-[10px] text-rose-300 hover:bg-rose-400/10">
+              <RotateCcw size={10} /> Reset papan {boardView === 'crypto-runner' ? 'Runner' : 'Whack'} saja
+            </button>
+            {resetConfirm && (
+              <div className="mb-2 rounded-lg border border-rose-400/30 bg-rose-400/10 p-2 text-[10px]" role="alertdialog" aria-label="Konfirmasi reset papan arcade">
+                <p className="mb-2 text-rose-200">Hapus hanya papan {GAME_LABELS[boardView]}? Papan game lain tidak berubah.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={resetBoard} className="rounded bg-rose-500 px-2 py-1 font-bold text-white">Hapus</button>
+                  <button type="button" onClick={() => setResetConfirm(false)} className="rounded bg-white/10 px-2 py-1 text-slate-200">Batal</button>
+                </div>
               </div>
-            ) : null}
-
-            <div className="flex gap-2">
-              <button type="button" onClick={resetRun} className="flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400">
-                <RotateCcw size={12} /> {gs.finished ? 'Main lagi' : 'Restart'}
-              </button>
-              <button type="button" onClick={() => { setMenu(true); setMode(null); setGs((p) => ({ ...p, running: false })); }} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 hover:bg-white/10">
-                Menu
-              </button>
-            </div>
-          </>
-        )}
+            )}
+            {storageFailed && <p className="mb-2 rounded bg-amber-400/10 p-2 text-[10px] text-amber-200" role="status">Penyimpanan tidak tersedia atau gagal: skor tertahan untuk sesi ini.</p>}
+            {invalidStored && <p className="mb-2 text-[10px] text-amber-300" role="status">Data skor tersimpan tidak valid dan diabaikan.</p>}
+            {board.length === 0 ? (
+              <p className="py-3 text-[10px] text-slate-500">Belum ada ronde selesai.</p>
+            ) : (
+              <ol className="grid gap-1.5">
+                {board.map((record, index) => (
+                  <li key={record.recordId} className="grid grid-cols-[20px_1fr_auto] items-center gap-1 rounded bg-white/[0.03] px-2 py-1.5 text-[10px]">
+                    <span className="text-slate-500">{index + 1}.</span>
+                    <span className="truncate text-slate-300" title={record.playerId}>{record.playerId}</span>
+                    <strong className="font-mono text-emerald-300">{record.score}</strong>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {pendingCount > 0 && <p className="mt-2 text-[9px] text-amber-300">{pendingCount} skor belum tersimpan (sesi ini).</p>}
+          </aside>
+        </div>
       </div>
     </div>
   );

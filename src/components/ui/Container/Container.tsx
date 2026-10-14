@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { css } from '@emotion/css';
 
 export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
@@ -13,29 +12,6 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-const styles = {
-  container: (glass: boolean, bordered: boolean, padded: boolean, elevated: boolean) => css`
-    border-radius: 20px;
-    transition: all 0.2s ease;
-    background: ${glass ? 'rgba(17, 18, 24, 0.88)' : '#111218'};
-    backdrop-filter: ${glass ? 'blur(16px)' : 'none'};
-    -webkit-backdrop-filter: ${glass ? 'blur(16px)' : 'none'};
-    border: ${bordered ? '1px solid rgba(255, 255, 255, 0.12)' : 'none'};
-    box-shadow: ${bordered ? '0 16px 36px rgba(0, 0, 0, 0.4)' : 'none'};
-    padding: ${padded ? '20px' : '0'};
-
-    ${elevated
-      ? `
-      &:hover {
-        border-color: rgba(16, 185, 129, 0.4);
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
-        transform: translateY(-2px);
-      }
-    `
-      : ''}
-  `,
-};
-
 export default function Container({
   children,
   className = '',
@@ -46,10 +22,21 @@ export default function Container({
   onClick,
   ...props
 }: ContainerProps) {
+  const glassCls = glass
+    ? 'bg-[rgba(17,18,24,0.88)] backdrop-blur-xl'
+    : 'bg-[#111218]';
+  const borderCls = bordered
+    ? 'border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.4)]'
+    : 'border-0';
+  const padCls = padded ? 'p-5' : 'p-0';
+  const elevatedCls = elevated
+    ? 'hover:border-emerald-500/40 hover:shadow-[0_20px_45px_rgba(0,0,0,0.55)] hover:-translate-y-0.5'
+    : '';
+
   return (
     <div
       onClick={onClick}
-      className={`${styles.container(glass, bordered, padded, elevated)} ${className}`}
+      className={`rounded-2xl transition-all duration-200 ${glassCls} ${borderCls} ${padCls} ${elevatedCls} ${className}`}
       {...props}
     >
       {children}

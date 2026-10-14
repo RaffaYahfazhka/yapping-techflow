@@ -28,10 +28,10 @@ function isConfinedToSafeRoots(resolved) {
 }
 
 const DEFAULT_WORKSPACE = process.env.KANTOR_WORKSPACE_ROOT || process.cwd();
-const MASTER_DIR = process.env.KANTOR_WORKSPACE_ROOT || path.dirname(process.cwd());
+const MASTER_DIR = process.env.KANTOR_WORKSPACE_ROOT || DEFAULT_WORKSPACE;
 const SAFE_ROOTS = [
   fs.realpathSync(DEFAULT_WORKSPACE),
-  fs.realpathSync(MASTER_DIR),
+  ...(process.env.KANTOR_WORKSPACE_ROOT ? [fs.realpathSync(process.env.KANTOR_WORKSPACE_ROOT)] : []),
 ];
 
 // Helper to safely execute git commands in a target directory
@@ -288,9 +288,15 @@ export async function POST(request) {
       try {
         // Check if origin exists
         const currentOrigin = runGit('git remote get-url origin', resolved);
-        if (currentOrigin) {
+        if (currentOrigin && currentOrigin !== newRemoteUrl) {
+          if (process.env.KANTOR_ALLOW_REMOTE_OVERWRITE !== '1') {
+            return NextResponse.json(
+              { error: 'Penggantian remote origin yang sudah ada diblokir demi keamanan. Set KANTOR_ALLOW_REMOTE_OVERWRITE=1 untuk mengizinkan.' },
+              { status: 403 }
+            );
+          }
           execFileSync('git', ['remote', 'set-url', 'origin', newRemoteUrl], { cwd: resolved, encoding: 'utf8' });
-        } else {
+        } else if (!currentOrigin) {
           execFileSync('git', ['remote', 'add', 'origin', newRemoteUrl], { cwd: resolved, encoding: 'utf8' });
         }
         const updated = inspectDirectory(resolved);

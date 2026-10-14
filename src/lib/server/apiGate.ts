@@ -10,8 +10,12 @@ import { createHash, timingSafeEqual } from 'crypto';
  *   from other machines. Setting the token is required for any shared exposure.
  */
 export function requireApiToken(request: Request): NextResponse | null {
-  const expected = process.env.KANTOR_API_TOKEN;
-  if (!expected) return null;
+  const rawExpected = process.env.KANTOR_API_TOKEN;
+  if (rawExpected === undefined) return null;
+  const expected = rawExpected.trim();
+  if (expected.length === 0) {
+    return NextResponse.json({ error: 'Server misconfigured: KANTOR_API_TOKEN is empty' }, { status: 500 });
+  }
   const header = request.headers.get('authorization') || '';
   const given = header.startsWith('Bearer ') ? header.slice(7) : '';
   const a = createHash('sha256').update(given).digest();

@@ -845,15 +845,17 @@ body {
   transform: scale(1.05);
 }
 
-/* YouTube Player Host (must be inside viewport with dimensions and full opacity so browser MediaSession/IntersectionObserver allows audio playback) */
+/* YouTube player host: visible, >=200x200, interactive (policy-compliant visible player). */
 #yt-player-host {
   position: fixed;
   bottom: 0px;
   right: 0px;
   width: 200px;
   height: 200px;
-  z-index: -10;
-  pointer-events: none;
+  min-width: 200px;
+  min-height: 200px;
+  z-index: 40;
+  pointer-events: auto;
   overflow: hidden;
   opacity: 1;
 }
@@ -862,7 +864,6 @@ body {
   width: 200px !important;
   height: 200px !important;
   border: none;
-  pointer-events: none;
 }
 
 /* Animated 9-bar Equalizer */

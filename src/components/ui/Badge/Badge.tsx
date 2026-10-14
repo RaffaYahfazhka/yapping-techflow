@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { css } from '@emotion/css';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   children?: React.ReactNode;
@@ -11,87 +10,55 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   dot?: boolean;
 }
 
-const styles = {
-  badge: (v: string, s: string) => {
-    let bg = 'rgba(255, 255, 255, 0.08)';
-    let color = '#d4d4d8';
-    let border = 'rgba(255, 255, 255, 0.12)';
-
-    switch (v) {
-      case 'emerald':
-        bg = 'rgba(16, 185, 129, 0.16)';
-        color = '#34d399';
-        border = 'rgba(16, 185, 129, 0.35)';
-        break;
-      case 'violet':
-        bg = 'rgba(139, 92, 246, 0.16)';
-        color = '#c084fc';
-        border = 'rgba(139, 92, 246, 0.35)';
-        break;
-      case 'amber':
-        bg = 'rgba(245, 158, 11, 0.16)';
-        color = '#fcd34d';
-        border = 'rgba(245, 158, 11, 0.35)';
-        break;
-      case 'rose':
-        bg = 'rgba(244, 63, 94, 0.16)';
-        color = '#fb7185';
-        border = 'rgba(244, 63, 94, 0.35)';
-        break;
-      case 'cyan':
-        bg = 'rgba(6, 182, 212, 0.16)';
-        color = '#67e8f9';
-        border = 'rgba(6, 182, 212, 0.35)';
-        break;
-      case 'blue':
-        bg = 'rgba(59, 130, 246, 0.16)';
-        color = '#60a5fa';
-        border = 'rgba(59, 130, 246, 0.35)';
-        break;
-    }
-
-    let pad = '3px 8px';
-    let fs = '11px';
-    if (s === 'xs') {
-      pad = '2px 6px';
-      fs = '10px';
-    } else if (s === 'md') {
-      pad = '4px 10px';
-      fs = '12px';
-    }
-
-    return css`
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: ${pad};
-      font-size: ${fs};
-      font-weight: 700;
-      font-family: ui-monospace, SFMono-Regular, monospace;
-      border-radius: 6px;
-      background: ${bg};
-      color: ${color};
-      border: 1px solid ${border};
-      user-select: none;
-      line-height: 1;
-    `;
+const VARIANT_MAP: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+  emerald: {
+    bg: 'bg-emerald-500/15',
+    text: 'text-emerald-400',
+    border: 'border-emerald-500/30',
+    dot: 'bg-emerald-400 shadow-[0_0_8px_#10b981]',
   },
-
-  dotSpan: (v: string) => {
-    let dotColor = '#10b981';
-    if (v === 'amber') dotColor = '#f59e0b';
-    if (v === 'rose') dotColor = '#f43f5e';
-    if (v === 'violet') dotColor = '#8b5cf6';
-    if (v === 'cyan') dotColor = '#06b6d4';
-
-    return css`
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: ${dotColor};
-      box-shadow: 0 0 6px ${dotColor};
-    `;
+  violet: {
+    bg: 'bg-violet-500/15',
+    text: 'text-violet-400',
+    border: 'border-violet-500/30',
+    dot: 'bg-violet-400 shadow-[0_0_8px_#8b5cf6]',
   },
+  amber: {
+    bg: 'bg-amber-500/15',
+    text: 'text-amber-400',
+    border: 'border-amber-500/30',
+    dot: 'bg-amber-400 shadow-[0_0_8px_#f59e0b]',
+  },
+  rose: {
+    bg: 'bg-rose-500/15',
+    text: 'text-rose-400',
+    border: 'border-rose-500/30',
+    dot: 'bg-rose-400 shadow-[0_0_8px_#f43f5e]',
+  },
+  cyan: {
+    bg: 'bg-cyan-500/15',
+    text: 'text-cyan-400',
+    border: 'border-cyan-500/30',
+    dot: 'bg-cyan-400 shadow-[0_0_8px_#06b6d4]',
+  },
+  blue: {
+    bg: 'bg-blue-500/15',
+    text: 'text-blue-400',
+    border: 'border-blue-500/30',
+    dot: 'bg-blue-400 shadow-[0_0_8px_#3b82f6]',
+  },
+  default: {
+    bg: 'bg-white/5',
+    text: 'text-zinc-300',
+    border: 'border-white/10',
+    dot: 'bg-zinc-400',
+  },
+};
+
+const SIZE_MAP: Record<string, string> = {
+  xs: 'px-1.5 py-0.5 text-[10px] gap-1',
+  sm: 'px-2 py-0.5 text-[11px] gap-1.5',
+  md: 'px-2.5 py-1 text-xs gap-1.5',
 };
 
 export default function Badge({
@@ -102,9 +69,15 @@ export default function Badge({
   dot = false,
   ...props
 }: BadgeProps) {
+  const conf = VARIANT_MAP[variant] || VARIANT_MAP.default;
+  const sizeCls = SIZE_MAP[size] || SIZE_MAP.sm;
+
   return (
-    <span className={`${styles.badge(variant, size)} ${className}`} {...props}>
-      {dot && <span className={styles.dotSpan(variant)} />}
+    <span
+      className={`inline-flex items-center font-semibold rounded-full border transition-all select-none backdrop-blur-sm ${conf.bg} ${conf.text} ${conf.border} ${sizeCls} ${className}`}
+      {...props}
+    >
+      {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${conf.dot}`} />}
       {children}
     </span>
   );

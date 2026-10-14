@@ -35,6 +35,7 @@ import Button from '../components/ui/Button';
 
 export default function OfficePage() {
   const stageRef = useRef(null);
+  const photoCaptureRef = useRef<(() => Promise<{ width: number; height: number }>) | null>(null);
   const sceneRef = useRef(null);
   const audioRef = useRef(null);
   const pipelineRef = useRef(null);
@@ -524,9 +525,8 @@ export default function OfficePage() {
 
   const handleEnterOffice = () => {
     setBooted(true);
-    if (audioRef.current) {
-      audioRef.current.play();
-    }
+    // Primary playlist is cued paused on entry; playback starts only from a visible Play control.
+    audioRef.current?.loadPlaylist('PLZVXIrT2s1CE', false);
   };
 
   const activeTicketForSubordinate =
@@ -541,7 +541,7 @@ export default function OfficePage() {
       {/* 3D WebGL Canvas (imperative scene: movement/avatar runtime) */}
       <div id="stage" ref={stageRef} aria-label="Kantor 3D isometrik" />
       {/* R3F declarative penthouse layer: WIB sky, terrace, wallboard, city glow */}
-      {booted && <OfficeClientBoundary equityPct={12.4} />}
+      {booted && <OfficeClientBoundary equityPct={12.4} captureRef={photoCaptureRef} />}
       <div className="vignette" aria-hidden="true" />
 
       {/* Navbar Component */}
@@ -820,10 +820,12 @@ export default function OfficePage() {
         active={isPhotoActive && booted}
         onEnter={() => setIsPhotoActive(true)}
         onExit={() => setIsPhotoActive(false)}
+        capture={() => (photoCaptureRef.current ? photoCaptureRef.current() : Promise.reject(new Error('Kamera 3D belum siap')))}
+        dof={null}
       />
 
       {/* YouTube Iframe Audio Host (Hidden unobtrusively without zero-dimension throttling) */}
-      <div id="yt-player-host" aria-hidden="true" />
+      <div id="yt-player-host" aria-label="Pemutar musik YouTube" />
     </main>
   );
 }

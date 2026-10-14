@@ -1,7 +1,8 @@
 /**
- * Weather engine — pure reducer for the Jakarta/SCBD weather state that the
- * office visual + social systems consume. Live provider only when configured;
- * manual override always available; never invents values as "live".
+ * Weather engine — pure reducer for Jakarta/SCBD weather state.
+ * Provider fetches only replace the visible condition when a result arrives; a manual
+ * override is sticky and cannot be silently overwritten by an in-flight live response.
+ * Last successful live metadata survives every loading, repeated-failure and manual state.
  */
 
 export type WeatherCondition = 'clear' | 'fog' | 'rain';
@@ -10,11 +11,13 @@ export type WeatherStatus = 'loading' | 'live' | 'stale' | 'unavailable' | 'manu
 export interface WeatherState {
   status: WeatherStatus;
   condition: WeatherCondition;
-  /** Last successful live fetch, ISO timestamp. */
+  /** Last successful live fetch, ISO timestamp. Kept through all failures and overrides. */
   fetchedAt: string | null;
-  /** Where the data came from (e.g. "open-meteo") - null for manual or unavailable. */
+  /** Last successful live source, e.g. "open-meteo"; retained through failures/override. */
   source: string | null;
   reason: string | null;
+  /** Sticky marker: fetch-start/success/fail cannot replace an explicit manual choice. */
+  manualOverride: boolean;
 }
 
 export const INITIAL_WEATHER: WeatherState = {
@@ -23,6 +26,7 @@ export const INITIAL_WEATHER: WeatherState = {
   fetchedAt: null,
   source: null,
   reason: 'Manual simulation (no live provider configured). Rain can be toggled explicitly.',
+  manualOverride: false,
 };
 
 export type WeatherAction =
@@ -34,18 +38,49 @@ export type WeatherAction =
 export function reduceWeather(state: WeatherState, action: WeatherAction): WeatherState {
   switch (action.kind) {
     case 'fetch-start':
+      if (state.manualOverride) return state;
       return { ...state, status: 'loading' };
     case 'fetch-success':
-      return { status: 'live', condition: action.condition, fetchedAt: action.fetchedAt, source: action.source, reason: null };
+      if (state.manualOverride) return state;
+      return {
+        status: 'live',
+        condition: action.condition,
+        fetchedAt: action.fetchedAt,
+        source: action.source,
+        reason: null,
+        manualOverride: false,
+      };
     case 'fetch-fail':
-      // stale = keep last-known condition and timestamp honestly labelled;
-      // unavailable = never had live data, fall back to clear simulation
-      if ((state.status === 'live' || state.status === 'stale') && state.fetchedAt && state.condition) {
-        return { status: 'stale', condition: state.condition, fetchedAt: state.fetchedAt, source: state.source, reason: action.reason };
+      if (state.manualOverride) return state;
+      if (state.fetchedAt !== null) {
+        return {
+          ...state,
+          status: 'stale',
+          reason: action.reason,
+          // Keep last-known condition/source/timestamp for repeated fail and start -> fail.
+          condition: state.condition,
+          fetchedAt: state.fetchedAt,
+          source: state.source,
+          manualOverride: false,
+        };
       }
-      return { status: 'unavailable', condition: 'clear', fetchedAt: null, source: null, reason: action.reason };
+      return {
+        ...state,
+        status: 'unavailable',
+        condition: 'clear',
+        reason: action.reason,
+        fetchedAt: null,
+        source: null,
+        manualOverride: false,
+      };
     case 'manual-set':
-      return { status: 'manual', condition: action.condition, fetchedAt: null, source: null, reason: `Manual override: ${action.condition}` };
+      return {
+        ...state,
+        status: 'manual',
+        condition: action.condition,
+        reason: `Manual override: ${action.condition}`,
+        manualOverride: true,
+      };
   }
 }
 

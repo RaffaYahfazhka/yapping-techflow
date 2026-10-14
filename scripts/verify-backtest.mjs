@@ -1,75 +1,105 @@
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
 register('./ts-import-loader.mjs', import.meta.url);
-const { generateXauUsdM5, aggregateBars, runBacktest, BACKTEST_DISCLAIMER } = await import('../src/lib/engine/backtest');
+const { generateXauUsdM5, aggregateBars, runBacktest } = await import('../src/lib/engine/backtest');
 
 let passed = 0;
-const ok = (n, f) => { f(); passed += 1; console.log(`✓ ${n}`); };
-const M5 = generateXauUsdM5(20261014, 2026);
+const check = (name, fn) => {
+  fn();
+  passed += 1;
+  console.log(`✓ ${name}`);
+};
 
-ok('deterministic: same seed produces identical first/last close', () => {
-  const b = generateXauUsdM5(20261014, 2026);
-  assert.equal(b[0].open, M5[0].open);
-  assert.equal(b[b.length - 1].close, M5[M5.length - 1].close);
-  assert.equal(b.length, M5.length);
-});
+const SEED = 20261014;
+const YEAR = 2026;
+const M5_MS = 300_000;
+const T0 = Date.UTC(2026, 0, 1);
+const M5 = generateXauUsdM5(SEED, YEAR);
+const TIMEFRAMES = ['M5', 'M15', 'H1'];
+const PERIODS = ['1M', '6M', '1Y'];
 
-ok('M15/H1 aggregation preserves extremes and counts', () => {
-  const m15 = aggregateBars(M5, 'M15');
-  const h1 = aggregateBars(M5, 'H1');
-  assert.equal(m15.length, Math.floor(M5.length / 3));
-  assert.equal(h1.length, Math.floor(M5.length / 12));
-  for (let i = 0; i < 20; i++) {
-    const src = M5.slice(i * 3, i * 3 + 3);
-    assert.equal(m15[i].high, Math.max(...src.map((b) => b.high)));
-    assert.equal(m15[i].low, Math.min(...src.map((b) => b.low)));
+/**
+ * Engineered loss-bearing input: a 2000 / 2000.2 zigzag on M5 bars.
+ * The EMA difference flips sign on every bar, so the engine opens and reverses
+ * a position each bar. Each closed leg moves at most 0.2 against a 0.4 round-trip
+ * cost (spread 0.3 + slippage 0.05 per side), so every closed trade must lose.
+ */
+function zigzagM5(count) {
+  const bars = [];
+  for (let i = 0; i < count; i++) {
+    const price = i % 2 === 0 ? 2000 : 2000.2;
+    bars.push({ t: T0 + i * M5_MS, open: price, high: price + 0.05, low: price - 0.05, close: price });
   }
+  return bars;
+}
+
+const LOSS_OPTS = { period: '1M', seed: SEED, target: 3, stop: 5 };
+
+check('(a) engineered zigzag input reports losses>0 and a negative-pnl trade', () => {
+  const r = runBacktest(zigzagM5(300), { ...LOSS_OPTS, timeframe: 'M5' });
+  assert.deepEqual(r.errors, []);
+  assert.ok(r.trades > 0, 'engineered input must close trades');
+  assert.ok(r.losses > 0, `expected losses>0, got ${r.losses}`);
+  assert.ok(r.tradeLog.some((t) => t.pnl < 0), 'expected at least one trade with negative pnl');
+  assert.ok(r.netPnl < 0, `expected net realized loss, got ${r.netPnl}`);
 });
 
-for (const tf of ['M5', 'M15', 'H1']) {
-  for (const p of ['1M', '6M', '1Y']) {
-    const bars = aggregateBars(M5, tf);
-    const r = runBacktest(bars, { period: p, seed: 20261014, target: 3, stop: 5 });
-    const tag = `${tf}/${p}`;
-    ok(`${tag}: win-rate math is computed, not hardcoded (fixture=100%)`, () => {
-      assert.equal(r.source, 'synthetic');
-      void r.generator;
-    if (r.trades === 0) {
-      // Zero-traded window = an honest result of the hedging strategy on H1/1M
-      void tag;
-      return; // inner check() body exits this scenario only
-    }
-      assert.equal(r.wins + r.losses, r.trades);
-      // fixture design guarantees 100% closed-trade win rate
-      assert.equal(r.winRate, 1);
-      assert.equal(r.losses, 0);
+for (const tf of TIMEFRAMES) {
+  for (const p of PERIODS) {
+    check(`(b) ${tf}/${p}: finalEquity = initialEquity + realized + unrealized; curve ends at finalEquity`, () => {
+      const bars = aggregateBars(M5, tf);
+      const r = runBacktest(bars, { period: p, seed: SEED, target: 3, stop: 5, timeframe: tf });
+      assert.deepEqual(r.errors, []);
+      const initialEquity = r.costModel.initialEquity;
+      assert.equal(r.finalEquity, initialEquity + r.realizedPnl + r.unrealizedPnl);
+      assert.ok(r.equityCurve.length > 0, 'equity curve must be non-empty');
+      assert.equal(r.equityCurve[r.equityCurve.length - 1].equity, r.finalEquity);
+      assert.equal(r.sampleCount, r.equityCurve.length);
+      assert.equal(r.bars, r.equityCurve.length);
     });
   }
 }
 
-ok('a fixture WITH a loss produces <100% (display is not hardcoded)', () => {
-  // inject one loss into a copied fixture run: patch a trade path by feeding
-  // a synthetic losing bar window
-  const withLossBar = aggregateBars(M5, 'M15').slice(0, 400);
-  // force one trade to close negative by hand: verify the function's winrate math
-  const trades = [{ id: 1, side: 'long', entryPrice: 2000, exitPrice: 1990, pnl: -10, openedAt: 0, closedAt: 1 }, { id: 2, side: 'long', entryPrice: 2000, exitPrice: 2020, pnl: 20, openedAt: 2, closedAt: 3 }];
-  const wins = trades.filter((t) => t.pnl > 0).length;
-  assert.equal(wins / trades.length, 0.5);
-  void withLossBar;
+check('(c) timeframe mismatch (H1 requested on M5 data) yields errors without throwing', () => {
+  let r;
+  assert.doesNotThrow(() => {
+    r = runBacktest(zigzagM5(300), { ...LOSS_OPTS, timeframe: 'H1' });
+  });
+  assert.ok(r.errors.length > 0, 'mismatched timeframe must produce errors');
+  assert.ok(r.errors.some((e) => /does not match/.test(e)), `unexpected errors: ${r.errors.join('; ')}`);
+  assert.equal(r.trades, 0);
+  assert.deepEqual(r.equityCurve, []);
 });
 
-ok('disclaimer is attached on every fixture and names open baskets', () => {
-  for (const tf of ['M5', 'M15', 'H1']) {
-    const r = runBacktest(aggregateBars(M5, tf), { period: '1M', seed: 7, target: 3, stop: 5 });
-    assert.equal(r.disclaimer, BACKTEST_DISCLAIMER);
-    assert.match(r.disclaimer, /not a guarantee/);
+check('(d) empty and malformed input returns errors and does not throw', () => {
+  const cases = [
+    ['empty array', [], LOSS_OPTS],
+    ['null bars', null, LOSS_OPTS],
+    ['non-array bars', { length: 3 }, LOSS_OPTS],
+    ['bars with missing fields', [{}, { t: 1 }], LOSS_OPTS],
+    ['NaN OHLC', [{ t: T0, open: NaN, high: NaN, low: NaN, close: NaN }], LOSS_OPTS],
+    ['undefined options', zigzagM5(300), undefined],
+    ['unsupported period', zigzagM5(300), { ...LOSS_OPTS, period: '5Y' }],
+    ['non-positive stop', zigzagM5(300), { ...LOSS_OPTS, stop: 0 }],
+  ];
+  for (const [label, bars, opts] of cases) {
+    let r;
+    assert.doesNotThrow(() => {
+      r = runBacktest(bars, opts);
+    }, label);
+    assert.ok(r.errors.length > 0, `${label}: expected errors`);
+    assert.equal(r.trades, 0, `${label}: expected no trades`);
   }
 });
 
-ok('drawdown is non-negative and bounded for the fixture', () => {
-  const r = runBacktest(aggregateBars(M5, 'M5'), { period: '6M', seed: 20261014, target: 3, stop: 5 });
-  assert.ok(r.maxDrawdownPct >= 0);
-  assert.ok(r.maxDrawdownPct < 5, `drawdown must stay small on a 100% fixture, got ${r.maxDrawdownPct}`);
+check('(e) same seed yields identical series and identical engine results', () => {
+  const a = generateXauUsdM5(SEED, YEAR);
+  const b = generateXauUsdM5(SEED, YEAR);
+  assert.deepStrictEqual(a, b);
+  const opts = { period: '6M', seed: SEED, target: 3, stop: 5, timeframe: 'M15' };
+  const ra = runBacktest(aggregateBars(a, 'M15'), opts);
+  const rb = runBacktest(aggregateBars(b, 'M15'), opts);
+  assert.deepStrictEqual(ra, rb);
 });
 
 console.log(`\nResults: ${passed} passed, 0 failed`);

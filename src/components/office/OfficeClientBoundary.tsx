@@ -16,6 +16,9 @@ const OfficeCanvas = dynamic(() => import('@/components/canvas/OfficeCanvas'), {
 
 export type OfficeEquity = number;
 
+/** Mutable handle the canvas fills with its R3F capture function. */
+export type OfficeCaptureHandle = { current: (() => Promise<{ width: number; height: number }>) | null };
+
 function OfficeSkeleton() {
   return (
     <div className="absolute inset-0 grid place-items-center bg-slate-950 text-slate-400 font-sans">
@@ -39,7 +42,7 @@ function detectWebgl(): { ok: boolean; reason: string } {
   }
 }
 
-export default function OfficeClientBoundary({ equityPct }: { equityPct: OfficeEquity }) {
+export default function OfficeClientBoundary({ equityPct, captureRef }: { equityPct: OfficeEquity; captureRef?: OfficeCaptureHandle }) {
   const [webgl, setWebgl] = useState<{ ok: boolean; reason: string } | null>(null);
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export default function OfficeClientBoundary({ equityPct }: { equityPct: OfficeE
   return (
     <div className="pointer-events-none absolute inset-0">
       <div className="pointer-events-auto absolute inset-0">
-        <OfficeCanvas equityPct={equityPct} />
+        <OfficeCanvas equityPct={equityPct} captureRef={captureRef} />
       </div>
     </div>
   );

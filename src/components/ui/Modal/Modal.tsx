@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { css, keyframes } from '@emotion/css';
+import { X } from 'lucide-react';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -15,208 +15,17 @@ export interface ModalProps {
   maxWidth?: string;
   className?: string;
   bodyClassName?: string;
-  /** Tinggi tetap (mis. '85vh') — berguna untuk modal dengan panel scroll internal */
   fixedHeight?: string;
 }
+export const scrollbar = '';
 
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
 
-const popIn = keyframes`
-  from { opacity: 0; transform: translateY(14px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-`;
-
-export const scrollbar = css`
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
-  &::-webkit-scrollbar { width: 8px; height: 8px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-  }
-  &::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.22); }
-`;
-
-const styles = {
-  backdrop: css`
-    position: fixed;
-    inset: 0;
-    z-index: 130;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: rgba(4, 5, 8, 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    animation: ${fadeIn} 0.18s ease-out;
-
-    @media (max-width: 640px) {
-      padding: 0;
-      align-items: flex-end;
-    }
-  `,
-
-  dialog: (maxWidthStr: string, fixedHeight?: string) => css`
-    position: relative;
-    width: 100%;
-    max-width: ${maxWidthStr};
-    max-height: min(88vh, 960px);
-    ${fixedHeight ? `height: ${fixedHeight};` : ''}
-    display: flex;
-    flex-direction: column;
-    background: linear-gradient(180deg, #111218 0%, #0c0d11 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 22px;
-    box-shadow: 0 30px 80px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    overflow: hidden;
-    color: #f4f4f5;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    animation: ${popIn} 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-
-    @media (max-width: 640px) {
-      max-width: 100%;
-      max-height: 94dvh;
-      ${fixedHeight ? 'height: 94dvh;' : ''}
-      border-radius: 20px 20px 0 0;
-      border-bottom: none;
-    }
-  `,
-
-  header: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px 22px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    flex-shrink: 0;
-
-    @media (max-width: 640px) {
-      padding: 14px 16px;
-    }
-  `,
-
-  titleGroup: css`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-  `,
-
-  iconBadge: css`
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 19px;
-    flex-shrink: 0;
-
-    @media (max-width: 640px) {
-      width: 34px;
-      height: 34px;
-      font-size: 16px;
-    }
-  `,
-
-  titleText: css`
-    font-size: 16px;
-    font-weight: 750;
-    color: #ffffff;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    @media (max-width: 640px) {
-      font-size: 14.5px;
-    }
-  `,
-
-  subtitleText: css`
-    font-size: 12px;
-    color: #a1a1aa;
-    margin-top: 2px;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-
-    @media (max-width: 640px) {
-      display: none;
-    }
-  `,
-
-  closeBtn: css`
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #a1a1aa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 13px;
-    flex-shrink: 0;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-    }
-  `,
-
-  body: css`
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 20px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    ${scrollbar}
-
-    @media (max-width: 640px) {
-      padding: 14px 16px;
-      gap: 14px;
-    }
-  `,
-
-  footer: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 22px;
-    background: rgba(255, 255, 255, 0.02);
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-    flex-shrink: 0;
-
-    @media (max-width: 640px) {
-      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    }
-  `,
-};
-
-const SIZES: Record<string, string> = {
-  sm: '480px',
-  md: '680px',
-  lg: '920px',
-  xl: '1120px',
-  full: '1240px',
+const SIZE_MAP: Record<string, string> = {
+  sm: 'max-w-md',
+  md: 'max-w-xl',
+  lg: 'max-w-3xl',
+  xl: 'max-w-5xl',
+  full: 'max-w-[95vw] h-[92vh]',
 };
 
 export default function Modal({
@@ -235,47 +44,64 @@ export default function Modal({
 }: ModalProps) {
   useEffect(() => {
     if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose?.();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
     };
-    window.addEventListener('keydown', handleKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = prevOverflow;
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const resolvedMaxWidth = maxWidth || SIZES[size] || SIZES.md;
+  const sizeCls = SIZE_MAP[size] || SIZE_MAP.md;
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md transition-opacity duration-200"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className={`${styles.dialog(resolvedMaxWidth, fixedHeight)} ${className}`}
+        className={`relative flex flex-col w-full rounded-2xl bg-[#0d0e12]/95 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.7)] text-zinc-100 overflow-hidden ${sizeCls} ${className}`}
+        style={{
+          maxWidth: maxWidth || undefined,
+          height: fixedHeight || undefined,
+          maxHeight: fixedHeight ? undefined : '90vh',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={styles.header}>
-          <div className={styles.titleGroup}>
-            {icon && <div className={styles.iconBadge}>{icon}</div>}
-            <div style={{ minWidth: 0 }}>
-              {title && <div className={styles.titleText}>{title}</div>}
-              {subtitle && <div className={styles.subtitleText}>{subtitle}</div>}
+        {/* Header */}
+        {(title || icon || subtitle) && (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
+            <div className="flex items-center gap-3">
+              {icon && <div className="text-emerald-400 shrink-0">{icon}</div>}
+              <div>
+                {title && <h2 className="text-sm font-bold text-white tracking-wide">{title}</h2>}
+                {subtitle && <p className="text-xs text-zinc-400 mt-0.5">{subtitle}</p>}
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Tutup"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Tutup">
-            ✕
-          </button>
+        )}
+
+        {/* Body */}
+        <div className={`flex-1 overflow-y-auto px-6 py-5 ${bodyClassName}`}>
+          {children}
         </div>
 
-        <div className={`${styles.body} ${bodyClassName}`}>{children}</div>
-
-        {footer && <div className={styles.footer}>{footer}</div>}
+        {/* Footer */}
+        {footer && (
+          <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-white/10 bg-white/[0.02]">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

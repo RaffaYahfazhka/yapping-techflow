@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Target, Crown, Users, TerminalSquare, Palette, Keyboard, Sun, Moon } from 'lucide-react';
-import { css } from '@emotion/css';
 
 export interface NavbarProps {
   missionState?: string;
@@ -17,225 +16,6 @@ export interface NavbarProps {
   onOpenHelp?: () => void;
   className?: string;
 }
-
-const styles = {
-  header: css`
-    position: fixed;
-    top: 12px;
-    left: 14px;
-    right: 14px;
-    z-index: 90;
-    padding: 8px 18px;
-    border-radius: 18px;
-    background: rgba(10, 10, 14, 0.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  `,
-
-  brandWrapper: css`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-  `,
-
-  brandLogo: css`
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(139, 92, 246, 0.2));
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  `,
-
-  brandTitle: css`
-    display: flex;
-    flex-direction: column;
-  `,
-
-  brandTitleRow: css`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  `,
-
-  brandName: css`
-    font-size: 15px;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-  `,
-
-  versionBadge: css`
-    font-size: 10px;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 6px;
-    background: rgba(16, 185, 129, 0.16);
-    color: #34d399;
-    border: 1px solid rgba(16, 185, 129, 0.3);
-  `,
-
-  brandSubtitle: css`
-    font-size: 11px;
-    color: #a1a1aa;
-    font-weight: 500;
-    @media (max-width: 640px) {
-      display: none;
-    }
-  `,
-
-  statusCenter: css`
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 14px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
-
-    @media (max-width: 1024px) {
-      display: none;
-    }
-  `,
-
-  statusPill: (dotColor: string, textColor: string) => css`
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 11px;
-    font-weight: 600;
-    color: ${textColor};
-
-    &::before {
-      content: '';
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: ${dotColor};
-      box-shadow: 0 0 8px ${dotColor};
-    }
-  `,
-
-  actionsRight: css`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-
-    @media (max-width: 768px) {
-      display: none;
-    }
-  `,
-
-  actionBtn: (variant?: 'primary' | 'secondary' | 'accent') => {
-    let bg = 'rgba(255, 255, 255, 0.06)';
-    let border = 'rgba(255, 255, 255, 0.12)';
-    let color = '#f4f4f5';
-    let hoverBg = 'rgba(255, 255, 255, 0.12)';
-
-    if (variant === 'primary') {
-      bg = 'linear-gradient(135deg, #f59e0b, #d97706)';
-      border = 'rgba(245, 158, 11, 0.6)';
-      color = '#000000';
-      hoverBg = 'linear-gradient(135deg, #fbbf24, #f59e0b)';
-    } else if (variant === 'accent') {
-      bg = 'rgba(16, 185, 129, 0.15)';
-      border = 'rgba(16, 185, 129, 0.35)';
-      color = '#34d399';
-      hoverBg = 'rgba(16, 185, 129, 0.25)';
-    }
-
-    return css`
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 14px;
-      border-radius: 10px;
-      background: ${bg};
-      border: 1px solid ${border};
-      color: ${color};
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.18s ease;
-      white-space: nowrap;
-
-      &:hover {
-        background: ${hoverBg};
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      }
-    `;
-  },
-
-  iconBtn: css`
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #e4e4e7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.14);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.22);
-    }
-  `,
-
-  mobileToggle: css`
-    display: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    cursor: pointer;
-
-    @media (max-width: 768px) {
-      display: flex;
-    }
-  `,
-
-  mobileDrawer: css`
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    left: 0;
-    background: rgba(14, 14, 18, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
-  `,
-};
 
 export default function Navbar({
   missionState = 'IDLE',
@@ -252,12 +32,24 @@ export default function Navbar({
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const isRunning = missionState === 'RUNNING';
+  const isCompleted = missionState === 'COMPLETED';
+
+  const sprintColor = isRunning
+    ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+    : isCompleted
+    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+    : 'border-white/10 bg-white/5 text-zinc-400';
+
   return (
-    <header className={`${styles.header} ${className}`} id="hud-header">
+    <header
+      id="hud-header"
+      className={`fixed top-3 left-3.5 right-3.5 z-40 flex items-center justify-between gap-4 px-4 py-2 rounded-2xl bg-[#0a0a0e]/90 backdrop-blur-xl border border-white/10 shadow-[0_14px_40px_rgba(0,0,0,0.55)] font-sans select-none ${className}`}
+    >
       {/* Brand Logo & Title */}
-      <div className={styles.brandWrapper}>
-        <div className={styles.brandLogo} aria-hidden="true">
-          <svg viewBox="0 0 64 64" width="22" height="22">
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-violet-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true">
             <path
               d="M32 8 54 20.5v23L32 56 10 43.5v-23Z"
               fill="none"
@@ -275,52 +67,38 @@ export default function Navbar({
           </svg>
         </div>
 
-        <div className={styles.brandTitle}>
-          <div className={styles.brandTitleRow}>
-            <span className={styles.brandName}>Kantor Raffa</span>
-            <span className={styles.versionBadge}>v2.5 TS</span>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-extrabold text-white tracking-tight leading-tight">Kantor Raffa</span>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              v2.5 TS
+            </span>
           </div>
-          <span className={styles.brandSubtitle}>
-            Autonomous Mission Control
-          </span>
+          <span className="text-[11px] text-zinc-400 leading-tight">Autonomous Mission Control</span>
         </div>
       </div>
 
       {/* Center Live Indicators */}
-      <div className={styles.statusCenter}>
-        <div className={styles.statusPill('#10b981', '#6ee7b7')}>
+      <div className="hidden lg:flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
           <span>6/6 Karyawan Aktif</span>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>|</span>
-        <div
-          className={styles.statusPill(
-            missionState === 'RUNNING'
-              ? '#f59e0b'
-              : missionState === 'COMPLETED'
-              ? '#10b981'
-              : '#a1a1aa',
-            missionState === 'RUNNING'
-              ? '#fcd34d'
-              : missionState === 'COMPLETED'
-              ? '#6ee7b7'
-              : '#d4d4d8'
-          )}
-        >
+        <span className="text-white/20 text-xs">|</span>
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${sprintColor}`}>
           <span>Sprint: {missionState}</span>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>|</span>
-        <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: '11px', color: '#93c5fd', fontWeight: 600 }}>
-          ⏱ {clockStr}
-        </span>
+        <span className="text-white/20 text-xs">|</span>
+        <span className="font-mono text-xs font-semibold text-sky-400">⏱ {clockStr}</span>
       </div>
 
       {/* Right Desktop Actions */}
-      <div className={styles.actionsRight}>
+      <div className="hidden md:flex items-center gap-2">
         <button
           type="button"
-          className={styles.actionBtn('primary')}
           onClick={onOpenMissionControl}
           title="Buka Mission Control Board (Shortcut: J)"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 border border-emerald-400/40 shadow-[0_4px_14px_rgba(16,185,129,0.3)] hover:brightness-110 hover:-translate-y-0.5 transition-all"
         >
           <Target size={13} />
           <span>Mission Control</span>
@@ -329,43 +107,20 @@ export default function Navbar({
         {onOpenKhansaChat && (
           <button
             type="button"
-            className={css`
-              display: inline-flex;
-              align-items: center;
-              gap: 7px;
-              padding: 7px 14px;
-              border-radius: 10px;
-              background: linear-gradient(135deg, rgba(244, 63, 94, 0.22), rgba(225, 29, 72, 0.15));
-              border: 1px solid rgba(244, 63, 94, 0.55);
-              color: #fecdd3;
-              font-size: 12px;
-              font-weight: 700;
-              cursor: pointer;
-              transition: all 0.18s ease;
-              box-shadow: 0 2px 10px rgba(244, 63, 94, 0.2);
-              white-space: nowrap;
-
-              &:hover {
-                background: linear-gradient(135deg, rgba(244, 63, 94, 0.35), rgba(225, 29, 72, 0.25));
-                border-color: #fb7185;
-                color: #ffffff;
-                transform: translateY(-1px);
-                box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
-              }
-            `}
             onClick={onOpenKhansaChat}
-            title="Ngobrol langsung dengan Khansaku & racik prompt Antigravity (Shortcut: K)"
+            title="Ngobrol langsung dengan Khansaku (Shortcut: K)"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-200 bg-gradient-to-r from-rose-500/20 to-rose-600/20 border border-rose-500/50 hover:bg-rose-500/30 hover:text-white shadow-[0_2px_10px_rgba(244,63,94,0.2)] hover:-translate-y-0.5 transition-all"
           >
-            <Crown size={14} />
+            <Crown size={13} />
             <span>Chat Khansaku</span>
           </button>
         )}
 
         <button
           type="button"
-          className={styles.actionBtn()}
           onClick={onOpenTeamDirectory}
           title="Daftar Profil Tim Karyawan AI"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-200 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-all"
         >
           <Users size={13} />
           <span>Tim Karyawan</span>
@@ -373,9 +128,9 @@ export default function Navbar({
 
         <button
           type="button"
-          className={styles.actionBtn('accent')}
           onClick={onToggleTerminal}
           title="Buka Terminal & Log Stream (Shortcut: T)"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all"
         >
           <TerminalSquare size={13} />
           <span>Terminal</span>
@@ -384,9 +139,9 @@ export default function Navbar({
         {onOpenFigma && (
           <button
             type="button"
-            className={styles.iconBtn}
             onClick={onOpenFigma}
             title="Desain Figma (Shortcut: F)"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <Palette size={16} />
           </button>
@@ -395,9 +150,9 @@ export default function Navbar({
         {onOpenHelp && (
           <button
             type="button"
-            className={styles.iconBtn}
             onClick={onOpenHelp}
             title="Bantuan Navigasi & Shortcut"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <Keyboard size={16} />
           </button>
@@ -405,9 +160,9 @@ export default function Navbar({
 
         <button
           type="button"
-          className={styles.iconBtn}
           onClick={onToggleTheme}
           title="Ganti Tema (Dark / Light)"
+          className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
@@ -416,63 +171,57 @@ export default function Navbar({
       {/* Mobile Toggle */}
       <button
         type="button"
-        className={styles.mobileToggle}
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         aria-label="Menu"
+        className="md:hidden p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
       >
         {mobileMenuOpen ? '✕' : '☰'}
       </button>
 
       {/* Mobile Dropdown */}
       {mobileMenuOpen && (
-        <div className={styles.mobileDrawer}>
+        <div className="md:hidden absolute top-full left-0 right-0 mt-2 p-3 rounded-2xl bg-[#0a0a0e]/95 border border-white/10 backdrop-blur-xl flex flex-col gap-2 shadow-2xl">
           <button
             type="button"
-            className={styles.actionBtn('primary')}
             onClick={() => {
               setMobileMenuOpen(false);
               onOpenMissionControl?.();
             }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600"
           >
-            <Target size={13} /> Mission Control
+            <Target size={14} /> Mission Control
           </button>
           {onOpenKhansaChat && (
             <button
               type="button"
-              className={styles.actionBtn()}
-              style={{
-                background: 'rgba(244, 63, 94, 0.2)',
-                borderColor: 'rgba(244, 63, 94, 0.4)',
-                color: '#fecdd3',
-              }}
               onClick={() => {
                 setMobileMenuOpen(false);
                 onOpenKhansaChat();
               }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/20"
             >
-              <Crown size={14} />
-              <span>Chat Khansaku</span>
+              <Crown size={14} /> Chat Khansaku
             </button>
           )}
           <button
             type="button"
-            className={styles.actionBtn()}
             onClick={() => {
               setMobileMenuOpen(false);
               onOpenTeamDirectory?.();
             }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-200 bg-white/5"
           >
-            <Users size={13} /> Tim Karyawan
+            <Users size={14} /> Tim Karyawan
           </button>
           <button
             type="button"
-            className={styles.actionBtn('accent')}
             onClick={() => {
               setMobileMenuOpen(false);
               onToggleTerminal?.();
             }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-cyan-300 bg-cyan-500/10"
           >
-            <TerminalSquare size={13} /> Terminal Log
+            <TerminalSquare size={14} /> Terminal
           </button>
         </div>
       )}

@@ -1,183 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { css, keyframes } from '@emotion/css';
+import { Zap, Rocket } from 'lucide-react';
 
 export interface SplashScreenProps {
   onFinish?: () => void;
   minDurationMs?: number;
 }
-
-const pulse = keyframes`
-  0%, 100% { opacity: 0.9; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.98); }
-`;
-
-const shimmer = keyframes`
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-`;
-
-const floatLogo = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-`;
-
-const styles = {
-  overlay: (fading: boolean) => css`
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(circle at 50% 30%, #151824 0%, #090a0f 70%, #040508 100%);
-    color: #f4f4f5;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    user-select: none;
-    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    opacity: ${fading ? 0 : 1};
-    transform: ${fading ? 'scale(1.04)' : 'scale(1)'};
-    pointer-events: ${fading ? 'none' : 'auto'};
-  `,
-
-  card: css`
-    width: min(92vw, 480px);
-    padding: 36px 32px;
-    border-radius: 28px;
-    background: rgba(18, 20, 29, 0.75);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 30px 80px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(16, 185, 129, 0.15);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 20px;
-  `,
-
-  logoBadge: css`
-    width: 68px;
-    height: 68px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.1));
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    display: grid;
-    place-items: center;
-    font-size: 32px;
-    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.25);
-    animation: ${floatLogo} 3s ease-in-out infinite;
-  `,
-
-  titleGroup: css`
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  `,
-
-  badgeText: css`
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    color: #34d399;
-    text-transform: uppercase;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  `,
-
-  heading: css`
-    font-size: 22px;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.02em;
-    line-height: 1.3;
-    margin: 0;
-  `,
-
-  desc: css`
-    font-size: 12.5px;
-    color: #94a3b8;
-    line-height: 1.5;
-    margin: 0;
-  `,
-
-  progressTrack: css`
-    width: 100%;
-    height: 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    position: relative;
-    overflow: hidden;
-  `,
-
-  progressFill: (pct: number) => css`
-    height: 100%;
-    width: ${pct}%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #10b981, #34d399);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
-    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  `,
-
-  progressShimmer: css`
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-    animation: ${shimmer} 1.6s infinite;
-  `,
-
-  statusRow: css`
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 11px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: #94a3b8;
-  `,
-
-  agentPills: css`
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-    padding-top: 4px;
-  `,
-
-  agentPill: (active: boolean) => css`
-    font-size: 10.5px;
-    padding: 3px 8px;
-    border-radius: 6px;
-    background: ${active ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.04)'};
-    border: 1px solid ${active ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.07)'};
-    color: ${active ? '#6ee7b7' : '#71717a'};
-    transition: all 0.2s ease;
-  `,
-
-  enterBtn: css`
-    width: 100%;
-    padding: 13px 20px;
-    border-radius: 14px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 800;
-    color: #04241a;
-    background: linear-gradient(135deg, #34d399, #10b981);
-    box-shadow: 0 10px 28px rgba(16, 185, 129, 0.45);
-    transition: all 0.2s ease;
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 34px rgba(16, 185, 129, 0.6);
-      background: linear-gradient(135deg, #6ee7b7, #34d399);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  `,
-};
 
 const STAGES = [
   { pct: 20, text: 'Memuat aset 3D isometric kantor…', agent: 'tara' },
@@ -186,6 +15,8 @@ const STAGES = [
   { pct: 90, text: 'Menyiapkan YouTube Music Audio Engine…', agent: 'vani' },
   { pct: 100, text: 'Kantor siap beroperasi!', agent: 'reno' },
 ];
+
+const AGENT_NAMES = ['Tara (PM)', 'Arga (Arch)', 'Jajang (FE)', 'Kian (BE)', 'Vani (QA)', 'Reno (DevOps)'];
 
 export default function SplashScreen({
   onFinish,
@@ -225,40 +56,67 @@ export default function SplashScreen({
     return () => clearInterval(interval);
   }, [minDurationMs]);
 
+  // Synchronous: onFinish is invoked in the same click handler, not deferred by a timer.
   const handleEnter = () => {
+    if (!ready || fading) return;
     setFading(true);
-    setTimeout(() => {
-      onFinish?.();
-    }, 550);
+    onFinish?.();
   };
 
   return (
-    <div className={styles.overlay(fading)} role="dialog" aria-modal="true" aria-label="Loading Kantor Raffa">
-      <div className={styles.card}>
-        <div className={styles.logoBadge}>⚡</div>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Loading Kantor Raffa"
+      className={`fixed inset-0 z-[9999] flex select-none items-center justify-center bg-[radial-gradient(circle_at_50%_30%,#151824_0%,#090a0f_70%,#040508_100%)] font-sans text-zinc-100 transition-[opacity,transform] duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        fading ? 'pointer-events-none scale-[1.04] opacity-0' : 'scale-100 opacity-100'
+      }`}
+    >
+      <div className="flex w-[min(92vw,480px)] flex-col items-center gap-5 rounded-[28px] border border-white/12 bg-[#12141d]/75 px-8 py-9 text-center shadow-[0_30px_80px_-10px_rgba(0,0,0,0.8),0_0_40px_rgba(16,185,129,0.15)] backdrop-blur-[24px]">
+        <div className="grid h-[68px] w-[68px] animate-[bounce_3s_ease-in-out_infinite] place-items-center rounded-[20px] border border-emerald-500/40 bg-gradient-to-br from-emerald-500/25 to-emerald-600/10 text-emerald-300 shadow-[0_10px_24px_rgba(16,185,129,0.25)]">
+          <Zap size={32} aria-hidden="true" />
+        </div>
 
-        <div className={styles.titleGroup}>
-          <span className={styles.badgeText}>Autonomous Mission Control v2.6</span>
-          <h2 className={styles.heading}>Kantor Raffa Virtual 3D</h2>
-          <p className={styles.desc}>
+        <div className="flex flex-col gap-1.5">
+          <span className="font-mono text-[11px] font-extrabold uppercase tracking-[0.1em] text-emerald-400">
+            Autonomous Mission Control v2.6
+          </span>
+          <h2 className="m-0 text-[22px] font-extrabold leading-[1.3] tracking-[-0.02em] text-white">Kantor Raffa Virtual 3D</h2>
+          <p className="m-0 text-[12.5px] leading-normal text-slate-400">
             Workspace autonomous AI engineering terintegrasi Jira Cloud, Git local detection, dan YouTube Music.
           </p>
         </div>
 
-        <div className={styles.progressTrack}>
-          <div className={styles.progressFill(progress)}>
-            <div className={styles.progressShimmer} />
+        <div
+          className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+        >
+          <div
+            className="relative h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.6)] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ width: `${progress}%` }}
+          >
+            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/40 to-transparent" />
           </div>
         </div>
 
-        <div className={styles.statusRow}>
+        <div className="flex w-full items-center justify-between font-mono text-[11px] text-slate-400">
           <span>{STAGES[stageIndex]?.text || 'Menyiapkan…'}</span>
           <span>{progress}%</span>
         </div>
 
-        <div className={styles.agentPills}>
-          {['Tara (PM)', 'Arga (Arch)', 'Jajang (FE)', 'Kian (BE)', 'Vani (QA)', 'Reno (DevOps)'].map((name, i) => (
-            <span key={name} className={styles.agentPill(i <= stageIndex)}>
+        <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+          {AGENT_NAMES.map((name, i) => (
+            <span
+              key={name}
+              className={`rounded-md border px-2 py-[3px] text-[10.5px] transition-all duration-200 ${
+                i <= stageIndex
+                  ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
+                  : 'border-white/[0.07] bg-white/[0.04] text-zinc-500'
+              }`}
+            >
               {name}
             </span>
           ))}
@@ -266,12 +124,21 @@ export default function SplashScreen({
 
         <button
           type="button"
-          className={styles.enterBtn}
           onClick={handleEnter}
           disabled={!ready}
-          style={ready ? undefined : { opacity: 0.6, cursor: 'wait' }}
+          className={`flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-br from-emerald-400 to-emerald-500 px-5 py-[13px] text-sm font-extrabold text-[#04241a] shadow-[0_10px_28px_rgba(16,185,129,0.45)] transition-all duration-200 enabled:cursor-pointer enabled:hover:-translate-y-px enabled:hover:from-emerald-300 enabled:hover:to-emerald-400 enabled:hover:shadow-[0_14px_34px_rgba(16,185,129,0.6)] enabled:active:translate-y-0 disabled:cursor-wait disabled:opacity-60`}
         >
-          {ready ? '🚀 Masuk ke Kantor Raffa' : '⚡ Memuat Workspace…'}
+          {ready ? (
+            <>
+              <Rocket size={16} aria-hidden="true" />
+              Masuk ke Kantor Raffa
+            </>
+          ) : (
+            <>
+              <Zap size={16} aria-hidden="true" />
+              Memuat Workspace…
+            </>
+          )}
         </button>
       </div>
     </div>

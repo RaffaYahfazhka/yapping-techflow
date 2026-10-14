@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { css } from '@emotion/css';
 
 export interface TerminalLogItem {
   time?: string;
@@ -9,7 +8,7 @@ export interface TerminalLogItem {
   level?: 'info' | 'warn' | 'error' | 'success';
   text?: string;
   message?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface GitDiffItem {
@@ -31,270 +30,6 @@ export interface TerminalDrawerProps {
   setSelectedDiffIndex?: (index: number) => void;
 }
 
-// -------------------------------------------------------------
-// Emotion CSS Styles - Isolated, Pixel-perfect, High Legibility
-// -------------------------------------------------------------
-const styles = {
-  drawer: (isOpen: boolean) => css`
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    z-index: 100;
-    width: 100%;
-    max-width: 660px;
-    height: 380px;
-    display: flex;
-    flex-direction: column;
-    background: rgba(9, 9, 11, 0.96);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    border-left: 1px solid rgba(255, 255, 255, 0.12);
-    border-right: 1px solid rgba(255, 255, 255, 0.12);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.7);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    transform: ${isOpen ? 'translateY(0)' : 'translateY(100%)'};
-    pointer-events: ${isOpen ? 'auto' : 'none'};
-    color: #e4e4e7;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-    @media (max-width: 640px) {
-      max-width: 100%;
-      height: 340px;
-      border-radius: 16px 16px 0 0;
-    }
-  `,
-
-  titlebar: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 18px;
-    background: rgba(0, 0, 0, 0.55);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    user-select: none;
-  `,
-
-  leftBrand: css`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  `,
-
-  trafficDots: css`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    span {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-  `,
-
-  hostPrompt: css`
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: #d4d4d8;
-  `,
-
-  pathHighlight: css`
-    color: #a78bfa;
-    font-weight: 700;
-    margin-left: 4px;
-  `,
-
-  toolbarActions: css`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  `,
-
-  toolBtn: css`
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #e4e4e7;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.14);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-  `,
-
-  closeBtn: css`
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: transparent;
-    border: none;
-    color: #a1a1aa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-    }
-  `,
-
-  tabBar: css`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 16px 0;
-    background: rgba(0, 0, 0, 0.35);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  `,
-
-  tabItem: (isActive: boolean) => css`
-    padding: 8px 14px;
-    font-size: 12px;
-    font-weight: ${isActive ? 700 : 500};
-    color: ${isActive ? '#34d399' : '#a1a1aa'};
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid ${isActive ? '#10b981' : 'transparent'};
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    &:hover {
-      color: ${isActive ? '#34d399' : '#f4f4f5'};
-    }
-  `,
-
-  logScrollArea: css`
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 20px;
-    font-size: 12px;
-    line-height: 1.7;
-    background: rgba(0, 0, 0, 0.75);
-    user-select: text;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    &::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.3);
-    }
-    &::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 3px;
-    }
-  `,
-
-  logRow: css`
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 6px;
-  `,
-
-  logTimestamp: css`
-    color: #71717a;
-    font-size: 11px;
-    flex-shrink: 0;
-    user-select: none;
-  `,
-
-  logBadge: (color: string) => css`
-    color: ${color};
-    font-weight: 700;
-    flex-shrink: 0;
-  `,
-
-  logContent: (level?: string) => {
-    let textColor = '#f4f4f5';
-    let fontWeight = 400;
-    if (level === 'error') {
-      textColor = '#f87171';
-      fontWeight = 700;
-    } else if (level === 'warn') {
-      textColor = '#fbbf24';
-      fontWeight = 600;
-    } else if (level === 'success') {
-      textColor = '#34d399';
-      fontWeight = 600;
-    }
-    return css`
-      color: ${textColor};
-      font-weight: ${fontWeight};
-      word-break: break-word;
-      white-space: pre-wrap;
-    `;
-  },
-
-  emptyNotice: css`
-    color: #71717a;
-    font-style: italic;
-    text-align: center;
-    padding: 40px 16px;
-    font-size: 12px;
-  `,
-
-  diffTabHeader: css`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-  `,
-
-  diffFilePill: (isSelected: boolean) => css`
-    padding: 5px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: ${isSelected ? 700 : 500};
-    border: 1px solid ${isSelected ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.1)'};
-    background: ${isSelected ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.05)'};
-    color: ${isSelected ? '#6ee7b7' : '#a1a1aa'};
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-
-    &:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.12);
-    }
-  `,
-
-  diffBox: css`
-    padding: 16px;
-    border-radius: 12px;
-    background: #09090b;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 11px;
-    line-height: 1.6;
-    color: #e4e4e7;
-    overflow-x: auto;
-    white-space: pre;
-  `,
-};
-
 const AGENT_COLORS: Record<string, string> = {
   tara: '#fbbf24',
   arga: '#38bdf8',
@@ -303,6 +38,13 @@ const AGENT_COLORS: Record<string, string> = {
   vani: '#fb7185',
   reno: '#22d3ee',
   sys: '#94a3b8',
+};
+
+const LEVEL_COLORS: Record<string, string> = {
+  info: 'text-zinc-300',
+  warn: 'text-amber-400',
+  error: 'text-rose-400',
+  success: 'text-emerald-400',
 };
 
 export default function TerminalDrawer({
@@ -328,35 +70,39 @@ export default function TerminalDrawer({
   }, [logs, termTab]);
 
   return (
-    <aside className={styles.drawer(isOpen)} aria-label="Terminal Drawer">
+    <aside
+      aria-label="Terminal Drawer"
+      className={`fixed bottom-0 right-0 z-40 w-full max-w-2xl h-[380px] flex flex-col bg-[#09090b]/95 backdrop-blur-2xl border-t border-l border-r border-white/10 rounded-t-2xl shadow-[0_-12px_40px_rgba(0,0,0,0.6)] font-mono transition-transform duration-250 ease-out ${
+        isOpen ? 'translate-y-0' : 'translate-y-full'
+      }`}
+    >
       {/* Terminal Titlebar */}
-      <div className={styles.titlebar}>
-        <div className={styles.leftBrand}>
-          <div className={styles.trafficDots} aria-hidden="true">
-            <span style={{ backgroundColor: '#ef4444' }} />
-            <span style={{ backgroundColor: '#f59e0b' }} />
-            <span style={{ backgroundColor: '#10b981' }} />
+      <div className="flex items-center justify-between px-4 py-2.5 bg-black/40 border-b border-white/10 select-none">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5" aria-hidden="true">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
           </div>
-          <div className={styles.hostPrompt}>
-            raffa@kantor<span style={{ color: '#71717a' }}>:</span>
-            <span className={styles.pathHighlight}>~/mission</span>
+          <div className="text-xs text-zinc-400">
+            raffa@kantor:<span className="text-emerald-400 font-bold">~/mission</span>
           </div>
         </div>
 
-        <div className={styles.toolbarActions}>
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className={styles.toolBtn}
             onClick={onSpeedToggle}
             title="Kecepatan Simulasi"
+            className="px-2 py-0.5 rounded text-[11px] font-semibold text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             ⚡ {simSpeed}×
           </button>
           <button
             type="button"
-            className={styles.toolBtn}
             onClick={onClearLogs}
             title="Bersihkan Log"
+            className="px-2 py-0.5 rounded text-[11px] font-semibold text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             clear
           </button>
@@ -364,7 +110,7 @@ export default function TerminalDrawer({
             type="button"
             onClick={onClose}
             aria-label="Tutup Terminal"
-            className={styles.closeBtn}
+            className="px-1.5 py-0.5 rounded text-xs text-zinc-400 hover:text-white hover:bg-rose-500/20 transition-colors"
           >
             ✕
           </button>
@@ -372,73 +118,82 @@ export default function TerminalDrawer({
       </div>
 
       {/* Tabs */}
-      <div className={styles.tabBar}>
+      <div className="flex items-center gap-1 px-4 py-1.5 bg-black/20 border-b border-white/5 select-none text-xs">
         <button
           type="button"
-          className={styles.tabItem(termTab === 'logs')}
           onClick={() => setTermTab?.('logs')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition-colors ${
+            termTab === 'logs' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'
+          }`}
         >
-          <span>$</span> Output Logs ({logs.length})
+          <span className="text-emerald-400">$</span> Output Logs ({logs.length})
         </button>
 
         <button
           type="button"
-          className={styles.tabItem(termTab === 'diff')}
           onClick={() => setTermTab?.('diff')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition-colors ${
+            termTab === 'diff' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'
+          }`}
         >
-          <span>±</span> Git Diffs {diffData?.length ? `(${diffData.length})` : ''}
+          <span className="text-amber-400">±</span> Git Diffs {diffData?.length ? `(${diffData.length})` : ''}
         </button>
       </div>
 
       {/* Tab 1: Live Terminal Log Streams */}
       {termTab === 'logs' ? (
-        <div ref={logScrollRef} className={styles.logScrollArea}>
+        <div ref={logScrollRef} className="flex-1 overflow-y-auto p-4 space-y-1.5 text-xs text-zinc-300">
           {logs.map((item, idx) => {
             const agentKey = (item.agent || 'sys').toLowerCase();
             const color = AGENT_COLORS[agentKey] || '#a1a1aa';
             const logMsg = item.text || item.message || JSON.stringify(item);
+            const levelColor = LEVEL_COLORS[item.level || 'info'] || 'text-zinc-300';
 
             return (
-              <div key={idx} className={styles.logRow}>
-                <span className={styles.logTimestamp}>{item.time || '»'}</span>
-                <span className={styles.logBadge(color)}>
+              <div key={idx} className="flex items-start gap-2 leading-relaxed">
+                <span className="text-zinc-600 select-none text-[11px] shrink-0">{item.time || '»'}</span>
+                <span className="font-bold text-[11px] shrink-0" style={{ color }}>
                   [{item.agent?.toUpperCase() || 'SYS'}]
                 </span>
-                <span className={styles.logContent(item.level)}>{logMsg}</span>
+                <span className={`break-words ${levelColor}`}>{logMsg}</span>
               </div>
             );
           })}
 
           {logs.length === 0 && (
-            <div className={styles.emptyNotice}>
+            <div className="text-zinc-600 italic py-8 text-center text-xs">
               Terminal standby. Tidak ada log eksekusi saat ini. Jalankan task di Mission Control untuk melihat log live streaming.
             </div>
           )}
         </div>
       ) : (
         /* Tab 2: Git Diff View */
-        <div className={styles.logScrollArea}>
+        <div className="flex-1 overflow-y-auto p-4">
           {diffData && diffData.length > 0 ? (
             <div>
-              <div className={styles.diffTabHeader}>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 border-b border-white/5">
                 {diffData.map((f, i) => (
                   <button
                     key={f.path || i}
                     type="button"
                     onClick={() => setSelectedDiffIndex?.(i)}
-                    className={styles.diffFilePill(selectedDiffIndex === i)}
+                    className={`px-2.5 py-1 rounded text-xs whitespace-nowrap transition-colors ${
+                      selectedDiffIndex === i
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-white/5 text-zinc-400 hover:text-white'
+                    }`}
                   >
                     {f.path}
                   </button>
                 ))}
               </div>
 
-              <pre className={styles.diffBox}>
+              <pre className="p-3 rounded-lg bg-black/60 border border-white/5 text-[11px] leading-relaxed text-zinc-300 overflow-x-auto whitespace-pre">
                 {diffData[selectedDiffIndex]?.diff || 'Tidak ada konten diff.'}
               </pre>
             </div>
           ) : (
-            <div className={styles.emptyNotice}>
+            <div className="text-zinc-600 italic py-8 text-center text-xs">
               Belum ada file diff dari repositori aktif.
             </div>
           )}

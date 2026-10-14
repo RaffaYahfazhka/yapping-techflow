@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { css } from '@emotion/css';
 
 export interface Agent {
   id: string;
@@ -14,7 +13,7 @@ export interface Agent {
   color?: string;
   avatar?: string;
   skills?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AgentIdentityCardProps {
@@ -24,205 +23,6 @@ export interface AgentIdentityCardProps {
   className?: string;
   compact?: boolean;
 }
-
-const styles = {
-  card: (color: string) => css`
-    position: relative;
-    border-radius: 20px;
-    padding: 20px;
-    background: #111218;
-    border: 1px solid ${color}40;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 14px;
-    transition: all 0.22s ease;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px ${color}20;
-      border-color: ${color}70;
-    }
-  `,
-
-  topGlowBar: (color: string) => css`
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, ${color}, #ffffff80, ${color});
-  `,
-
-  badgeHeader: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  `,
-
-  empIdText: css`
-    font-family: ui-monospace, monospace;
-    font-size: 11px;
-    font-weight: 700;
-    color: #a1a1aa;
-    letter-spacing: 0.05em;
-  `,
-
-  activePill: css`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    font-family: ui-monospace, monospace;
-    font-weight: 800;
-    color: #34d399;
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 2px 8px;
-    border-radius: 6px;
-
-    &::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 6px #10b981;
-    }
-  `,
-
-  profileRow: css`
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  `,
-
-  avatarBox: (color: string) => css`
-    width: 58px;
-    height: 58px;
-    border-radius: 16px;
-    overflow: hidden;
-    border: 2px solid ${color};
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-    flex-shrink: 0;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  `,
-
-  avatarInitials: (color: string) => css`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    color: ${color};
-    background: ${color}22;
-  `,
-
-  namesCol: css`
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-  `,
-
-  nameText: css`
-    font-size: 16px;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.01em;
-  `,
-
-  rolePill: (color: string) => css`
-    display: inline-block;
-    font-size: 10px;
-    font-family: ui-monospace, monospace;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: ${color};
-    background: ${color}20;
-    border: 1px solid ${color}45;
-    padding: 2px 8px;
-    border-radius: 6px;
-    align-self: flex-start;
-  `,
-
-  dutiesText: css`
-    font-size: 12px;
-    color: #a1a1aa;
-    line-height: 1.5;
-  `,
-
-  skillsWrap: css`
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  `,
-
-  skillBadge: css`
-    font-size: 10px;
-    font-family: ui-monospace, monospace;
-    font-weight: 600;
-    color: #d4d4d8;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 2px 8px;
-    border-radius: 6px;
-  `,
-
-  actionsRow: css`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-  `,
-
-  primaryBtn: (color: string) => css`
-    flex: 1;
-    padding: 9px 14px;
-    border-radius: 10px;
-    background: ${color}25;
-    border: 1px solid ${color}60;
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: center;
-
-    &:hover {
-      background: ${color}40;
-      border-color: ${color};
-    }
-  `,
-
-  deskBtn: css`
-    padding: 9px 14px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #d4d4d8;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-    }
-  `,
-};
 
 function getAgentInitials(agent: Agent) {
   const source = String(agent.fullName || agent.name || agent.id || '').replace(/[()]/g, ' ');
@@ -237,48 +37,71 @@ export default function AgentIdentityCard({
   onOpenWorkspace,
   onFocusDesk,
   className = '',
-  compact = false,
 }: AgentIdentityCardProps) {
   if (!agent) return null;
   const color = agent.color || '#10b981';
 
   return (
-    <div className={`${styles.card(color)} ${className}`}>
-      <div className={styles.topGlowBar(color)} />
+    <div
+      className={`relative flex flex-col justify-between gap-3.5 p-5 rounded-2xl bg-[#111218] border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)] transition-all duration-200 overflow-hidden font-sans select-none ${className}`}
+      style={{ borderColor: `${color}40` }}
+    >
+      {/* Top glow accent */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1"
+        style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}
+      />
 
       {/* Header ID */}
-      <div className={styles.badgeHeader}>
-        <span className={styles.empIdText}>
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-xs font-bold text-zinc-400">
           {agent.employeeId || `EMP-${agent.id?.toUpperCase()}`}
         </span>
-        <span className={styles.activePill}>ACTIVE</span>
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          ACTIVE
+        </span>
       </div>
 
       {/* Profile info */}
-      <div className={styles.profileRow}>
-        <div className={styles.avatarBox(color)}>
+      <div className="flex items-center gap-3">
+        <div
+          className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border flex items-center justify-center bg-black/40"
+          style={{ borderColor: `${color}60` }}
+        >
           {agent.avatar ? (
-            <img src={agent.avatar} alt={agent.fullName || agent.name} />
+            <img src={agent.avatar} alt={agent.fullName || agent.name} className="w-full h-full object-cover" />
           ) : (
-            <span className={styles.avatarInitials(color)} aria-hidden="true">
+            <span className="font-bold text-sm" style={{ color }} aria-hidden="true">
               {getAgentInitials(agent)}
             </span>
           )}
         </div>
-        <div className={styles.namesCol}>
-          <div className={styles.nameText}>{agent.fullName || agent.name}</div>
-          <div className={styles.rolePill(color)}>{agent.role}</div>
+        <div className="flex flex-col min-w-0">
+          <div className="text-sm font-bold text-white truncate">{agent.fullName || agent.name}</div>
+          <div
+            className="inline-block mt-0.5 text-[11px] font-semibold truncate"
+            style={{ color }}
+          >
+            {agent.role}
+          </div>
         </div>
       </div>
 
       {/* Duties description */}
-      <div className={styles.dutiesText}>{agent.duties}</div>
+      {agent.duties && (
+        <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3">
+          {agent.duties}
+        </p>
+      )}
 
       {/* Skills list */}
       {agent.skills && agent.skills.length > 0 && (
-        <div className={styles.skillsWrap}>
+        <div className="flex flex-wrap gap-1.5">
           {agent.skills.map((s, idx) => (
-            <span key={idx} className={styles.skillBadge}>
+            <span
+              key={idx}
+              className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300"
+            >
               {s}
             </span>
           ))}
@@ -286,12 +109,13 @@ export default function AgentIdentityCard({
       )}
 
       {/* Action buttons */}
-      <div className={styles.actionsRow}>
+      <div className="flex items-center gap-2 pt-2 border-t border-white/5">
         {onOpenWorkspace && (
           <button
             type="button"
-            className={styles.primaryBtn(color)}
             onClick={() => onOpenWorkspace(agent.id)}
+            className="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
+            style={{ backgroundColor: color }}
           >
             Buka Workspace
           </button>
@@ -299,9 +123,9 @@ export default function AgentIdentityCard({
         {onFocusDesk && (
           <button
             type="button"
-            className={styles.deskBtn}
             onClick={() => onFocusDesk(agent.id)}
             title="Sorot meja di scene 3D"
+            className="py-1.5 px-3 rounded-xl text-xs font-semibold text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-colors"
           >
             Meja 🎯
           </button>

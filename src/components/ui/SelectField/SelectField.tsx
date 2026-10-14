@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import { css } from '@emotion/css';
+import { ChevronDown } from 'lucide-react';
 
 export interface SelectOption {
   value: string;
   label?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SelectFieldProps {
@@ -25,94 +25,18 @@ export interface SelectFieldProps {
   name?: string;
 }
 
-const styles = {
-  wrap: css`
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  `,
+const STATUS_BORDER: Record<string, string> = {
+  default: 'border-white/10 focus-within:border-emerald-500/50',
+  success: 'border-emerald-500/50',
+  warning: 'border-amber-500/50',
+  error: 'border-rose-500/50',
+};
 
-  labelRow: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  `,
-
-  label: css`
-    font-size: 12px;
-    font-weight: 700;
-    color: #e4e4e7;
-  `,
-
-  relativeInput: css`
-    position: relative;
-    display: flex;
-    align-items: center;
-  `,
-
-  select: (status: string) => {
-    let border = 'rgba(255, 255, 255, 0.12)';
-    let bg = '#14151b';
-    if (status === 'success') {
-      border = 'rgba(16, 185, 129, 0.5)';
-      bg = 'rgba(16, 185, 129, 0.05)';
-    } else if (status === 'warning') {
-      border = 'rgba(245, 158, 11, 0.5)';
-      bg = 'rgba(245, 158, 11, 0.05)';
-    } else if (status === 'error') {
-      border = 'rgba(244, 63, 94, 0.5)';
-      bg = 'rgba(244, 63, 94, 0.05)';
-    }
-
-    return css`
-      width: 100%;
-      padding: 10px 38px 10px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      border-radius: 12px;
-      background: ${bg};
-      color: #f4f4f5;
-      border: 1px solid ${border};
-      appearance: none;
-      cursor: pointer;
-      outline: none;
-      transition: all 0.15s ease;
-
-      &:focus {
-        border-color: #34d399;
-        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    `;
-  },
-
-  rightIcons: css`
-    position: absolute;
-    right: 12px;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #a1a1aa;
-  `,
-
-  helperRow: (status: string) => {
-    let color = '#71717a';
-    if (status === 'success') color = '#34d399';
-    if (status === 'warning') color = '#fbbf24';
-    if (status === 'error') color = '#fb7185';
-
-    return css`
-      font-size: 11px;
-      line-height: 1.4;
-      color: ${color};
-    `;
-  },
+const STATUS_TEXT_COLOR: Record<string, string> = {
+  default: 'text-zinc-400',
+  success: 'text-emerald-400',
+  warning: 'text-amber-400',
+  error: 'text-rose-400',
 };
 
 export default function SelectField({
@@ -130,58 +54,45 @@ export default function SelectField({
   id,
   name,
 }: SelectFieldProps) {
+  const borderCls = STATUS_BORDER[status] || STATUS_BORDER.default;
+  const statusTextColor = STATUS_TEXT_COLOR[status] || STATUS_TEXT_COLOR.default;
+
   return (
-    <div className={`${styles.wrap} ${className}`}>
+    <div className={`flex flex-col gap-1.5 w-full ${className}`}>
       {label && (
-        <div className={styles.labelRow}>
-          <label htmlFor={id} className={styles.label}>
-            {label}
-          </label>
+        <div className="flex items-center justify-between text-xs font-medium text-zinc-300">
+          <span>{label}</span>
           {actionButton}
         </div>
       )}
 
-      <div className={styles.relativeInput}>
+      <div className={`relative flex items-center rounded-xl bg-black/40 border transition-all ${borderCls} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
         <select
           id={id}
           name={name}
           value={value}
           disabled={disabled}
           onChange={(e) => onChange?.(e.target.value, e)}
-          className={styles.select(status)}
+          className="w-full appearance-none bg-transparent px-3 py-2 text-xs text-zinc-200 outline-none cursor-pointer disabled:cursor-not-allowed font-medium pr-8"
         >
           {placeholder && (
-            <option value="" disabled style={{ background: '#14151b', color: '#71717a' }}>
+            <option value="" disabled className="bg-zinc-900 text-zinc-500">
               {placeholder}
             </option>
           )}
           {options.map((opt) => (
-            <option
-              key={opt.value}
-              value={opt.value}
-              style={{ background: '#14151b', color: '#f4f4f5' }}
-            >
+            <option key={opt.value} value={opt.value} className="bg-zinc-900 text-zinc-200">
               {opt.label || opt.value}
             </option>
           ))}
         </select>
-
-        <div className={styles.rightIcons}>
-          {status === 'success' && <span style={{ color: '#34d399', fontWeight: 800 }}>✓</span>}
-          {status === 'warning' && <span style={{ color: '#fbbf24', fontWeight: 800 }}>⚠</span>}
-          {status === 'error' && <span style={{ color: '#fb7185', fontWeight: 800 }}>✕</span>}
-          <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor">
-            <path
-              fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="pointer-events-none absolute right-2.5 text-zinc-400">
+          <ChevronDown size={14} />
         </div>
       </div>
 
       {(statusText || helper) && (
-        <div className={styles.helperRow(status)}>
+        <div className={`text-[11px] ${statusText ? statusTextColor : 'text-zinc-500'}`}>
           {statusText || helper}
         </div>
       )}

@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Play, Pause, SkipForward, Maximize2 } from 'lucide-react';
-import { css, keyframes } from '@emotion/css';
 
 export interface AudioTimeState {
   currentTime: number;
@@ -39,135 +38,15 @@ export interface MusicPlayerWidgetProps {
   className?: string;
 }
 
-const spin = keyframes`to { transform: rotate(360deg); }`;
-
-const styles = {
-  pill: (playing: boolean) => css`
-    position: fixed;
-    left: 20px;
-    bottom: 20px;
-    z-index: 70;
-    width: min(300px, calc(100vw - 40px));
-    display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 8px 8px 8px;
-    border-radius: 16px;
-    background: rgba(13, 14, 19, 0.88);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border: 1px solid ${playing ? 'rgba(16,185,129,.4)' : 'rgba(255,255,255,.1)'};
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55)${playing ? ', 0 0 22px rgba(16,185,129,.18)' : ''};
-    color: #f4f4f5;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    overflow: hidden;
-    transition: border-color 0.25s ease, box-shadow 0.25s ease;
-
-    @media (max-width: 480px) {
-      left: 12px;
-      bottom: 12px;
-      width: calc(100vw - 24px);
-    }
-  `,
-
-  cover: (playing: boolean) => css`
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid ${playing ? '#10b981' : 'rgba(255,255,255,.15)'};
-    padding: 0;
-    cursor: pointer;
-    background: #1a1b20;
-    animation: ${spin} 8s linear infinite;
-    animation-play-state: ${playing ? 'running' : 'paused'};
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-  `,
-
-  info: css`
-    min-width: 0;
-    background: none;
-    border: none;
-    padding: 0;
-    text-align: left;
-    color: inherit;
-    cursor: pointer;
-  `,
-
-  title: css`
-    font-size: 12.5px;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  `,
-
-  sub: (tone: string) => css`
-    margin-top: 2px;
-    font-size: 10.5px;
-    color: ${tone};
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  `,
-
-  btns: css`
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  `,
-
-  btn: (primary = false) => css`
-    width: ${primary ? 34 : 30}px;
-    height: ${primary ? 34 : 30}px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    font-size: ${primary ? 13 : 12}px;
-    color: ${primary ? '#04241a' : '#d4d4d8'};
-    background: ${primary ? 'linear-gradient(135deg,#34d399,#10b981)' : 'rgba(255,255,255,.06)'};
-    transition: transform 0.12s ease, background 0.12s ease;
-
-    &:hover {
-      transform: translateY(-1px);
-      background: ${primary ? 'linear-gradient(135deg,#6ee7b7,#34d399)' : 'rgba(255,255,255,.12)'};
-    }
-  `,
-
-  spinner: css`
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid rgba(4, 36, 26, 0.3);
-    border-top-color: #04241a;
-    animation: ${spin} 0.8s linear infinite;
-  `,
-
-  progress: (pct: number) => css`
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 2px;
-    width: ${pct}%;
-    background: linear-gradient(90deg, #10b981, #34d399);
-    transition: width 0.4s linear;
-  `,
-};
-
 const fmt = (s: number) => {
   if (!s || Number.isNaN(s)) return '0:00';
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 };
+
+const DEFAULT_COVER = 'https://i.ytimg.com/vi/NA7hmTexZ0E/mqdefault.jpg';
+
+const iconBtn =
+  'grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] bg-white/[0.06] text-zinc-300 transition hover:-translate-y-px hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400';
 
 /**
  * Mini player (pill) di pojok kiri bawah. Kontrol lengkap ada di MusicPlayerModal.
@@ -184,50 +63,79 @@ export default function MusicPlayerWidget({
   const status = audioState.status || (audioState.isPlaying ? 'playing' : 'paused');
   const playing = status === 'playing';
   const busy = status === 'loading' || status === 'buffering';
-  const pct = audioTime.duration > 0 ? (audioTime.currentTime / audioTime.duration) * 100 : 0;
+  const pct = audioTime.duration > 0 ? Math.min(100, Math.max(0, (audioTime.currentTime / audioTime.duration) * 100)) : 0;
 
   let subText = `${fmt(audioTime.currentTime)} / ${audioTime.duration ? fmt(audioTime.duration) : '--:--'}`;
-  let tone = '#a1a1aa';
+  let tone = 'text-zinc-400';
   if (status === 'error') {
     subText = `⚠ ${audioState.error || 'Tidak dapat diputar'}`;
-    tone = '#fca5a5';
+    tone = 'text-red-300';
   } else if (busy) {
     subText = 'Memuat…';
-    tone = '#fcd34d';
+    tone = 'text-amber-300';
   } else if (playing) {
-    tone = '#6ee7b7';
+    tone = 'text-emerald-300';
   }
 
   return (
-    <section className={`${styles.pill(playing)} ${className}`} aria-label="Mini music player">
-      <button type="button" className={styles.cover(playing)} onClick={onOpenPlayer} title="Buka Music Player">
-        <img src={currentTrack?.cover || 'https://i.ytimg.com/vi/NA7hmTexZ0E/mqdefault.jpg'} alt="" />
+    <section
+      className={`fixed bottom-5 left-5 z-[70] grid w-[min(300px,calc(100vw-40px))] grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-2.5 overflow-hidden rounded-2xl border bg-[#0d0e13]/90 p-2 text-zinc-100 shadow-[0_14px_34px_rgba(0,0,0,0.55)] backdrop-blur-[18px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
+        playing ? 'border-emerald-500/40 shadow-[0_0_22px_rgba(16,185,129,0.18)]' : 'border-white/10'
+      } ${className}`}
+      aria-label="Mini music player"
+    >
+      <button
+        type="button"
+        onClick={onOpenPlayer}
+        title="Buka Music Player"
+        aria-label="Buka Music Player"
+        className={`h-10 w-10 overflow-hidden rounded-full border-2 bg-zinc-900 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+          playing ? 'animate-[spin_8s_linear_infinite] border-emerald-500' : 'border-white/15'
+        } ${playing ? '' : '[animation-play-state:paused]'}`}
+      >
+        <img className="block h-full w-full object-cover" src={currentTrack?.cover || DEFAULT_COVER} alt="" />
       </button>
 
-      <button type="button" className={styles.info} onClick={onOpenPlayer} title={currentTrack?.title}>
-        <div className={styles.title}>{currentTrack?.title || 'YouTube Music'}</div>
-        <div className={styles.sub(tone)}>{subText}</div>
+      <button
+        type="button"
+        className="min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+        onClick={onOpenPlayer}
+        title={currentTrack?.title}
+      >
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-bold">
+          {currentTrack?.title || 'YouTube Music'}
+        </div>
+        <div className={`mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-[10.5px] tabular-nums ${tone}`}>{subText}</div>
       </button>
 
-      <div className={styles.btns}>
+      <div className="flex items-center gap-1">
         <button
           type="button"
-          className={styles.btn(true)}
           onClick={onTogglePlay}
           aria-label={playing ? 'Jeda' : 'Putar'}
           title={playing ? 'Jeda' : 'Putar'}
+          className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-emerald-400 to-emerald-600 text-[#04241a] transition hover:-translate-y-px hover:from-emerald-300 hover:to-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
         >
-          {busy ? <span className={styles.spinner} /> : playing ? <Pause size={15} /> : <Play size={15} />}
+          {busy ? (
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#04241a]/30 border-t-[#04241a]" />
+          ) : playing ? (
+            <Pause size={15} />
+          ) : (
+            <Play size={15} />
+          )}
         </button>
-        <button type="button" className={styles.btn()} onClick={onNextTrack} aria-label="Lagu berikutnya" title="Berikutnya">
+        <button type="button" className={iconBtn} onClick={onNextTrack} aria-label="Lagu berikutnya" title="Berikutnya">
           <SkipForward size={14} />
         </button>
-        <button type="button" className={styles.btn()} onClick={onOpenPlayer} aria-label="Buka player" title="Buka player">
+        <button type="button" className={iconBtn} onClick={onOpenPlayer} aria-label="Buka player" title="Buka player">
           <Maximize2 size={13} />
         </button>
       </div>
 
-      <span className={styles.progress(pct)} />
+      <span
+        className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-emerald-500 to-emerald-300 transition-[width] duration-300 ease-linear"
+        style={{ width: `${pct}%` }}
+      />
     </section>
   );
 }
