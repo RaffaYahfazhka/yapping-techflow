@@ -18,6 +18,7 @@ import MissionControlModal from '../components/mission/MissionControlModal';
 import MusicPlayerWidget from '../components/music/MusicPlayerWidget';
 import MusicPlayerModal, { RepeatMode } from '../components/music/MusicPlayerModal';
 import SplashScreen from '../components/ui/SplashScreen';
+import OfficeClientBoundary from '@/components/office/OfficeClientBoundary';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 import SubordinateModal from '../components/SubordinateModal';
 import TradingBotsModal from '../components/finance/TradingBotsModal';
@@ -480,8 +481,10 @@ export default function OfficePage() {
         Kantor Raffa — Interactive 3D Virtual AI Office &amp; Autonomous Mission Control
       </h1>
 
-      {/* 3D WebGL Canvas */}
+      {/* 3D WebGL Canvas (imperative scene: movement/avatar runtime) */}
       <div id="stage" ref={stageRef} aria-label="Kantor 3D isometrik" />
+      {/* R3F declarative penthouse layer: WIB sky, terrace, wallboard, city glow */}
+      {booted && <OfficeClientBoundary equityPct={12.4} />}
       <div className="vignette" aria-hidden="true" />
 
       {/* Navbar Component */}
