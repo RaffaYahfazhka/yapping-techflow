@@ -19,6 +19,9 @@ import MusicPlayerWidget from '../components/music/MusicPlayerWidget';
 import MusicPlayerModal, { RepeatMode } from '../components/music/MusicPlayerModal';
 import SplashScreen from '../components/ui/SplashScreen';
 import OfficeClientBoundary from '@/components/office/OfficeClientBoundary';
+import OfficeMinimap, { blipsFromScene, type Blip } from '@/components/map/OfficeMinimap';
+import OfficeGroupChatModal from '@/components/chat/OfficeGroupChatModal';
+import { createEmployeeSim, employeeStateTick, applyEmployeeTreat, applyWeatherToSim, visibleBubble, type EmployeeSim, type OfficeEvent } from '@/lib/engine/socialEngine';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 import SubordinateModal from '../components/SubordinateModal';
 import TradingBotsModal from '../components/finance/TradingBotsModal';
@@ -76,6 +79,12 @@ export default function OfficePage() {
 
   // Modals & Interaction
   const [isTeamDirectoryOpen, setIsTeamDirectoryOpen] = useState(false);
+  const [isMinimapOpen, setIsMinimapOpen] = useState(false);
+  const [isOfficeChatOpen, setIsOfficeChatOpen] = useState(false);
+  const [officeBlips, setOfficeBlips] = useState<Blip[]>([]);
+  const [employeeSim, setEmployeeSim] = useState<EmployeeSim>(() => createEmployeeSim({ x: -2.5, z: 2.6 }));
+  const simTickRef = useRef(0);
+  const [officeEvents, setOfficeEvents] = useState<OfficeEvent[]>([]);
   const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
@@ -116,6 +125,7 @@ export default function OfficePage() {
     setIsHelpOpen(false);
     setIsMusicModalOpen(false);
     setIsKhansaChatOpen(false);
+    setIsOfficeChatOpen(false);
   }, []);
 
   // Open specific agent workspace
@@ -209,6 +219,39 @@ export default function OfficePage() {
     loadJira();
   }, []);
 
+  // Employee social simulation + office minimap blips tick (runs when office is entered)
+  useEffect(() => {
+    if (!booted) return;
+    let cancelled = false;
+    const poll = setInterval(() => {
+      if (cancelled) return;
+      simTickRef.current += 1;
+      const now = Date.now();
+      setEmployeeSim((prev) => {
+        const next = employeeStateTick({ ...prev, boss: { x: prev.boss.x, z: prev.boss.z } }, now, simTickRef.current);
+        // read live positions from the imperative scene
+        const sc = sceneRef.current as unknown as { playerPos?: { x: number; z: number }; khansaPos?: { x: number; z: number } } | null;
+        const blips: Blip[] = sc
+          ? blipsFromScene(
+              sc.playerPos ?? { x: -2.5, z: 2.6 },
+              sc.khansaPos ?? { x: -1.2, z: 3.2 },
+              (() => {
+                const list: { id: string; x: number; z: number; name: string; color: string }[] = [];
+                for (const [id] of Object.entries(next.states)) {
+                  const agent = AGENTS.find((a) => a.id === id);
+                  if (agent) list.push({ id: agent.id, x: agent.desk.x, z: agent.desk.z, name: agent.name, color: agent.color });
+                }
+                return list;
+              })(),
+            )
+          : [];
+        setOfficeBlips(blips);
+        return next;
+      });
+    }, 15_000);
+    return () => { cancelled = true; clearInterval(poll); };
+  }, [booted]);
+
   // Initialize 3D Engine, Audio, and Pipeline Runner ONCE
   useEffect(() => {
     if (!stageRef.current) return;
@@ -285,7 +328,7 @@ export default function OfficePage() {
       } else if (e.code === 'KeyP' && !e.repeat) {
         audio.togglePlay();
       } else if (e.code === 'KeyM' && !e.repeat) {
-        audio.toggleMute();
+        setIsMinimapOpen((o) => !o);
       } else if (e.code === 'KeyK' && !e.repeat) {
         openKhansaChatRef.current?.();
       } else if (e.code === 'KeyE' && !e.repeat) {
@@ -722,12 +765,36 @@ export default function OfficePage() {
       </Modal>
 
       {/* Global Splash Screen Loader */}
-      {!booted && (
-        <SplashScreen
-          minDurationMs={1800}
-          onFinish={handleEnterOffice}
-        />
-      )}
+      {!booted && <SplashScreen minDurationMs={1800} onFinish={handleEnterOffice} />}
+
+      {/* Office Minimap radar + Warung Kopi office chat (post-boot overlays) */}
+      <OfficeMinimap
+        open={isMinimapOpen && booted}
+        onClose={() => setIsMinimapOpen(false)}
+        onFocusZone={(z) => sceneRef.current?.focusOn(null)}
+        onFocusAgent={(agentId) => sceneRef.current?.focusOn(agentId)}
+        blips={officeBlips}
+        clockStr={clockStr}
+      />
+
+      <OfficeGroupChatModal
+        isOpen={isOfficeChatOpen && booted}
+        onClose={() => setIsOfficeChatOpen(false)}
+        events={officeEvents}
+        onSendUserMessage={(text) => {
+          const ev: OfficeEvent = { id: `u-${Date.now()}`, at: Date.now(), actor: 'raffa', kind: 'status', text };
+          setOfficeEvents((prev) => [...prev, ev]);
+        }}
+        onTreat={() => {
+          const now = Date.now();
+          setEmployeeSim((prev) => applyEmployeeTreat(prev, now));
+          setOfficeEvents((prev) => [...prev, { id: `tr-${now}`, at: now, actor: 'khansaku', kind: 'treat', text: '🎉 Mas Bos Raffa traktir Kopi Kenangan & Croissant untuk se-kantor!' }]);
+        }}
+        onDelegate={() => {
+          setIsOfficeChatOpen(false);
+          setIsKhansaChatOpen(true);
+        }}
+      />
 
       {/* YouTube Iframe Audio Host (Hidden unobtrusively without zero-dimension throttling) */}
       <div id="yt-player-host" aria-hidden="true" />

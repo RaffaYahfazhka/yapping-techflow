@@ -17,7 +17,9 @@
     "test:paper-store": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-store.mjs",
     "test:paper-orders": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-orders.mjs",
     "test:paper-polymarket": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-paper-polymarket.mjs",
-    "test:sky": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-sky.mjs"
+    "test:sky": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-sky.mjs",
+    "test:social": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-social.mjs",
+    "test:delegation": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/verify-delegation.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",
