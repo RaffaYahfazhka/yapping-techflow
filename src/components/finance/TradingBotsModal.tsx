@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useVenueFeed } from '@/components/trading/useVenueFeed';
+import type { MarketFeedEnvelope, MeteoraFeedData, PolymarketFeedData, ExnessFeedData } from '@/lib/data/markets';
 import { css } from '@emotion/css';
 import Modal from '@/components/ui/Modal';
 import { AGENTS } from '@/lib/data/agents';
@@ -408,16 +410,13 @@ export default function TradingBotsModal({
   // Fetch Meteora pools
   const fetchMeteora = useCallback(async () => {
     try {
-      const res = await fetch('/api/trading/meteora');
-      const data = await res.json();
-      if (data.pools) {
-        setMeteoraPools(data.pools);
-        setMeteoraStatus(data.status === 'live' ? 'live' : 'stale');
-        if (data.pools[0]?.current_price) {
-          const prices = data.pools.slice(0, 10).map((p: MeteoraPool) => Number(p.current_price || 0)).filter((p: number) => p > 0);
-          if (prices.length > 1) setMeteoraCandles(prices);
-        }
-      }
+      const res = await fetch('/api/markets/meteora');
+      const env = (await res.json()) as MarketFeedEnvelope<MeteoraFeedData>;
+      const pools = env.data?.pools ?? [];
+      setMeteoraPools(pools);
+      setMeteoraStatus(env.status === 'live' ? 'live' : 'stale');
+      const prices = pools.slice(0, 10).map((p: MeteoraPool) => Number(p.current_price || 0)).filter((p: number) => p > 0);
+      if (prices.length > 1) setMeteoraCandles(prices);
     } catch {
       setMeteoraStatus('stale');
     }
@@ -426,11 +425,11 @@ export default function TradingBotsModal({
   // Fetch Polymarket 5m crypto
   const fetchPolymarket = useCallback(async () => {
     try {
-      const res = await fetch('/api/trading/polymarket');
-      const data = await res.json();
-      setPolyStatus(data.status === 'live' ? 'live' : 'stale');
-      setPolymarkets(data.markets || []);
-      setPolyMessage(data.message || '');
+      const res = await fetch('/api/markets/polymarket');
+      const env = (await res.json()) as MarketFeedEnvelope<PolymarketFeedData>;
+      setPolyStatus(env.status === 'live' ? 'live' : 'stale');
+      setPolymarkets(env.data?.markets ?? []);
+      setPolyMessage(env.reason ?? '');
     } catch {
       setPolyStatus('stale');
     }
@@ -439,17 +438,16 @@ export default function TradingBotsModal({
   // Poll Exness status
   const fetchExness = useCallback(async () => {
     try {
-      const res = await fetch('/api/trading/exness');
-      const data = await res.json();
-      if (!data.available) {
+      const res = await fetch('/api/markets/exness');
+      const env = (await res.json()) as MarketFeedEnvelope<ExnessFeedData>;
+      if (env.status === 'unavailable' || env.status === 'unconfigured' || !env.data?.quote) {
         setExnessStatus('unavailable');
-        setExnessMessage(data.reason || 'Exness XAUUSD feed unavailable');
+        setExnessMessage(env.reason || 'Exness XAUUSD feed unavailable');
       } else {
-        setExnessStatus(data.status || 'live');
-        if (data.tick) {
-          setLatestXau({ bid: data.tick.bid, ask: data.tick.ask });
-          setXauTicks((prev) => [...prev.slice(-30), data.tick.bid]);
-        }
+        setExnessStatus(env.status === 'live' ? 'live' : 'stale');
+        const q = env.data.quote;
+        setLatestXau({ bid: q.bid, ask: q.ask });
+        setXauTicks((prev) => [...prev.slice(-30), q.bid]);
       }
     } catch {
       setExnessStatus('unavailable');
