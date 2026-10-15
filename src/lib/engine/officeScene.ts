@@ -367,6 +367,19 @@ export class OfficeScene {
     curvedScreen.rotation.y = Math.PI;
     execDeskGroup.add(curvedScreen);
 
+    // Photorealistic 2.5D Billboard Sprite for Boss Executive Desk Suite
+    const execBillboardTex = textureLoader.load('/textures/props/boss_executive_desk.jpg');
+    execBillboardTex.colorSpace = THREE.SRGBColorSpace;
+    const execBillboardMat = new THREE.SpriteMaterial({
+      map: execBillboardTex,
+      transparent: true,
+      opacity: 0.96,
+    });
+    const execBillboardSprite = new THREE.Sprite(execBillboardMat);
+    execBillboardSprite.scale.set(3.4, 2.2, 1);
+    execBillboardSprite.position.set(0, 1.35, 0.0);
+    execDeskGroup.add(execBillboardSprite);
+
     this.scene.add(execDeskGroup);
 
     // Executive Suite Acoustic Glass Divider along x = -6.0 (z: -12 to -4.5)
@@ -792,6 +805,19 @@ export class OfficeScene {
       base.position.set(sx, 0.02, -0.65);
       pantryGroup.add(base);
     });
+
+    // Photorealistic 2.5D Billboard Sprite for Luxury Espresso Bar
+    const pantryBillboardTex = new THREE.TextureLoader().load('/textures/props/pantry_espresso_bar.jpg');
+    pantryBillboardTex.colorSpace = THREE.SRGBColorSpace;
+    const pantryBillboardMat = new THREE.SpriteMaterial({
+      map: pantryBillboardTex,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const pantryBillboardSprite = new THREE.Sprite(pantryBillboardMat);
+    pantryBillboardSprite.scale.set(3.2, 2.0, 1);
+    pantryBillboardSprite.position.set(0, 1.85, 0.45);
+    pantryGroup.add(pantryBillboardSprite);
 
     this.scene.add(pantryGroup);
   }
@@ -1676,7 +1702,18 @@ export class OfficeScene {
     sofaGroup.add(mug1);
     const mug2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.16), new THREE.MeshStandardMaterial({ color: '#f43f5e' }));
     mug2.position.set(0.7, 0.4, 1.5);
-    sofaGroup.add(mug2);
+    // Photorealistic 2.5D Billboard Sprite for Terrace Lounge Sofa
+    const sofaBillboardTex = new THREE.TextureLoader().load('/textures/props/terrace_lounge_sofa.jpg');
+    sofaBillboardTex.colorSpace = THREE.SRGBColorSpace;
+    const sofaBillboardMat = new THREE.SpriteMaterial({
+      map: sofaBillboardTex,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const sofaBillboardSprite = new THREE.Sprite(sofaBillboardMat);
+    sofaBillboardSprite.scale.set(4.2, 2.2, 1);
+    sofaBillboardSprite.position.set(0, 1.4, -0.6);
+    sofaGroup.add(sofaBillboardSprite);
 
     this.scene.add(sofaGroup);
 
@@ -1750,6 +1787,19 @@ export class OfficeScene {
     const cPanel = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.1, 0.45), cabMat);
     cPanel.position.set(0, 0.95, 0.6);
     arcadeGroup.add(cPanel);
+
+    // Photorealistic 2.5D Billboard Sprite for Retro Arcade Cabinet
+    const arcadeBillboardTex = new THREE.TextureLoader().load('/textures/props/retro_arcade_cabinet.jpg');
+    arcadeBillboardTex.colorSpace = THREE.SRGBColorSpace;
+    const arcadeBillboardMat = new THREE.SpriteMaterial({
+      map: arcadeBillboardTex,
+      transparent: true,
+      opacity: 0.95,
+    });
+    const arcadeBillboardSprite = new THREE.Sprite(arcadeBillboardMat);
+    arcadeBillboardSprite.scale.set(1.5, 2.3, 1);
+    arcadeBillboardSprite.position.set(0, 1.35, 0.65);
+    arcadeGroup.add(arcadeBillboardSprite);
 
     this.scene.add(arcadeGroup);
 
