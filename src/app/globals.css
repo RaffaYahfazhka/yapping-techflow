@@ -66,6 +66,10 @@
   padding: 0;
 }
 
+button {
+  font-family: inherit;
+}
+
 html,
 body {
   width: 100vw;
@@ -119,44 +123,6 @@ body {
   white-space: nowrap;
   border: 0;
 }
-
-.flex { display: flex; }
-.flex-col { display: flex; flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-4 { gap: 16px; }
-.w-full { width: 100%; }
-
-.text-xs { font-size: 11px; }
-.text-sm { font-size: 13px; }
-.text-base { font-size: 15px; }
-.font-bold { font-weight: 700; }
-.font-mono { font-family: var(--font-geist-mono), monospace; }
-
-.text-emerald-400 { color: #34d399; }
-.text-violet-400 { color: #a78bfa; }
-.text-rose-400 { color: #fb7185; }
-.text-zinc-300 { color: #d4d4d8; }
-.text-zinc-400 { color: #a1a1aa; }
-.text-zinc-500 { color: #71717a; }
-
-.mt-1 { margin-top: 4px; }
-.mt-4 { margin-top: 16px; }
-.mb-1 { margin-bottom: 4px; }
-.mb-2 { margin-bottom: 8px; }
-.py-4 { padding-top: 16px; padding-bottom: 16px; }
-.pb-1 { padding-bottom: 4px; }
-.pl-4 { padding-left: 16px; }
-
-.list-disc { list-style-type: disc; }
-.list-decimal { list-style-type: decimal; }
-.overflow-x-auto { overflow-x: auto; }
-.overflow-y-auto { overflow-y: auto; }
-.uppercase { text-transform: uppercase; }
-.tracking-wider { letter-spacing: 0.05em; }
-.italic { font-style: italic; }
 
 /* Glassmorphism utility */
 .glass {
@@ -1595,4 +1561,22 @@ input[type="range"]::-webkit-slider-thumb {
 .animate-radar-sweep {
   animation: radar-sweep 3.5s linear infinite;
   transform-origin: center;
+}
+
+/* ==================== REVAMPED UI COMPONENT KEYFRAMES ==================== */
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.35; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes equalizer {
+  0% { height: 20%; }
+  50% { height: 100%; }
+  100% { height: 35%; }
 }

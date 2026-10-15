@@ -21,15 +21,17 @@ interface TicketContext {
 }
 
 // Order of preference for Google Gemini models:
-// 1. gemini-3.8-flash (Target primary)
-// 2. gemini-3.6-flash (Stable, fast fallback during 3.8 spikes)
-// 3. gemini-3.5-flash (Very reliable fallback)
-// 4. gemini-3.7-flash (Alternative fallback)
+// 1. gemini-2.5-flash (Fast, latest stable)
+// 2. gemini-2.0-flash (High speed)
+// 3. gemini-1.5-flash (Standard widespread production)
+// 4. gemini-3.8-flash (Experimental next-gen)
 const CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest',
   'gemini-3.8-flash',
-  'gemini-3.6-flash',
   'gemini-3.5-flash',
-  'gemini-3.7-flash',
 ];
 
 export async function POST(request: Request) {

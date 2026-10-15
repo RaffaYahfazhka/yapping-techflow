@@ -333,6 +333,42 @@ export class OfficeScene {
     rugBorder.position.set(-11.0, 0.019, -6.5);
     this.scene.add(rugBorder);
 
+    // Luxury Executive Desk for Bos Raffa (Walnut & Italian Black-Gold Marble)
+    const textureLoader = new THREE.TextureLoader();
+    const execDeskTex = textureLoader.load('/textures/props/boss_executive_desk.jpg');
+    execDeskTex.colorSpace = THREE.SRGBColorSpace;
+
+    const execDeskGroup = new THREE.Group();
+    execDeskGroup.position.set(-11.0, 0, -6.8);
+
+    // Marble desk surface with realistic texture
+    const execTopMat = new THREE.MeshStandardMaterial({
+      map: execDeskTex,
+      roughness: 0.25,
+      metalness: 0.2,
+    });
+    const execDeskMesh = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.95, 1.8), execTopMat);
+    execDeskMesh.position.y = 0.475;
+    execDeskMesh.castShadow = true;
+    execDeskMesh.receiveShadow = true;
+    execDeskGroup.add(execDeskMesh);
+
+    // Gold brass executive base trim
+    const goldTrimMat = new THREE.MeshStandardMaterial({ color: '#f59e0b', metalness: 0.85, roughness: 0.2 });
+    const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(3.65, 0.05, 1.85), goldTrimMat);
+    goldTrim.position.y = 0.025;
+    execDeskGroup.add(goldTrim);
+
+    // Curved ultra-wide financial command display on desk
+    const curvedScreenGeo = new THREE.CylinderGeometry(1.4, 1.4, 0.65, 32, 1, true, -Math.PI / 6, Math.PI / 3);
+    const curvedScreenMat = new THREE.MeshBasicMaterial({ color: '#10b981', side: THREE.DoubleSide });
+    const curvedScreen = new THREE.Mesh(curvedScreenGeo, curvedScreenMat);
+    curvedScreen.position.set(0, 1.35, -0.2);
+    curvedScreen.rotation.y = Math.PI;
+    execDeskGroup.add(curvedScreen);
+
+    this.scene.add(execDeskGroup);
+
     // Executive Suite Acoustic Glass Divider along x = -6.0 (z: -12 to -4.5)
     const execGlassMat = new THREE.MeshPhysicalMaterial({
       color: '#0f291e',
@@ -677,13 +713,16 @@ export class OfficeScene {
     pantryGroup.position.set(8.5, 0, 8.5);
 
     // 1. Kitchen Island Bar Counter (W = 3.4, D = 1.0, H = 1.05)
+    const pantryTex = new THREE.TextureLoader().load('/textures/props/pantry_espresso_bar.jpg');
+    pantryTex.colorSpace = THREE.SRGBColorSpace;
+
     const marbleMat = new THREE.MeshStandardMaterial({
-      color: '#1e222d',
+      map: pantryTex,
       roughness: 0.25,
-      metalness: 0.3,
+      metalness: 0.2,
     });
     const woodMat = new THREE.MeshStandardMaterial({
-      color: '#0e1017',
+      color: '#1a1816',
       roughness: 0.7,
     });
 
@@ -1539,9 +1578,16 @@ export class OfficeScene {
       const potGroup = new THREE.Group();
       potGroup.position.set(px, 0, pz);
 
-      // Ceramic fluted pot
+      // Ceramic fluted pot with realistic monstera texture
+      const plantTex = new THREE.TextureLoader().load('/textures/props/indoor_monstera_plant.jpg');
+      plantTex.colorSpace = THREE.SRGBColorSpace;
+
       const potGeo = new THREE.CylinderGeometry(0.42, 0.32, 0.75, 14);
-      const potMat = new THREE.MeshStandardMaterial({ color: '#f4f4f5', roughness: 0.35 });
+      const potMat = new THREE.MeshStandardMaterial({
+        map: plantTex,
+        roughness: 0.35,
+        metalness: 0.1,
+      });
       const pot = new THREE.Mesh(potGeo, potMat);
       pot.position.y = 0.375;
       pot.castShadow = true;
@@ -1566,7 +1612,14 @@ export class OfficeScene {
     const sofaGroup = new THREE.Group();
     sofaGroup.position.set(-9.0, 0, 18.0);
 
-    const sofaMat = new THREE.MeshStandardMaterial({ color: '#27272a', roughness: 0.8 });
+    const sofaTex = new THREE.TextureLoader().load('/textures/props/terrace_lounge_sofa.jpg');
+    sofaTex.colorSpace = THREE.SRGBColorSpace;
+
+    const sofaMat = new THREE.MeshStandardMaterial({
+      map: sofaTex,
+      roughness: 0.65,
+      metalness: 0.15,
+    });
     const cushionMat = new THREE.MeshStandardMaterial({ color: '#3f3f46', roughness: 0.7 });
     const pillowMat = new THREE.MeshStandardMaterial({ color: '#10b981', roughness: 0.6 });
 
@@ -1660,8 +1713,14 @@ export class OfficeScene {
     arcadeGroup.position.set(9.5, 0, 17.5);
     arcadeGroup.rotation.y = -Math.PI / 2; // facing toward terrace center
 
-    const cabMat = new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.5 });
-    const cabSideMat = new THREE.MeshStandardMaterial({ color: '#8b5cf6', roughness: 0.4 });
+    const arcadeTex = new THREE.TextureLoader().load('/textures/props/retro_arcade_cabinet.jpg');
+    arcadeTex.colorSpace = THREE.SRGBColorSpace;
+
+    const cabMat = new THREE.MeshStandardMaterial({
+      color: '#18181b',
+      roughness: 0.5,
+      metalness: 0.2,
+    });
     const cab = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.1, 1.1), cabMat);
     cab.position.y = 1.05;
     cab.castShadow = true;
@@ -1674,9 +1733,14 @@ export class OfficeScene {
     marq.position.set(0, 1.85, 0.56);
     arcadeGroup.add(marq);
 
-    // Glowing CRT Game Screen
+    // Glowing CRT Game Screen with Crypto Scalper texture
     const screenGeo = new THREE.BoxGeometry(0.75, 0.6, 0.05);
-    const screenMat = new THREE.MeshBasicMaterial({ color: '#10b981' });
+    const screenMat = new THREE.MeshStandardMaterial({
+      map: arcadeTex,
+      roughness: 0.2,
+      emissive: new THREE.Color('#38bdf8'),
+      emissiveIntensity: 0.2,
+    });
     const screen = new THREE.Mesh(screenGeo, screenMat);
     screen.position.set(0, 1.35, 0.48);
     screen.rotation.x = -0.2;
@@ -2227,7 +2291,8 @@ export class OfficeScene {
         const isTerrace = item.currentPos.z > 14;
         const spot = this.pickSeparatedSlot(id, isTerrace ? 'terrace' : 'pantry', item);
         item.targetPos.set(spot.x, 0, spot.z);
-        item.targetFacing = (subordinateIdx % 2 === 0) ? Math.PI * 0.25 : -Math.PI * 0.75;
+        const charCode = id.charCodeAt(0) || 0;
+        item.targetFacing = (charCode % 2 === 0) ? Math.PI * 0.25 : -Math.PI * 0.75;
       } else if (state === 'shelter') {
         item.targetPos.copy(item.chairPos);
         item.targetFacing = item.deskRot;

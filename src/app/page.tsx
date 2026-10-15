@@ -280,6 +280,17 @@ export default function OfficePage() {
         if (blips.length > 0) {
           setOfficeBlips(blips);
         }
+
+        // Sync new events into the office group chat feed
+        if (next.events && next.events.length > 0) {
+          setOfficeEvents((prev) => {
+            const existingIds = new Set(prev.map((e) => e.id));
+            const fresh = next.events.filter((e) => !existingIds.has(e.id));
+            if (fresh.length === 0) return prev;
+            return [...prev, ...fresh].slice(-60);
+          });
+        }
+
         return next;
       });
     }, 4_000); // 4-second reactive tick for responsive social dynamics and proximity silence
@@ -308,6 +319,68 @@ export default function OfficePage() {
     const interval = setInterval(updateLiveBlips, 80);
     return () => clearInterval(interval);
   }, [booted, isMinimapOpen, employeeSim.states]);
+
+  // Autonomous AI Office & WAG Group Chatter Loop
+  // Generates genuine, dynamic conversational messages across the AI squad via Gemini AI
+  useEffect(() => {
+    if (!booted) return;
+    let cancelled = false;
+
+    const interval = setInterval(async () => {
+      if (cancelled) return;
+      const randomAgent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+      if (!randomAgent) return;
+
+      const currentState = employeeSim.states[randomAgent.id] || 'working';
+      const eventKind =
+        currentState === 'pantry' ? 'pantry' :
+        currentState === 'terrace' ? 'terrace' :
+        currentState === 'chatting' ? 'chatting' : 'working';
+
+      const aiText = await fetchEmployeeDialogue({
+        id: randomAgent.id,
+        name: randomAgent.name,
+        role: (randomAgent as any).role || 'TechFlow Staff',
+        event: eventKind,
+        weather: employeeSim.weather || 'clear',
+        stamina: employeeSim.stamina[randomAgent.id] || 80,
+        focus: employeeSim.focus[randomAgent.id] || 80,
+      });
+
+      if (!aiText || cancelled) return;
+
+      const now = Date.now();
+      const bubble = createAiSpeechBubble(
+        randomAgent.id,
+        currentState === 'pantry' ? '☕' : currentState === 'terrace' ? '🌆' : '💬',
+        aiText,
+        now + 18_000,
+        'status'
+      );
+
+      if (bubble) {
+        setEmployeeSim((prev) => ({
+          ...prev,
+          bubbles: [...prev.bubbles.filter((b) => b.agentId !== randomAgent.id), bubble].slice(-12),
+        }));
+      }
+
+      const chatEv: OfficeEvent = {
+        id: `ai-${randomAgent.id}-${now}`,
+        at: now,
+        actor: randomAgent.id,
+        kind: 'status',
+        text: aiText,
+      };
+
+      setOfficeEvents((prev) => [...prev, chatEv].slice(-60));
+    }, 28_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [booted, employeeSim.states, employeeSim.stamina, employeeSim.focus, employeeSim.weather]);
 
   // Initialize 3D Engine, Audio, and Pipeline Runner ONCE
   useEffect(() => {
@@ -617,14 +690,41 @@ export default function OfficePage() {
       }
     });
     setOfficeEvents((prev) => [
+      ...prev,
       {
         id: `tr-${now}`,
         at: now,
         actor: 'khansaku',
-        kind: 'treat',
+        kind: 'treat' as const,
         text: '🎉 Mas Bos Raffa traktir Kopi Kenangan & Croissant untuk se-kantor!',
       },
-    ]);
+    ].slice(-60));
+
+    // Squad members thank the boss in the WAG
+    setTimeout(async () => {
+      const luckyAgent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+      if (!luckyAgent) return;
+      const thanksText = await fetchEmployeeDialogue({
+        id: luckyAgent.id,
+        name: luckyAgent.name,
+        role: (luckyAgent as any).role || 'TechFlow Staff',
+        event: 'treat',
+        weather: 'clear',
+      });
+      if (thanksText) {
+        const replyTime = Date.now();
+        setOfficeEvents((prev) => [
+          ...prev,
+          {
+            id: `tr-thanks-${replyTime}`,
+            at: replyTime,
+            actor: luckyAgent.id,
+            kind: 'status' as const,
+            text: thanksText,
+          },
+        ].slice(-60));
+      }
+    }, 2200);
     pushToast({
       kind: 'coffee',
       title: 'Traktir Se-Kantor!',
@@ -989,8 +1089,60 @@ export default function OfficePage() {
         onClose={() => setIsOfficeChatOpen(false)}
         events={officeEvents}
         onSendUserMessage={(text) => {
-          const ev: OfficeEvent = { id: `u-${Date.now()}`, at: Date.now(), actor: 'raffa', kind: 'status', text };
+          const now = Date.now();
+          const ev: OfficeEvent = { id: `u-${now}`, at: now, actor: 'raffa', kind: 'status', text };
           setOfficeEvents((prev) => [...prev, ev]);
+
+          // Autonomous squad member reply to the boss
+          setTimeout(async () => {
+            const lower = text.toLowerCase();
+            let responder = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+            if (lower.includes('deploy') || lower.includes('frontend') || lower.includes('css') || lower.includes('ui')) {
+              responder = AGENTS.find((a) => a.id === 'jajang') || responder;
+            } else if (lower.includes('market') || lower.includes('crypto') || lower.includes('btc') || lower.includes('cuan') || lower.includes('scalp')) {
+              responder = AGENTS.find((a) => a.id === 'damian-prasetya' || a.id === 'damian') || responder;
+            } else if (lower.includes('server') || lower.includes('cloud') || lower.includes('infra') || lower.includes('down')) {
+              responder = AGENTS.find((a) => a.id === 'altair-raditya' || a.id === 'altair') || responder;
+            } else if (lower.includes('kopi') || lower.includes('traktir')) {
+              responder = AGENTS.find((a) => a.id === 'tara' || a.id === 'khansaku') || responder;
+            }
+
+            if (!responder) return;
+
+            const replyText = await fetchEmployeeDialogue({
+              id: responder.id,
+              name: responder.name,
+              role: (responder as any).role || 'TechFlow Staff',
+              event: 'chatting',
+              weather: employeeSim.weather || 'clear',
+            });
+
+            if (replyText) {
+              const replyTime = Date.now();
+              const replyEv: OfficeEvent = {
+                id: `ai-reply-${responder.id}-${replyTime}`,
+                at: replyTime,
+                actor: responder.id,
+                kind: 'status',
+                text: replyText,
+              };
+              setOfficeEvents((prev) => [...prev, replyEv].slice(-60));
+
+              const bubble = createAiSpeechBubble(
+                responder.id,
+                '💬',
+                replyText,
+                replyTime + 18_000,
+                'status'
+              );
+              if (bubble) {
+                setEmployeeSim((prev) => ({
+                  ...prev,
+                  bubbles: [...prev.bubbles.filter((b) => b.agentId !== responder.id), bubble].slice(-12),
+                }));
+              }
+            }
+          }, 1800);
         }}
         onTreat={handleTreatAll}
         onDelegate={() => {
@@ -1026,90 +1178,96 @@ export default function OfficePage() {
       {booted && (
         <div className="pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-4 select-none sm:bottom-4">
           <div className="pointer-events-auto max-w-full overflow-x-auto overscroll-x-contain no-scrollbar">
-          <Dock className="mx-auto w-max gap-2 p-2.5 sm:gap-2.5 sm:p-3">
+          <Dock className="mx-auto w-max gap-1.5 sm:gap-2 p-1.5 px-2.5 sm:px-3.5 sm:py-2">
             <DockItem
               onClick={() => setIsMinimapOpen((o) => !o)}
               title="Radar Minimap Penthouse (M)"
-              className="text-emerald-300 hover:bg-emerald-500/20"
+              className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-400/50 hover:shadow-[0_0_12px_rgba(16,185,129,0.25)]"
             >
               <span className="flex items-center gap-1.5">
-                <Compass size={14} className="text-emerald-400" />
-                <span className="font-bold">Radar</span>
+                <Compass size={14} className="text-emerald-400 shrink-0" />
+                <span className="font-semibold text-xs">Radar</span>
               </span>
             </DockItem>
 
             <DockItem
               onClick={() => setIsOfficeChatOpen((o) => !o)}
               title="Warung Kopi TechFlow (N)"
-              className="text-amber-300 hover:bg-amber-500/20"
+              className="text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 hover:border-amber-400/50 hover:shadow-[0_0_12px_rgba(245,158,11,0.25)]"
             >
               <span className="flex items-center gap-1.5">
-                <Coffee size={14} className="text-amber-400" />
-                <span className="font-bold">Warung Kopi</span>
+                <Coffee size={14} className="text-amber-400 shrink-0" />
+                <span className="font-semibold text-xs hidden sm:inline">Warung Kopi</span>
+                <span className="font-semibold text-xs sm:hidden">Kopi</span>
               </span>
             </DockItem>
 
             <DockItem
               onClick={handleTreatAll}
               title="Traktir Kopi & Pizza Se-Kantor via Khansaku (100% Buff)"
-              className="text-rose-300 hover:bg-rose-500/20"
+              className="text-rose-300 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 hover:border-rose-400/50 hover:shadow-[0_0_12px_rgba(244,63,94,0.25)]"
             >
               <span className="flex items-center gap-1.5">
-                <PartyPopper size={14} className="text-rose-400" />
-                <span className="font-bold">Traktir Kopi</span>
+                <PartyPopper size={14} className="text-rose-400 shrink-0" />
+                <span className="font-semibold text-xs hidden sm:inline">Traktir Kopi</span>
+                <span className="font-semibold text-xs sm:hidden">Traktir</span>
               </span>
             </DockItem>
 
             <DockItem
               onClick={() => setIsWallboardOpen((o) => !o)}
               title="Giant Wallboard Hologram (War Room)"
-              className="text-cyan-300 hover:bg-cyan-500/20"
+              className="text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/20 hover:border-cyan-400/50 hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]"
             >
               <span className="flex items-center gap-1.5">
-                <BarChart3 size={14} className="text-cyan-400" />
-                <span className="font-bold">Wallboard</span>
+                <BarChart3 size={14} className="text-cyan-400 shrink-0" />
+                <span className="font-semibold text-xs">Wallboard</span>
               </span>
             </DockItem>
 
-            <div className="h-5 w-px bg-white/20 mx-1" aria-hidden="true" />
+            <div className="h-4 w-px bg-white/15 mx-1 shrink-0 self-center" aria-hidden="true" />
 
             <DockItem
               onClick={() => setIsWardrobeOpen((o) => !o)}
               title="Setelan Wardrobe Bos Raffa (O)"
+              className="text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
               <span className="flex items-center gap-1.5">
-                <Shirt size={14} />
-                <span className="hidden sm:inline">Wardrobe</span>
+                <Shirt size={14} className="text-zinc-400 shrink-0" />
+                <span className="hidden md:inline font-medium text-xs">Wardrobe</span>
               </span>
             </DockItem>
 
             <DockItem
               onClick={() => setIsDartsOpen((o) => !o)}
               title="Mini-Game Sky Darts Penthouse (G)"
+              className="text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
               <span className="flex items-center gap-1.5">
-                <Target size={14} />
-                <span className="hidden sm:inline">Darts</span>
+                <Target size={14} className="text-zinc-400 shrink-0" />
+                <span className="hidden md:inline font-medium text-xs">Darts</span>
               </span>
             </DockItem>
 
             <DockItem
               onClick={() => setIsArcadeOpen((o) => !o)}
               title="Retro Arcade: Crypto Scalper & Whack-A-Bug (B)"
+              className="text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
               <span className="flex items-center gap-1.5">
-                <Gamepad2 size={14} />
-                <span className="hidden sm:inline">Arcade</span>
+                <Gamepad2 size={14} className="text-zinc-400 shrink-0" />
+                <span className="hidden md:inline font-medium text-xs">Arcade</span>
               </span>
             </DockItem>
 
             <DockItem
               onClick={() => setIsPhotoActive((o) => !o)}
               title="Photo Drone Mode (P)"
+              className="text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
               <span className="flex items-center gap-1.5">
-                <Camera size={14} />
-                <span className="hidden sm:inline">Photo</span>
+                <Camera size={14} className="text-zinc-400 shrink-0" />
+                <span className="hidden md:inline font-medium text-xs">Photo</span>
               </span>
             </DockItem>
           </Dock>

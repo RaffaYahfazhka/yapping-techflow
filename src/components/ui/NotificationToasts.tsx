@@ -8,7 +8,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { TrendingUp, Zap, Shield, Coffee, Bell, X, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { TrendingUp, Zap, Shield, Coffee, Bell, X } from 'lucide-react';
+import { cn } from './lib/cn';
 
 export type ToastKind = 'profit' | 'harvest' | 'qa' | 'coffee' | 'system';
 
@@ -30,12 +32,48 @@ const TOAST_ICONS: Record<ToastKind, typeof TrendingUp> = {
   system: Bell,
 };
 
-const TOAST_COLORS: Record<ToastKind, { border: string; icon: string; glow: string }> = {
-  profit: { border: 'border-emerald-400/50', icon: 'text-emerald-400', glow: 'shadow-[0_0_24px_rgba(52,211,153,0.15)]' },
-  harvest: { border: 'border-violet-400/50', icon: 'text-violet-400', glow: 'shadow-[0_0_24px_rgba(167,139,250,0.15)]' },
-  qa: { border: 'border-cyan-400/50', icon: 'text-cyan-400', glow: 'shadow-[0_0_24px_rgba(34,211,238,0.15)]' },
-  coffee: { border: 'border-amber-400/50', icon: 'text-amber-400', glow: 'shadow-[0_0_24px_rgba(251,191,36,0.15)]' },
-  system: { border: 'border-white/20', icon: 'text-zinc-300', glow: 'shadow-[0_0_16px_rgba(255,255,255,0.06)]' },
+const TOAST_COLORS: Record<ToastKind, {
+  border: string;
+  icon: string;
+  glow: string;
+  iconBg: string;
+  accent: string;
+}> = {
+  profit: {
+    border: 'border-emerald-400/25',
+    icon: 'text-emerald-400',
+    glow: 'shadow-[0_0_20px_rgba(52,211,153,0.1)]',
+    iconBg: 'bg-emerald-500/[0.08]',
+    accent: 'from-emerald-500/20',
+  },
+  harvest: {
+    border: 'border-violet-400/25',
+    icon: 'text-violet-400',
+    glow: 'shadow-[0_0_20px_rgba(167,139,250,0.1)]',
+    iconBg: 'bg-violet-500/[0.08]',
+    accent: 'from-violet-500/20',
+  },
+  qa: {
+    border: 'border-cyan-400/25',
+    icon: 'text-cyan-400',
+    glow: 'shadow-[0_0_20px_rgba(34,211,238,0.1)]',
+    iconBg: 'bg-cyan-500/[0.08]',
+    accent: 'from-cyan-500/20',
+  },
+  coffee: {
+    border: 'border-amber-400/25',
+    icon: 'text-amber-400',
+    glow: 'shadow-[0_0_20px_rgba(251,191,36,0.1)]',
+    iconBg: 'bg-amber-500/[0.08]',
+    accent: 'from-amber-500/20',
+  },
+  system: {
+    border: 'border-white/[0.1]',
+    icon: 'text-zinc-300',
+    glow: 'shadow-[0_0_16px_rgba(255,255,255,0.03)]',
+    iconBg: 'bg-white/[0.04]',
+    accent: 'from-white/[0.04]',
+  },
 };
 
 const TOAST_EMOJIS: Record<ToastKind, string> = {
@@ -88,15 +126,16 @@ export default function NotificationToasts({
       aria-live="polite"
       aria-label="Notifikasi eksekutif"
     >
-      {visible.map((toast, idx) => (
-        <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} index={idx} />
-      ))}
+      <AnimatePresence mode="popLayout">
+        {visible.map((toast, idx) => (
+          <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} index={idx} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
 
 function ToastCard({ toast, onDismiss, index }: { toast: ToastItem; onDismiss: (id: string) => void; index: number }) {
-  const [exiting, setExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const duration = toast.duration ?? DEFAULT_DURATION;
   const colors = TOAST_COLORS[toast.kind];
@@ -104,8 +143,7 @@ function ToastCard({ toast, onDismiss, index }: { toast: ToastItem; onDismiss: (
   const emoji = TOAST_EMOJIS[toast.kind];
 
   const startDismiss = useCallback(() => {
-    setExiting(true);
-    setTimeout(() => onDismiss(toast.id), 300);
+    onDismiss(toast.id);
   }, [onDismiss, toast.id]);
 
   useEffect(() => {
@@ -117,16 +155,39 @@ function ToastCard({ toast, onDismiss, index }: { toast: ToastItem; onDismiss: (
   }, [duration, startDismiss]);
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={{ x: 120, opacity: 0, scale: 0.9, filter: 'blur(4px)' }}
+      animate={{ x: 0, opacity: 1, scale: 1, filter: 'blur(0px)' }}
+      exit={{ x: 140, opacity: 0, scale: 0.92, filter: 'blur(4px)' }}
+      transition={{
+        type: 'spring',
+        stiffness: 400,
+        damping: 28,
+        delay: index * 0.04,
+      }}
       role="status"
-      className={`pointer-events-auto flex items-start gap-3 rounded-2xl border bg-[#0c0d12]/95 backdrop-blur-2xl px-4 py-3.5 transition-all duration-300 ${colors.border} ${colors.glow} ${
-        exiting ? 'translate-x-[120%] opacity-0' : 'translate-x-0 opacity-100 animate-[slideInRight_0.35s_ease-out]'
-      }`}
-      style={{ animationDelay: `${index * 60}ms` }}
+      className={cn(
+        'pointer-events-auto relative flex items-start gap-3 overflow-hidden',
+        'rounded-[16px] border',
+        'bg-[#0c0d12]/[0.96] backdrop-blur-2xl',
+        'px-4 py-3.5',
+        colors.border,
+        colors.glow
+      )}
     >
+      {/* Left accent gradient bar */}
+      <div className={cn('absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b', colors.accent, 'to-transparent')} />
+
       {/* Icon */}
-      <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${colors.border} bg-white/5 ${colors.icon}`}>
-        <Icon size={15} />
+      <div className={cn(
+        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center',
+        'rounded-[10px] border',
+        colors.border,
+        colors.iconBg,
+        colors.icon
+      )}>
+        <Icon size={14} strokeWidth={2.5} />
       </div>
 
       {/* Content */}
@@ -134,22 +195,36 @@ function ToastCard({ toast, onDismiss, index }: { toast: ToastItem; onDismiss: (
         <div className="mb-0.5 flex items-center gap-2">
           <span className="text-[10px]">{emoji}</span>
           <span className="text-[11px] font-bold text-white">{toast.title}</span>
-          <span className="ml-auto text-[9px] font-mono text-zinc-600">
+          <span className="ml-auto text-[9px] font-mono text-zinc-600 tabular-nums">
             {new Date(toast.timestamp).toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </span>
         </div>
         <p className="text-[11px] leading-relaxed text-zinc-400">{toast.message}</p>
+
+        {/* Auto-dismiss progress bar */}
+        {duration > 0 && (
+          <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-white/[0.04]">
+            <motion.div
+              initial={{ width: '100%' }}
+              animate={{ width: '0%' }}
+              transition={{ duration: duration / 1000, ease: 'linear' }}
+              className={cn('h-full rounded-full', colors.icon.replace('text-', 'bg-'), 'opacity-40')}
+            />
+          </div>
+        )}
       </div>
 
       {/* Dismiss */}
-      <button
+      <motion.button
         type="button"
         onClick={startDismiss}
-        className="mt-0.5 shrink-0 rounded-lg p-1 text-zinc-600 hover:bg-white/10 hover:text-zinc-300 transition-colors"
+        whileHover={{ scale: 1.15, backgroundColor: 'rgba(255,255,255,0.08)' }}
+        whileTap={{ scale: 0.9 }}
+        className="mt-0.5 shrink-0 rounded-lg p-1.5 text-zinc-600 transition-colors outline-none"
         aria-label="Tutup notifikasi"
       >
-        <X size={12} />
-      </button>
-    </div>
+        <X size={11} strokeWidth={3} />
+      </motion.button>
+    </motion.div>
   );
 }

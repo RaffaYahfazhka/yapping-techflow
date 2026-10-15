@@ -53,6 +53,8 @@ export const PENTHOUSE_OBSTACLES = [
   // Skyline Suite Acoustic Glass Walls (Doorway at z: -1.5 to 1.5)
   { id: 'skyline_wall_n', minX: 11.35, maxX: 11.65, minZ: -12.0, maxZ: -1.5 },
   { id: 'skyline_wall_s', minX: 11.35, maxX: 11.65, minZ: 1.5, maxZ: 11.8 },
+  // Boss Executive Luxury Desk (x: -11.0, z: -6.8)
+  { id: 'boss_exec_desk', minX: -12.8, maxX: -9.2, minZ: -7.7, maxZ: -5.9 },
   // Pantry Espresso & Island Bar
   { id: 'pantry_bar', minX: 6.8, maxX: 10.2, minZ: 7.8, maxZ: 9.2 },
   // Terrace Outdoor L-Sofa Lounge

@@ -13,8 +13,6 @@ import {
   motion,
   MotionValue,
   useMotionValue,
-  useSpring,
-  useTransform,
 } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -77,8 +75,14 @@ export function Dock({ className, children }: DockProps) {
     >
       <motion.div
         ref={dockRef}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28, delay: 0.1 }}
         className={cn(
-          "flex items-center gap-2 p-2 rounded-2xl bg-[#0a0a0e]/95 backdrop-blur-2xl border border-white/20 shadow-[0_18px_48px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.12)]",
+          "flex items-center gap-2 sm:gap-2.5 md:gap-3 p-2 px-3 sm:px-4 sm:py-2.5 rounded-full",
+          "bg-[#0a0a0e]/[0.94] backdrop-blur-2xl",
+          "border border-white/[0.12]",
+          "shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_1px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.08)]",
           className
         )}
         onMouseMove={(e) => {
@@ -110,17 +114,6 @@ export interface DockItemProps {
 
 export function DockItem({ children, className, onClick, title }: DockItemProps) {
   const itemRef = useRef<HTMLButtonElement>(null);
-  const dock = useDock();
-
-  const widthSync = useTransform(dock.mouseX, (val) => {
-    const bounds = itemRef.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    const distance = val - bounds.x - bounds.width / 2;
-    const clamped = Math.max(-120, Math.min(120, distance));
-    const scale = Math.cos((clamped / 120) * (Math.PI / 2));
-    return 36 + Math.pow(Math.max(0, scale), 6) * 14;
-  });
-
-  const size = useSpring(widthSync, { mass: 0.1, stiffness: 240, damping: 14 });
 
   return (
     <motion.button
@@ -128,11 +121,17 @@ export function DockItem({ children, className, onClick, title }: DockItemProps)
       type="button"
       onClick={onClick}
       title={title}
+      whileHover={{ y: -2, scale: 1.03 }}
+      whileTap={{ scale: 0.94 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
-        "relative flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl px-3 py-2 font-medium text-xs text-zinc-300 transition-colors hover:text-white hover:bg-white/10 active:scale-95",
+        "relative flex shrink-0 items-center justify-center whitespace-nowrap",
+        "rounded-full px-2.5 py-1.5 sm:px-3 sm:py-1.5 font-medium text-xs",
+        "border border-transparent bg-transparent",
+        "text-zinc-400 transition-colors duration-150",
+        "outline-none cursor-pointer select-none",
         className
       )}
-      style={{ minHeight: size }}
     >
       {children}
     </motion.button>

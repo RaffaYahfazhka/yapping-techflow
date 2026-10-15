@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
+import { cn } from '../lib/cn';
 
 export interface SelectOption {
   value: string;
@@ -26,17 +28,24 @@ export interface SelectFieldProps {
 }
 
 const STATUS_BORDER: Record<string, string> = {
-  default: 'border-white/10 focus-within:border-emerald-500/50',
-  success: 'border-emerald-500/50',
-  warning: 'border-amber-500/50',
-  error: 'border-rose-500/50',
+  default: 'border-white/[0.08] focus-within:border-emerald-500/40 focus-within:shadow-[0_0_12px_rgba(16,185,129,0.06)]',
+  success: 'border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.06)]',
+  warning: 'border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.06)]',
+  error: 'border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.06)]',
 };
 
 const STATUS_TEXT_COLOR: Record<string, string> = {
-  default: 'text-zinc-400',
+  default: 'text-zinc-500',
   success: 'text-emerald-400',
   warning: 'text-amber-400',
   error: 'text-rose-400',
+};
+
+const STATUS_ICON: Record<string, string> = {
+  default: '',
+  success: '✓',
+  warning: '⚠',
+  error: '✕',
 };
 
 export default function SelectField({
@@ -54,48 +63,91 @@ export default function SelectField({
   id,
   name,
 }: SelectFieldProps) {
+  const [isFocused, setIsFocused] = useState(false);
   const borderCls = STATUS_BORDER[status] || STATUS_BORDER.default;
   const statusTextColor = STATUS_TEXT_COLOR[status] || STATUS_TEXT_COLOR.default;
+  const statusIcon = STATUS_ICON[status] || '';
 
   return (
-    <div className={`flex flex-col gap-1.5 w-full ${className}`}>
+    <div className={cn('flex flex-col gap-1.5 w-full', className)}>
       {label && (
-        <div className="flex items-center justify-between text-xs font-medium text-zinc-300">
-          <span>{label}</span>
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor={id}
+            className={cn(
+              'text-[11px] font-semibold uppercase tracking-wider transition-colors duration-200',
+              isFocused ? 'text-zinc-200' : 'text-zinc-500'
+            )}
+          >
+            {label}
+          </label>
           {actionButton}
         </div>
       )}
 
-      <div className={`relative flex items-center rounded-xl bg-black/40 border transition-all ${borderCls} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+      <div
+        className={cn(
+          'relative flex items-center rounded-xl',
+          'bg-white/[0.025] backdrop-blur-sm',
+          'border transition-all duration-200',
+          borderCls,
+          disabled && 'opacity-40 cursor-not-allowed'
+        )}
+      >
         <select
           id={id}
           name={name}
           value={value}
           disabled={disabled}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           onChange={(e) => onChange?.(e.target.value, e)}
-          className="w-full appearance-none bg-transparent px-3 py-2 text-xs text-zinc-200 outline-none cursor-pointer disabled:cursor-not-allowed font-medium pr-8"
+          className={cn(
+            'w-full appearance-none bg-transparent px-3.5 py-2.5',
+            'text-xs text-zinc-200 outline-none cursor-pointer',
+            'disabled:cursor-not-allowed font-medium pr-9',
+            'transition-colors duration-200'
+          )}
         >
           {placeholder && (
-            <option value="" disabled className="bg-zinc-900 text-zinc-500">
+            <option value="" disabled className="bg-[#0c0d12] text-zinc-600">
               {placeholder}
             </option>
           )}
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value} className="bg-zinc-900 text-zinc-200">
+            <option key={opt.value} value={opt.value} className="bg-[#0c0d12] text-zinc-200">
               {opt.label || opt.value}
             </option>
           ))}
         </select>
-        <div className="pointer-events-none absolute right-2.5 text-zinc-400">
-          <ChevronDown size={14} />
-        </div>
+
+        {/* Custom chevron with rotation animation */}
+        <motion.div
+          animate={{ rotate: isFocused ? 180 : 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className="pointer-events-none absolute right-3 text-zinc-500"
+        >
+          <ChevronDown size={13} strokeWidth={2.5} />
+        </motion.div>
       </div>
 
-      {(statusText || helper) && (
-        <div className={`text-[11px] ${statusText ? statusTextColor : 'text-zinc-500'}`}>
-          {statusText || helper}
-        </div>
-      )}
+      <AnimatePresence>
+        {(statusText || helper) && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className={cn(
+              'flex items-center gap-1 text-[11px]',
+              statusText ? statusTextColor : 'text-zinc-600'
+            )}
+          >
+            {statusIcon && <span className="text-[10px]">{statusIcon}</span>}
+            <span>{statusText || helper}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

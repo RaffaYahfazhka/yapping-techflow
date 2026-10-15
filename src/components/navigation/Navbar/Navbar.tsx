@@ -117,8 +117,8 @@ export default function Navbar({
 
       {/* Right Desktop Actions - Clean Spacing & Adaptive Responsiveness */}
       <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
-        {/* Cluster 1: Penthouse Quick Toggles (Minimap & Group Chat) */}
-        <div className="flex items-center gap-1 lg:gap-1.5 p-1.5 px-2 rounded-2xl bg-white/[0.04] border border-white/10 shadow-sm shrink-0">
+        {/* Cluster 1: Penthouse Quick Toggles (Minimap & Group Chat) — visible on lg+ */}
+        <div className="hidden lg:flex items-center gap-1 lg:gap-1.5 p-1.5 px-2 rounded-2xl bg-white/[0.04] border border-white/10 shadow-sm shrink-0">
           {onOpenMinimap && (
             <button
               type="button"
@@ -127,7 +127,7 @@ export default function Navbar({
               className="inline-flex items-center gap-1.5 px-3 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:shadow-[0_4px_16px_rgba(52,211,153,0.2)] active:scale-95 transition-all whitespace-nowrap"
             >
               <Compass size={14} />
-              <span className="hidden lg:inline">Radar</span>
+              <span className="hidden xl:inline">Radar</span>
             </button>
           )}
 
@@ -139,12 +139,12 @@ export default function Navbar({
               className="inline-flex items-center gap-1.5 px-3 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_4px_16px_rgba(251,191,36,0.2)] active:scale-95 transition-all whitespace-nowrap"
             >
               <Coffee size={14} />
-              <span className="hidden lg:inline">Warung Kopi</span>
+              <span className="hidden xl:inline">Warung Kopi</span>
             </button>
           )}
         </div>
 
-        <div className="w-px h-5 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
+        <div className="hidden lg:block w-px h-5 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
 
         {/* Cluster 2: Executive & Squad Operations with Responsive Text */}
         <div className="flex items-center gap-2 lg:gap-2.5 shrink-0">

@@ -433,17 +433,35 @@ export default function RetroArcadeModal({ isOpen, onClose, onSelectMode, player
   return (
     <div className="pointer-events-auto fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 md:p-6 backdrop-blur-md" role="dialog" aria-label="Retro Arcade">
       <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-violet-500/30 bg-[#0c0d12]/95 p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
-        <header className="mb-6 pb-3 flex items-center justify-between border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/15">
-              <Gamepad2 size={18} className="text-violet-400" />
+        <header className="mb-6 pb-3 flex items-center justify-between border-b border-white/10 relative overflow-hidden">
+          <div className="absolute right-0 top-0 bottom-0 w-48 opacity-20 pointer-events-none overflow-hidden">
+            <img
+              src="/textures/props/retro_arcade_cabinet.jpg"
+              alt="Retro Arcade Cabinet"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d12] to-transparent" />
+          </div>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/15 overflow-hidden relative">
+              <img
+                src="/textures/props/retro_arcade_cabinet.jpg"
+                alt="Retro Arcade Cabinet"
+                className="absolute inset-0 w-full h-full object-cover opacity-50"
+              />
+              <Gamepad2 size={20} className="text-violet-400 relative z-10 drop-shadow" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white tracking-wide">Retro Arcade · TechFlow Cabinet</h2>
+              <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
+                Retro Arcade · TechFlow Cabinet
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                  ROOFTOP DECK
+                </span>
+              </h2>
               <p className="text-xs text-zinc-400 mt-0.5">Rooftop Sky Terrace Arcade Machine · Pilih Mini-Game</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-xl p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" aria-label="Close arcade">
+          <button type="button" onClick={onClose} className="rounded-xl p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors relative z-10" aria-label="Close arcade">
             <X size={18} />
           </button>
         </header>
