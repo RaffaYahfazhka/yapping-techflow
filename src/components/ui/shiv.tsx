@@ -26,9 +26,9 @@ const VARIANT_CLASSES = {
 } as const;
 
 const SIZE_CLASSES = {
-  sm: 'px-2.5 py-1 text-[11px]',
-  md: 'px-3.5 py-2 text-xs',
-  lg: 'px-5 py-2.5 text-sm',
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2 text-xs font-bold',
+  lg: 'px-5.5 py-2.5 text-sm font-bold',
 } as const;
 
 export function ShivButton({ variant = 'primary', size = 'md', className, children, ...rest }: ShivButtonProps) {
@@ -36,7 +36,7 @@ export function ShivButton({ variant = 'primary', size = 'md', className, childr
     <button
       type="button"
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-bold transition focus:outline-none focus-visible:ring-2 disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-bold transition focus:outline-none focus-visible:ring-2 disabled:opacity-50',
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],
         className,
@@ -61,7 +61,7 @@ export function ShivBadge({ color = '#10b981', children, className, glow }: Shiv
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide',
         glow && 'shadow-lg',
         className,
       )}
@@ -79,13 +79,31 @@ export interface ShivModalProps {
   onClose: () => void;
   title: string;
   subtitle?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  noPadding?: boolean;
+  className?: string;
   children: ReactNode;
 }
 
-const SIZE_W = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' } as const;
+const SIZE_W = {
+  sm: 'max-w-sm',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-5xl',
+  '2xl': 'max-w-6xl',
+  full: 'max-w-[96vw]',
+} as const;
 
-export function ShivModal({ isOpen, onClose, title, subtitle, size = 'md', children }: ShivModalProps) {
+export function ShivModal({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  size = 'md',
+  noPadding = false,
+  className,
+  children,
+}: ShivModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,25 +120,34 @@ export function ShivModal({ isOpen, onClose, title, subtitle, size = 'md', child
   if (!isOpen) return null;
 
   return (
-    <div className="pointer-events-auto fixed inset-0 z-[60] grid place-items-center bg-slate-950/50 p-4 backdrop-blur-sm">
+    <div className="pointer-events-auto fixed inset-0 z-[60] grid place-items-center bg-black/70 p-4 md:p-6 backdrop-blur-md">
       <div
         ref={panelRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={cn('w-full rounded-2xl border border-white/10 bg-slate-950/95 p-5 shadow-2xl focus:outline-none', SIZE_W[size])}
+        className={cn(
+          'w-full max-h-[90vh] flex flex-col rounded-3xl border border-white/10 bg-[#0d0e14]/95 shadow-2xl backdrop-blur-xl focus:outline-none overflow-hidden',
+          SIZE_W[size],
+          className,
+        )}
       >
-        <div className="mb-4 flex items-start justify-between">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4.5 bg-white/[0.02] shrink-0">
           <div>
-            <h2 className="text-sm font-bold text-slate-200">{title}</h2>
-            {subtitle && <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>}
+            <h2 className="text-base font-bold text-white tracking-wide">{title}</h2>
+            {subtitle && <p className="mt-0.5 text-xs text-zinc-400">{subtitle}</p>}
           </div>
-          <button type="button" onClick={onClose} className="rounded-md p-1 text-slate-500 hover:bg-white/10 hover:text-slate-300" aria-label="Tutup">
-            <X size={14} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Tutup"
+          >
+            <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className={cn('flex-1 overflow-y-auto min-h-0', !noPadding && 'p-6')}>{children}</div>
       </div>
     </div>
   );

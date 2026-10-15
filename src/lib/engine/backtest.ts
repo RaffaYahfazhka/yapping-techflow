@@ -1,17 +1,11 @@
 /**
- * Deterministic synthetic XAUUSD EMA backtest.
- * Prices are synthetic (generated from a seed); they are NOT market data.
- *
- * Model summary:
- * - Signal: EMA(12) / EMA(26) crossover computed on bar closes. No signal before the
- *   slow EMA has its full warmup (SLOW_PERIOD bars).
- * - Execution: a signal on bar j is filled at the OPEN of bar j+1 (no look-ahead).
- * - Costs: fixed full spread (half paid per side) + fixed slippage per market fill,
- *   plus a fixed commission per side. Stop exits pay spread+slippage; target (limit)
- *   exits pay spread only.
- * - Accounting: position size is `units`; P&L is net of all modeled costs.
- * - Equity: marked to market on every bar (realized + open-position value after an
- *   estimated exit), so drawdown is measured on the full equity path, not closed trades.
+ * Deterministic synthetic XAUUSD ATR-grid basket backtest.
+ * Prices are generated, not market history. EMA crossover entries and ATR grid
+ * additions execute at the next bar open, without looking ahead. A basket only
+ * closes when its aggregate profit covers spread, slippage, and commissions.
+ * Losing open baskets remain marked to market: a high closed-basket win rate
+ * does NOT imply positive equity or bounded risk. At most six equal-sized legs
+ * may be open; there is no martingale sizing or hidden forced loss deletion.
  */
 
 export type Bars = 'M5' | 'M15' | 'H1';
@@ -38,7 +32,7 @@ export interface BacktestTrade {
   costs: number;
   /** Net realized P&L after all modeled costs. */
   pnl: number;
-  exitReason: 'stop' | 'target' | 'signal';
+  exitReason: 'basket-target';
   openedAt: number;
   closedAt: number;
 }
@@ -63,7 +57,8 @@ export interface BacktestOptions {
   period: Period;
   seed: number;
   target: number;
-  stop: number;
+  /** Grid spacing as a multiple of the preceding completed bar's ATR(14). */
+  gridAtrMultiplier: number;
   /** Expected bar timeframe. If provided it must match the bars' spacing. */
   timeframe?: Bars;
   /** Price units (USD per oz for XAUUSD). Default 0.30. */
@@ -120,7 +115,7 @@ export interface BacktestResult {
 }
 
 export const BACKTEST_DISCLAIMER =
-  'Deterministic synthetic paper backtest; not market data, investment advice, or a guarantee. Modeled: fixed spread, slippage, and commission. Not modeled: swaps, latency, partial fills, requotes, margin calls, and real liquidity. Past or simulated performance is not predictive.';
+  'Synthetic ATR Grid / Never-Close-Loss basket simulation, not historical market data or a profit guarantee. Closed-basket win rate excludes open losses; equity and drawdown include them. Up to six equal-sized grid legs; fixed spread, slippage and commissions. No stop loss: sustained trends can exhaust the account. Swaps, margin liquidation and real liquidity are not modeled.';
 
 const GENERATOR = 'xauusd-m5-mulberry32-v3';
 const FAST_PERIOD = 12;
@@ -212,7 +207,7 @@ interface Config {
   period: Period;
   seed: number;
   target: number;
-  stop: number;
+  gridAtrMultiplier: number;
   spread: number;
   slippage: number;
   commissionPerSide: number;
@@ -239,14 +234,14 @@ function resolveConfig(opts: BacktestOptions | undefined, errors: string[]): Con
   if (!PERIODS.includes(opts.period)) errors.push(`unsupported period: ${String(opts.period)}`);
   if (!Number.isFinite(opts.seed)) errors.push('seed must be a finite number');
   if (!Number.isFinite(opts.target) || opts.target <= 0) errors.push('target must be a positive finite number');
-  if (!Number.isFinite(opts.stop) || opts.stop <= 0) errors.push('stop must be a positive finite number');
+  if (!Number.isFinite(opts.gridAtrMultiplier) || opts.gridAtrMultiplier <= 0) errors.push('gridAtrMultiplier must be a positive finite number');
   if (opts.timeframe !== undefined && !TIMEFRAMES.includes(opts.timeframe)) errors.push(`unsupported timeframe: ${String(opts.timeframe)}`);
 
   const cfg: Config = {
     period: opts.period,
     seed: opts.seed,
     target: opts.target,
-    stop: opts.stop,
+    gridAtrMultiplier: opts.gridAtrMultiplier,
     spread: opts.spread ?? DEFAULTS.spread,
     slippage: opts.slippage ?? DEFAULTS.slippage,
     commissionPerSide: opts.commissionPerSide ?? DEFAULTS.commissionPerSide,
@@ -310,8 +305,6 @@ interface OpenPosition {
   entryFill: number;
   entryMid: number;
   openedAt: number;
-  stopLevel: number;
-  targetLevel: number;
 }
 
 interface SimOutput {
@@ -320,89 +313,85 @@ interface SimOutput {
   open: boolean;
 }
 
-/** Bar-by-bar simulation with next-open execution, costs, and mark-to-market equity. */
+/** ATR uses only completed bars; every order decided at close fills next open. */
 function simulate(window: BacktestBar[], fast: number[], slow: number[], cfg: Config): SimOutput {
-  const halfSpread = cfg.spread / 2;
-  const marketCost = halfSpread + cfg.slippage;
+  const marketCost = cfg.spread / 2 + cfg.slippage;
   const trades: BacktestTrade[] = [];
   const equityCurve: EquityPoint[] = [];
-  let pos: OpenPosition | null = null;
+  const legs: OpenPosition[] = [];
   let pending: 1 | -1 | 0 = 0;
+  let closePending = false;
   let realized = 0;
+  let atr = 0;
 
-  // Closes the position at `exitMid` with an adverse `exitCost` per unit; commission on both sides.
-  const closePosition = (p: OpenPosition, exitMid: number, exitCost: number, closedAt: number, reason: BacktestTrade['exitReason']) => {
-    const exitFill = exitMid - p.side * exitCost;
-    const grossPnl = (exitMid - p.entryMid) * p.side * cfg.units;
-    const pnl = (exitFill - p.entryFill) * p.side * cfg.units - 2 * cfg.commissionPerSide;
-    realized += pnl;
-    trades.push({
-      id: trades.length + 1,
-      side: p.side === 1 ? 'long' : 'short',
-      entryPrice: p.entryFill,
-      exitPrice: exitFill,
-      grossPnl,
-      costs: grossPnl - pnl,
-      pnl,
-      exitReason: reason,
-      openedAt: p.openedAt,
-      closedAt,
-    });
+  const basketPnl = (mid: number): number => {
+    let pnl = 0;
+    for (const leg of legs) {
+      const exitFill = mid - leg.side * marketCost;
+      pnl += (exitFill - leg.entryFill) * leg.side * cfg.units - 2 * cfg.commissionPerSide;
+    }
+    return pnl;
   };
 
   for (let j = 0; j < window.length; j++) {
     const bar = window[j];
-
-    // 1) Fill a pending signal from the previous bar at this bar's open.
-    if (pending !== 0 && !(pos && pos.side === pending)) {
-      if (pos) closePosition(pos, bar.open, marketCost, bar.t, 'signal');
-      pos = {
-        side: pending,
-        entryFill: bar.open + pending * marketCost,
-        entryMid: bar.open,
-        openedAt: bar.t,
-        stopLevel: bar.open - pending * cfg.stop,
-        targetLevel: bar.open + pending * cfg.target,
-      };
+    // Re-check after opening gaps. Never manufacture a profitable fill when the
+    // actual next open cannot cover all entry and exit costs.
+    if (closePending && legs.length && basketPnl(bar.open) >= cfg.target) {
+      const first = legs[0];
+      let entryMid = 0;
+      let entryFill = 0;
+      for (const leg of legs) {
+        entryMid += leg.entryMid;
+        entryFill += leg.entryFill;
+      }
+      entryMid /= legs.length;
+      entryFill /= legs.length;
+      const grossPnl = (bar.open - entryMid) * first.side * cfg.units * legs.length;
+      const pnl = basketPnl(bar.open);
+      realized += pnl;
+      trades.push({
+        id: trades.length + 1,
+        side: first.side === 1 ? 'long' : 'short',
+        entryPrice: entryFill,
+        exitPrice: bar.open - first.side * marketCost,
+        grossPnl,
+        costs: grossPnl - pnl,
+        pnl,
+        exitReason: 'basket-target',
+        openedAt: first.openedAt,
+        closedAt: bar.t,
+      });
+      legs.length = 0;
+      pending = 0;
+    }
+    closePending = false;
+    if (pending && legs.length < 6) {
+      legs.push({ side: pending, entryMid: bar.open, entryFill: bar.open + pending * marketCost, openedAt: bar.t });
     }
     pending = 0;
 
-    // 2) Intrabar stop/target. If both are touched on one bar, the stop is assumed first.
-    if (pos) {
-      const s = pos.side;
-      const stopHit = s === 1 ? bar.low <= pos.stopLevel : bar.high >= pos.stopLevel;
-      const targetHit = s === 1 ? bar.high >= pos.targetLevel : bar.low <= pos.targetLevel;
-      if (stopHit) {
-        // Gapped through the stop: fill at the open (worse than the level).
-        const mid = s === 1 ? Math.min(bar.open, pos.stopLevel) : Math.max(bar.open, pos.stopLevel);
-        closePosition(pos, mid, marketCost, bar.t, 'stop');
-        pos = null;
-      } else if (targetHit) {
-        // Limit exit: spread only, no slippage. Gap-through fills at the better open.
-        const mid = s === 1 ? Math.max(bar.open, pos.targetLevel) : Math.min(bar.open, pos.targetLevel);
-        closePosition(pos, mid, halfSpread, bar.t, 'target');
-        pos = null;
-      }
-    }
+    const previousClose = j ? window[j - 1].close : bar.open;
+    const trueRange = Math.max(bar.high - bar.low, Math.abs(bar.high - previousClose), Math.abs(bar.low - previousClose));
+    atr = j < 14 ? (atr * j + trueRange) / (j + 1) : (atr * 13 + trueRange) / 14;
+    const unrealized = basketPnl(bar.close);
+    equityCurve.push({ t: bar.t, equity: cfg.initialEquity + realized + unrealized, realized, unrealized });
 
-    // 3) Signal on this bar's close; execution happens on the next bar's open.
-    if (j >= SLOW_PERIOD && j + 1 < window.length) {
+    if (j < SLOW_PERIOD || j + 1 >= window.length) continue;
+    if (legs.length) {
+      closePending = unrealized >= cfg.target;
+      const last = legs[legs.length - 1];
+      if (!closePending && legs.length < 6 && atr > 0 &&
+          (last.entryMid - bar.close) * last.side >= atr * cfg.gridAtrMultiplier) {
+        pending = last.side;
+      }
+    } else {
       const prior = fast[j - 1] - slow[j - 1];
       const current = fast[j] - slow[j];
-      const signal: 1 | -1 | 0 = prior <= 0 && current > 0 ? 1 : prior >= 0 && current < 0 ? -1 : 0;
-      if (signal !== 0 && !(pos && pos.side === signal)) pending = signal;
+      pending = prior <= 0 && current > 0 ? 1 : prior >= 0 && current < 0 ? -1 : 0;
     }
-
-    // 4) Mark to market: open position valued at an estimated exit (spread+slippage, commission).
-    let unrealized = 0;
-    if (pos) {
-      const markFill = bar.close - pos.side * marketCost;
-      unrealized = (markFill - pos.entryFill) * pos.side * cfg.units - 2 * cfg.commissionPerSide;
-    }
-    equityCurve.push({ t: bar.t, equity: cfg.initialEquity + realized + unrealized, realized, unrealized });
   }
-
-  return { trades, equityCurve, open: pos !== null };
+  return { trades, equityCurve, open: legs.length > 0 };
 }
 
 function emptyResult(
@@ -446,7 +435,7 @@ function emptyResult(
 }
 
 /**
- * Run the EMA crossover backtest on `bars` for the requested period.
+ * Run the ATR-grid basket backtest on `bars` for the requested period.
  * Never throws for bad input: problems are reported in `errors` (result is then empty)
  * and non-fatal notices in `warnings`.
  */

@@ -28,7 +28,7 @@ export const DESK_OBSTACLES = AGENTS.map((agent) => {
 export const HOLOTABLE_OBSTACLE = {
   id: 'holotable',
   name: 'Holographic Planning Table',
-  x: 9.5,
+  x: 8.5,
   z: 0.0,
   radius: 1.9,
 };
@@ -50,18 +50,23 @@ export const PENTHOUSE_OBSTACLES = [
   { id: 'glass_wall_w', minX: -16.0, maxX: -3.2, minZ: 11.75, maxZ: 12.25 },
   // Glass partition East of sliding door
   { id: 'glass_wall_e', minX: 3.2, maxX: 16.0, minZ: 11.75, maxZ: 12.25 },
+  // Skyline Suite Acoustic Glass Walls (Doorway at z: -1.5 to 1.5)
+  { id: 'skyline_wall_n', minX: 11.35, maxX: 11.65, minZ: -12.0, maxZ: -1.5 },
+  { id: 'skyline_wall_s', minX: 11.35, maxX: 11.65, minZ: 1.5, maxZ: 11.8 },
+  // Pantry Espresso & Island Bar
+  { id: 'pantry_bar', minX: 6.8, maxX: 10.2, minZ: 7.8, maxZ: 9.2 },
   // Terrace Outdoor L-Sofa Lounge
-  { id: 'terrace_sofa', minX: -11.0, maxX: -5.0, minZ: 16.5, maxZ: 20.0 },
+  { id: 'terrace_sofa', minX: -11.5, maxX: -6.5, minZ: 16.5, maxZ: 20.5 },
   // Retro Arcade Machine
-  { id: 'terrace_arcade', minX: 9.5, maxX: 12.5, minZ: 15.0, maxZ: 17.5 },
+  { id: 'terrace_arcade', minX: 8.2, maxX: 10.8, minZ: 16.5, maxZ: 18.5 },
   // Sky Darts Stand
-  { id: 'terrace_darts', minX: 10.5, maxX: 13.5, minZ: 22.0, maxZ: 24.5 },
+  { id: 'terrace_darts', minX: 10.5, maxX: 13.5, minZ: 21.5, maxZ: 24.5 },
 ];
 
 export const TELESCOPE_OBSTACLE = {
   id: 'terrace_telescope',
-  x: -11.5,
-  z: 24.5,
+  x: -12.5,
+  z: 25.0,
   radius: 0.9,
 };
 

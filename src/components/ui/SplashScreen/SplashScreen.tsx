@@ -9,14 +9,24 @@ export interface SplashScreenProps {
 }
 
 const STAGES = [
-  { pct: 20, text: 'Memuat aset 3D isometric kantor…', agent: 'tara' },
-  { pct: 45, text: 'Menginisialisasi 6 Karyawan AI…', agent: 'arga' },
-  { pct: 70, text: 'Sinkronisasi Jira Cloud & Git local…', agent: 'jajang' },
-  { pct: 90, text: 'Menyiapkan YouTube Music Audio Engine…', agent: 'vani' },
+  { pct: 15, text: 'Memuat aset 3D isometric penthouse…', agent: 'khansaku' },
+  { pct: 40, text: 'Menginisialisasi 9 Karyawan AI & Trading Engine…', agent: 'arga' },
+  { pct: 65, text: 'Sinkronisasi Jira Cloud, Git local & DLMM feeds…', agent: 'jajang' },
+  { pct: 88, text: 'Menyiapkan YouTube Music Audio Engine…', agent: 'vani' },
   { pct: 100, text: 'Kantor siap beroperasi!', agent: 'reno' },
 ];
 
-const AGENT_NAMES = ['Tara (PM)', 'Arga (Arch)', 'Jajang (FE)', 'Kian (BE)', 'Vani (QA)', 'Reno (DevOps)'];
+const AGENT_NAMES = [
+  'Khansaku (Sec)',
+  'Arga (Arch)',
+  'Jajang (FE)',
+  'Kian (BE)',
+  'Vani (QA)',
+  'Reno (DevOps)',
+  'Altair (DeFi)',
+  'Kenzo (Poly)',
+  'Damian (Quant)',
+];
 
 export default function SplashScreen({
   onFinish,
@@ -67,54 +77,63 @@ export default function SplashScreen({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Loading Kantor Raffa"
+      aria-label="Loading Yapping Techflow"
       className={`fixed inset-0 z-[9999] flex select-none items-center justify-center bg-[radial-gradient(circle_at_50%_30%,#151824_0%,#090a0f_70%,#040508_100%)] font-sans text-zinc-100 transition-[opacity,transform] duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         fading ? 'pointer-events-none scale-[1.04] opacity-0' : 'scale-100 opacity-100'
       }`}
     >
-      <div className="flex w-[min(92vw,480px)] flex-col items-center gap-5 rounded-[28px] border border-white/12 bg-[#12141d]/75 px-8 py-9 text-center shadow-[0_30px_80px_-10px_rgba(0,0,0,0.8),0_0_40px_rgba(16,185,129,0.15)] backdrop-blur-[24px]">
-        <div className="grid h-[68px] w-[68px] animate-[bounce_3s_ease-in-out_infinite] place-items-center rounded-[20px] border border-emerald-500/40 bg-gradient-to-br from-emerald-500/25 to-emerald-600/10 text-emerald-300 shadow-[0_10px_24px_rgba(16,185,129,0.25)]">
-          <Zap size={32} aria-hidden="true" />
+      <div className="flex w-[min(92vw,560px)] flex-col items-center gap-7 sm:gap-8 rounded-[32px] border border-white/15 bg-[#12141d]/85 px-8 sm:px-12 py-10 sm:py-12 text-center shadow-[0_30px_90px_-10px_rgba(0,0,0,0.85),0_0_50px_rgba(16,185,129,0.15)] backdrop-blur-[28px]">
+        {/* Brand Icon */}
+        <div className="grid h-18 w-18 sm:h-20 sm:w-20 place-items-center rounded-2xl sm:rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-emerald-500/25 via-emerald-500/10 to-emerald-600/20 text-emerald-300 shadow-[0_12px_28px_rgba(16,185,129,0.3)] animate-[bounce_3s_ease-in-out_infinite]">
+          <Zap size={36} aria-hidden="true" className="drop-shadow-[0_0_10px_rgba(52,211,153,0.6)]" />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <span className="font-mono text-[11px] font-extrabold uppercase tracking-[0.1em] text-emerald-400">
+        {/* Title & Description with Generous Spacing */}
+        <div className="flex flex-col items-center gap-3 w-full">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-mono text-[11px] sm:text-xs font-bold tracking-wider uppercase">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]" />
             Autonomous Mission Control v2.6
-          </span>
-          <h2 className="m-0 text-[22px] font-extrabold leading-[1.3] tracking-[-0.02em] text-white">Kantor Raffa Virtual 3D</h2>
-          <p className="m-0 text-[12.5px] leading-normal text-slate-400">
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white m-0">
+            Yapping Techflow
+          </h2>
+          <p className="text-sm text-zinc-400 leading-relaxed max-w-md m-0">
             Workspace autonomous AI engineering terintegrasi Jira Cloud, Git local detection, dan YouTube Music.
           </p>
         </div>
 
-        <div
-          className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-        >
+        {/* Progress Bar Container with Dedicated Spacing */}
+        <div className="w-full flex flex-col gap-3 py-1">
           <div
-            className="relative h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.6)] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-            style={{ width: `${progress}%` }}
+            className="relative h-2 sm:h-2.5 w-full overflow-hidden rounded-full bg-white/[0.08] shadow-inner"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
           >
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            <div
+              className="relative h-full rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-300 shadow-[0_0_16px_rgba(16,185,129,0.7)] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              style={{ width: `${progress}%` }}
+            >
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            </div>
+          </div>
+
+          <div className="flex w-full items-center justify-between font-mono text-xs text-zinc-400 font-medium px-1">
+            <span className="text-zinc-300">{STAGES[stageIndex]?.text || 'Menyiapkan…'}</span>
+            <span className="text-emerald-400 font-bold">{progress}%</span>
           </div>
         </div>
 
-        <div className="flex w-full items-center justify-between font-mono text-[11px] text-slate-400">
-          <span>{STAGES[stageIndex]?.text || 'Menyiapkan…'}</span>
-          <span>{progress}%</span>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+        {/* Agent Badges with Roomy Gaps and Proper Pill Proportions for 9 Employees */}
+        <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-2.5 w-full max-w-lg py-1">
           {AGENT_NAMES.map((name, i) => (
             <span
               key={name}
-              className={`rounded-md border px-2 py-[3px] text-[10.5px] transition-all duration-200 ${
+              className={`rounded-xl border px-3 py-1.5 text-[11px] sm:text-xs font-medium transition-all duration-300 ${
                 i <= stageIndex
-                  ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
-                  : 'border-white/[0.07] bg-white/[0.04] text-zinc-500'
+                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)] font-semibold'
+                  : 'border-white/10 bg-white/[0.03] text-zinc-500'
               }`}
             >
               {name}
@@ -122,24 +141,27 @@ export default function SplashScreen({
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={handleEnter}
-          disabled={!ready}
-          className={`flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-br from-emerald-400 to-emerald-500 px-5 py-[13px] text-sm font-extrabold text-[#04241a] shadow-[0_10px_28px_rgba(16,185,129,0.45)] transition-all duration-200 enabled:cursor-pointer enabled:hover:-translate-y-px enabled:hover:from-emerald-300 enabled:hover:to-emerald-400 enabled:hover:shadow-[0_14px_34px_rgba(16,185,129,0.6)] enabled:active:translate-y-0 disabled:cursor-wait disabled:opacity-60`}
-        >
-          {ready ? (
-            <>
-              <Rocket size={16} aria-hidden="true" />
-              Masuk ke Kantor Raffa
-            </>
-          ) : (
-            <>
-              <Zap size={16} aria-hidden="true" />
-              Memuat Workspace…
-            </>
-          )}
-        </button>
+        {/* Primary CTA Button with Roomy Padding & Margin */}
+        <div className="w-full pt-2">
+          <button
+            type="button"
+            onClick={handleEnter}
+            disabled={!ready}
+            className={`flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-400 px-6 py-4 text-sm sm:text-base font-extrabold text-[#031d14] shadow-[0_12px_32px_rgba(16,185,129,0.4)] transition-all duration-200 enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_16px_40px_rgba(16,185,129,0.55)] enabled:active:translate-y-0 disabled:cursor-wait disabled:opacity-60`}
+          >
+            {ready ? (
+              <>
+                <Rocket size={18} aria-hidden="true" />
+                Masuk ke Kantor Raffa
+              </>
+            ) : (
+              <>
+                <Zap size={18} aria-hidden="true" />
+                Memuat Workspace…
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

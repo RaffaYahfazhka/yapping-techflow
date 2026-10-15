@@ -49,7 +49,7 @@ export default function BacktestSimulator() {
             period,
             seed: SEED,
             target: 3,
-            stop: 5,
+            gridAtrMultiplier: 1.5,
             timeframe: tf,
             initialEquity: INITIAL_EQUITY,
           }),
@@ -67,26 +67,28 @@ export default function BacktestSimulator() {
   const hasErrors = !!result && result.errors.length > 0;
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4" aria-label="Backtest Simulator">
-      <header className="flex flex-wrap items-center gap-3">
-        <h3 className="flex items-center gap-2 text-xs font-bold text-slate-200">
-          <ShieldCheck size={14} className="text-amber-400" /> Interactive Backtest — XAUUSD (Synthetic Paper)
+    <section className="flex flex-col gap-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8 backdrop-blur-sm shadow-sm" aria-label="Backtest Simulator">
+      <header className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/10">
+        <h3 className="flex items-center gap-2.5 text-base font-bold text-white">
+          <ShieldCheck size={18} className="text-amber-400" /> ATR Grid / Never-Close-Loss — XAUUSD
         </h3>
-        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] text-amber-300">Demo fixture, bukan jaminan</span>
+        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3.5 py-1.5 font-mono text-xs font-semibold text-amber-300">
+          Demo fixture, bukan jaminan
+        </span>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500">Timeframe</span>
-          <div className="flex gap-1 rounded-xl border border-white/10 bg-slate-950/70 p-1">
+          <span className="mb-2.5 block font-mono text-xs font-semibold uppercase tracking-wider text-zinc-400">Timeframe</span>
+          <div className="flex gap-2 rounded-2xl border border-white/10 bg-black/40 p-2">
             {TIMEFRAMES.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setTf(t.id)}
                 aria-pressed={tf === t.id}
-                className={`flex-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${
-                  tf === t.id ? 'bg-amber-400 text-amber-950' : 'text-slate-400 hover:bg-white/5'
+                className={`flex-1 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+                  tf === t.id ? 'bg-amber-400 text-amber-950 font-bold shadow-sm' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 {t.label}
@@ -95,16 +97,16 @@ export default function BacktestSimulator() {
           </div>
         </div>
         <div>
-          <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-slate-500">Periode</span>
-          <div className="flex gap-1 rounded-xl border border-white/10 bg-slate-950/70 p-1">
+          <span className="mb-2.5 block font-mono text-xs font-semibold uppercase tracking-wider text-zinc-400">Periode</span>
+          <div className="flex gap-2 rounded-2xl border border-white/10 bg-black/40 p-2">
             {PERIODS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setPeriod(p.id)}
                 aria-pressed={period === p.id}
-                className={`flex-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition ${
-                  period === p.id ? 'bg-amber-400 text-amber-950' : 'text-slate-400 hover:bg-white/5'
+                className={`flex-1 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+                  period === p.id ? 'bg-amber-400 text-amber-950 font-bold shadow-sm' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 {p.label}
@@ -114,38 +116,38 @@ export default function BacktestSimulator() {
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-3.5">
         <button
           type="button"
           onClick={run}
           disabled={running}
-          className="flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-xs font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-50"
+          className="flex items-center gap-2.5 rounded-xl bg-amber-400 px-6 py-3 text-xs md:text-sm font-bold text-amber-950 hover:bg-amber-300 disabled:opacity-50 transition shadow-sm active:scale-95"
         >
-          <Play size={13} /> {running ? 'Menjalankan…' : 'Jalankan Backtest'}
+          <Play size={16} /> {running ? 'Menjalankan…' : 'Jalankan Backtest'}
         </button>
         <button
           type="button"
           onClick={reset}
-          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 hover:bg-white/10"
+          className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-xs md:text-sm font-semibold text-zinc-300 hover:bg-white/10 hover:text-white transition"
         >
-          <RotateCcw size={13} /> Reset Hasil
+          <RotateCcw size={16} /> Reset Hasil
         </button>
       </div>
 
       {!result && !running && (
-        <p className="rounded-xl border border-white/10 bg-slate-950/40 p-3 text-xs text-slate-400" role="status">
-          Pilih timeframe dan periode, lalu jalankan backtest untuk melihat hasil simulasi. Tidak ada performa contoh yang ditampilkan.
+        <p className="rounded-2xl border border-white/10 bg-black/30 p-5 text-xs text-zinc-400 leading-relaxed" role="status">
+          Data sintetis, bukan histori pasar. Grid ATR(14) dengan maksimal enam posisi setara; basket ditutup hanya setelah biaya terbayar. Kerugian terbuka tetap masuk ekuitas dan drawdown. Pilih timeframe dan periode untuk menghitung hasil aktual.
         </p>
       )}
 
-      {running && <p className="text-xs text-amber-300" role="status">Menghitung hasil dari data sintetis…</p>}
+      {running && <p className="text-xs font-semibold text-amber-300" role="status">Menghitung hasil dari data sintetis…</p>}
 
       {result && hasErrors && (
-        <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3" role="alert">
+        <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4" role="alert">
           <p className="flex items-center gap-2 text-xs font-bold text-rose-300">
-            <XCircle size={13} /> Backtest tidak valid — hasil disembunyikan
+            <XCircle size={15} /> Backtest tidak valid — hasil disembunyikan
           </p>
-          <ul className="list-disc pl-5 text-[11px] text-rose-200">
+          <ul className="list-disc pl-5 text-xs text-rose-200">
             {result.errors.map((e, i) => (
               <li key={i}>{e}</li>
             ))}
@@ -154,44 +156,44 @@ export default function BacktestSimulator() {
       )}
 
       {result && !hasErrors && (
-        <div className="flex flex-col gap-3" aria-live="polite">
+        <div className="flex flex-col gap-4" aria-live="polite">
           {result.warnings.length > 0 && (
-            <ul className="flex flex-col gap-1 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-[11px] text-amber-200" role="status">
+            <ul className="flex flex-col gap-1.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3.5 text-xs text-amber-200" role="status">
               {result.warnings.map((w, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <AlertTriangle size={11} className="mt-0.5 shrink-0" /> <span>{w}</span>
+                  <AlertTriangle size={13} className="mt-0.5 shrink-0" /> <span>{w}</span>
                 </li>
               ))}
             </ul>
           )}
 
           {result.trades === 0 && (
-            <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs text-amber-200">
+            <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4 text-xs text-amber-200">
               Tidak ada transaksi tertutup pada rentang ini. Win rate tidak bermakna tanpa transaksi.
             </p>
           )}
 
           <EquityChart points={result.equityCurve} initialEquity={result.costModel.initialEquity} />
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <StatBox label="Samples" value={String(result.sampleCount)} />
-            <StatBox label="Closed Trades" value={String(result.trades)} />
-            <StatBox label="Winning Trades" value={String(result.wins)} accent="text-emerald-400" />
-            <StatBox label="Losing Trades" value={String(result.losses)} accent="text-rose-400" />
-            <StatBox label="Closed-trade Win Rate" value={result.trades ? `${(result.winRate * 100).toFixed(2)}%` : '—'} accent="text-amber-300" />
+            <StatBox label="Closed Baskets" value={String(result.trades)} />
+            <StatBox label="Winning Baskets" value={String(result.wins)} accent="text-emerald-400" />
+            <StatBox label="Losing Baskets" value={String(result.losses)} accent="text-rose-400" />
+            <StatBox label="Closed-basket Win Rate" value={result.trades ? `${(result.winRate * 100).toFixed(2)}%` : '—'} accent="text-amber-300" />
             <StatBox label="Realized P&L" value={money(result.realizedPnl)} accent={pnlColor(result.realizedPnl)} />
             <StatBox label="Unrealized P&L" value={money(result.unrealizedPnl)} accent={pnlColor(result.unrealizedPnl)} />
             <StatBox label="Costs" value={money(-result.costs)} accent="text-rose-300" />
             <StatBox label="Final Equity" value={money(result.finalEquity, false)} accent={pnlColor(result.finalEquity - result.costModel.initialEquity)} />
             <StatBox label="Max Drawdown" value={`${result.maxDrawdownPct.toFixed(2)}%`} />
-            <StatBox label="Open Positions" value={String(result.openBaskets)} />
+            <StatBox label="Open Baskets" value={String(result.openBaskets)} />
           </div>
 
-          <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3">
-            <p className="text-[10px] leading-relaxed text-amber-200/90">
-              <AlertTriangle size={10} className="mr-1 inline" />{result.disclaimer}
+          <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
+            <p className="text-xs leading-relaxed text-amber-200/90">
+              <AlertTriangle size={13} className="mr-1.5 inline" />{result.disclaimer}
             </p>
-            <p className="mt-1 text-[9px] text-slate-500">
+            <p className="mt-1.5 font-mono text-[10px] text-zinc-500">
               Source: {result.source} · Generator: {result.generator} · seed={result.seed} · {result.bars} bars ({result.timeframe ?? tf}) · periode {result.period ?? period} · range {new Date(result.rangeStartMs).toISOString().slice(0, 10)} → {new Date(result.rangeEndMs).toISOString().slice(0, 10)}
             </p>
           </div>
@@ -209,37 +211,54 @@ const PAD_Y = 10;
 function EquityChart({ points, initialEquity }: { points: BacktestResult['equityCurve']; initialEquity: number }) {
   if (points.length < 2) {
     return (
-      <div className="rounded-xl border border-white/10 bg-slate-950/60 p-3 text-[11px] text-slate-500" role="status">
+      <div className="rounded-xl border border-white/10 bg-black/40 p-4 text-xs text-zinc-500" role="status">
         Kurva ekuitas tidak tersedia — butuh minimal 2 titik data.
       </div>
     );
   }
 
-  const values = points.map((p) => p.equity);
-  const min = Math.min(initialEquity, ...values);
-  const max = Math.max(initialEquity, ...values);
+  let min = initialEquity;
+  let max = initialEquity;
+  for (const point of points) {
+    min = Math.min(min, point.equity);
+    max = Math.max(max, point.equity);
+  }
   const span = max - min || 1;
   const plotW = W - PAD_X * 2;
   const plotH = H - PAD_Y * 2;
-  const polyline = points
-    .map((p, i) => `${(PAD_X + (i / (points.length - 1)) * plotW).toFixed(2)},${(PAD_Y + (1 - (p.equity - min) / span) * plotH).toFixed(2)}`)
-    .join(' ');
+  // Preserve bucket extrema so a short-lived drawdown stays visible in annual runs.
+  const coordinates: string[] = [];
+  const stride = Math.max(1, Math.ceil(points.length / 320));
+  const coordinate = (i: number) => `${(PAD_X + (i / (points.length - 1)) * plotW).toFixed(2)},${(PAD_Y + (1 - (points[i].equity - min) / span) * plotH).toFixed(2)}`;
+  for (let start = 0; start < points.length; start += stride) {
+    const end = Math.min(points.length, start + stride);
+    let low = start;
+    let high = start;
+    for (let i = start + 1; i < end; i++) {
+      if (points[i].equity < points[low].equity) low = i;
+      if (points[i].equity > points[high].equity) high = i;
+    }
+    coordinates.push(coordinate(Math.min(low, high)));
+    if (low !== high) coordinates.push(coordinate(Math.max(low, high)));
+  }
+  coordinates.push(coordinate(points.length - 1));
+  const polyline = coordinates.join(' ');
   const baselineY = PAD_Y + (1 - (initialEquity - min) / span) * plotH;
   const last = points[points.length - 1];
   const lineColor = last.equity >= initialEquity ? '#34d399' : '#fb7185';
 
   return (
-    <figure className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
-      <figcaption className="mb-2 flex items-center justify-between text-[10px]">
-        <span className="font-semibold text-slate-300">Kurva ekuitas (mark-to-market)</span>
-        <span className="font-mono text-slate-400">
-          {money(initialEquity, false)} → <span style={{ color: lineColor }}>{money(last.equity, false)}</span>
+    <figure className="rounded-2xl border border-white/10 bg-black/40 p-4">
+      <figcaption className="mb-3 flex items-center justify-between text-xs">
+        <span className="font-semibold text-zinc-200">Kurva ekuitas (mark-to-market)</span>
+        <span className="font-mono text-zinc-400">
+          {money(initialEquity, false)} → <span style={{ color: lineColor }} className="font-bold">{money(last.equity, false)}</span>
         </span>
       </figcaption>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Equity curve from ${money(initialEquity, false)} to ${money(last.equity, false)}`} className="h-32 w-full">
-        <line x1={PAD_X} x2={W - PAD_X} y1={baselineY} y2={baselineY} stroke="currentColor" strokeOpacity=".3" strokeDasharray="4 4" />
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Equity curve from ${money(initialEquity, false)} to ${money(last.equity, false)}`} className="h-36 w-full">
+        <line x1={PAD_X} x2={W - PAD_X} y1={baselineY} y2={baselineY} stroke="currentColor" strokeOpacity=".2" strokeDasharray="4 4" />
         <text x={PAD_X} y={baselineY - 3} fill="currentColor" opacity=".5" fontSize="8">initial {money(initialEquity, false)}</text>
-        <polyline points={polyline} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinejoin="round" />
+        <polyline points={polyline} fill="none" stroke={lineColor} strokeWidth="2" strokeLinejoin="round" />
       </svg>
     </figure>
   );
@@ -254,11 +273,11 @@ function pnlColor(v: number): string {
   return v >= 0 ? 'text-emerald-400' : 'text-rose-400';
 }
 
-function StatBox({ label, value, accent = 'text-slate-200' }: { label: string; value: string; accent?: string }) {
+function StatBox({ label, value, accent = 'text-zinc-200' }: { label: string; value: string; accent?: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2">
-      <div className="text-[9px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={`font-mono text-sm font-bold ${accent}`}>{value}</div>
+    <div className="rounded-2xl border border-white/10 bg-black/40 p-4.5 flex flex-col justify-between gap-2 transition hover:border-white/20">
+      <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-zinc-400">{label}</div>
+      <div className={`font-mono text-lg font-bold tracking-tight ${accent}`}>{value}</div>
     </div>
   );
 }

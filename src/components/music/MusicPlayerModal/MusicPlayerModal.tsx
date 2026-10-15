@@ -50,13 +50,13 @@ const rangeStyle = (pct: number): React.CSSProperties => ({
 });
 
 const iconBtnClass = (active = false) =>
-  `relative grid h-10 w-10 cursor-pointer place-items-center rounded-xl border text-[15px] transition-all duration-150 hover:bg-white/10 hover:text-white ${
-    active ? 'border-emerald-500/45 bg-emerald-500/15 text-emerald-300' : 'border-white/[0.08] bg-white/[0.04] text-zinc-300'
+  `relative grid h-11 w-11 cursor-pointer place-items-center rounded-xl border text-[15px] transition-all duration-150 hover:bg-white/10 hover:text-white ${
+    active ? 'border-emerald-500/45 bg-emerald-500/15 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.2)]' : 'border-white/[0.08] bg-white/[0.04] text-zinc-300'
   }`;
 
-const labelClass = 'flex flex-col gap-1.5 text-xs font-semibold text-zinc-300';
+const labelClass = 'flex flex-col gap-2 text-xs font-semibold text-zinc-300';
 const inputClass =
-  'w-full rounded-[11px] border border-white/10 bg-white/[0.04] px-3 py-2.5 text-[13px] text-white outline-none placeholder:text-zinc-500 focus:border-emerald-500/60 focus:shadow-[0_0_0_3px_rgba(16,185,129,0.15)]';
+  'w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[13px] text-white outline-none placeholder:text-zinc-500 focus:border-emerald-500/60 focus:shadow-[0_0_0_3px_rgba(16,185,129,0.15)] transition';
 
 export function parseYouTubeUrl(url: string): { videoId: string | null; playlistId: string | null } {
   let videoId: string | null = null;
@@ -144,18 +144,18 @@ export default function MusicPlayerModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      size="xl"
-      maxWidth="1040px"
-      fixedHeight="min(86vh, 760px)"
+      size="2xl"
+      maxWidth="1160px"
+      fixedHeight="min(90vh, 800px)"
       title="YouTube Music Player"
       subtitle={`Playlist Raffa · ${USER_PLAYLIST.length} lagu · Shortcut: P play/pause, M mute`}
       icon={<span>🎧</span>}
     >
-      <div className="grid h-full min-h-0 grid-cols-1 gap-5 max-[860px]:h-auto min-[861px]:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+      <div className="grid h-full min-h-0 grid-cols-1 gap-6 max-[860px]:h-auto min-[861px]:grid-cols-[minmax(320px,380px)_minmax(0,1fr)]">
         {/* ─────────── Now Playing ─────────── */}
         <section
           aria-label="Sedang diputar"
-          className="flex flex-col items-center gap-4 rounded-[18px] border border-white/[0.07] bg-[radial-gradient(120%_80%_at_50%_0%,rgba(16,185,129,0.16),transparent_60%),rgba(255,255,255,0.025)] px-5 py-[22px] max-[860px]:px-4 max-[860px]:py-[18px]"
+          className="flex flex-col items-center gap-5.5 rounded-3xl border border-white/[0.08] bg-[radial-gradient(120%_80%_at_50%_0%,rgba(16,185,129,0.16),transparent_60%),rgba(255,255,255,0.025)] p-6 md:p-7 max-[860px]:p-5 shadow-sm"
         >
           <div className="relative aspect-square w-[min(100%,240px)] max-[860px]:w-[min(62vw,200px)]">
             <div
@@ -163,7 +163,7 @@ export default function MusicPlayerModal({
                 isPlaying ? 'translate-x-[18%]' : 'translate-x-0 [animation-play-state:paused]'
               }`}
             />
-            <div className="absolute inset-0 overflow-hidden rounded-[18px] border border-white/12 shadow-[0_20px_40px_rgba(0,0,0,0.55)]">
+            <div className="absolute inset-0 overflow-hidden rounded-2xl border border-white/12 shadow-[0_20px_40px_rgba(0,0,0,0.55)]">
               <img
                 className="h-full w-full object-cover"
                 src={currentTrack?.cover || `https://i.ytimg.com/vi/${currentTrack?.videoId}/hqdefault.jpg`}
@@ -173,22 +173,22 @@ export default function MusicPlayerModal({
           </div>
 
           <div className="w-full min-w-0 text-center">
-            <div title={currentTrack?.title} className="line-clamp-2 text-[15px] font-bold leading-[1.35] text-white">
+            <div title={currentTrack?.title} className="line-clamp-2 text-base font-bold leading-snug text-white">
               {currentTrack?.title || 'Belum ada lagu'}
             </div>
-            <div className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-400">
-              <span className="rounded-[5px] border border-red-500/30 bg-red-500/15 px-1.5 py-0.5 text-[10px] font-extrabold tracking-[0.04em] text-red-300">
+            <div className="mt-1.5 inline-flex items-center gap-2 text-xs text-zinc-400">
+              <span className="rounded-md border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-red-300">
                 YT MUSIC
               </span>
               <span>{currentTrack?.artist || 'YouTube Music'}</span>
             </div>
           </div>
 
-          <div className={`max-w-full rounded-full px-2.5 py-1 text-center text-[11px] font-semibold ${statusToneClass}`}>
+          <div className={`max-w-full rounded-full px-3.5 py-1 text-center text-xs font-semibold ${statusToneClass}`}>
             {statusInfo.text}
           </div>
 
-          <div className="flex w-full flex-col gap-1.5">
+          <div className="flex w-full flex-col gap-2">
             <input
               type="range"
               aria-label="Posisi lagu"
@@ -204,13 +204,13 @@ export default function MusicPlayerModal({
               onTouchEnd={commitScrub}
               onKeyUp={commitScrub}
             />
-            <div className="flex justify-between font-mono text-[11px] tabular-nums text-zinc-400">
+            <div className="flex justify-between font-mono text-xs tabular-nums text-zinc-400">
               <span>{formatTime(shownTime)}</span>
               <span>{duration ? formatTime(duration) : '--:--'}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5">
+          <div className="flex items-center justify-center gap-3.5">
             <button
               type="button"
               className={iconBtnClass(isShuffle)}
@@ -226,7 +226,7 @@ export default function MusicPlayerModal({
             </button>
             <button
               type="button"
-              className="grid h-[58px] w-[58px] cursor-pointer place-items-center rounded-full border-none bg-gradient-to-br from-emerald-400 to-emerald-500 text-[20px] text-[#04241a] shadow-[0_10px_26px_rgba(16,185,129,0.45)] transition-transform duration-150 hover:scale-105 active:scale-95"
+              className="grid h-15 w-15 cursor-pointer place-items-center rounded-full border-none bg-gradient-to-br from-emerald-400 to-emerald-500 text-xl text-[#04241a] shadow-[0_10px_26px_rgba(16,185,129,0.45)] transition-transform duration-150 hover:scale-105 active:scale-95"
               onClick={onTogglePlay}
               title={isPlaying ? 'Jeda (P)' : 'Putar (P)'}
               aria-label={isPlaying ? 'Jeda' : 'Putar'}
@@ -234,9 +234,9 @@ export default function MusicPlayerModal({
               {isBusy ? (
                 <span className="h-5 w-5 animate-spin rounded-full border-[2.5px] border-[#04241a]/30 border-t-[#04241a]" />
               ) : isPlaying ? (
-                <Pause size={20} />
+                <Pause size={22} />
               ) : (
-                <Play size={20} className="ml-0.5" />
+                <Play size={22} className="ml-0.5" />
               )}
             </button>
             <button type="button" className={iconBtnClass()} onClick={onNextTrack} title="Berikutnya" aria-label="Lagu berikutnya">
@@ -254,10 +254,10 @@ export default function MusicPlayerModal({
             </button>
           </div>
 
-          <div className="flex w-full items-center gap-2.5">
+          <div className="flex w-full items-center gap-3">
             <button
               type="button"
-              className={`${iconBtnClass(audioState.isMuted)} h-[34px] w-[34px]`}
+              className={`${iconBtnClass(audioState.isMuted)} h-9 w-9`}
               onClick={onToggleMute}
               title={audioState.isMuted ? 'Nyalakan suara (M)' : 'Bisukan (M)'}
               aria-label={audioState.isMuted ? 'Nyalakan suara' : 'Bisukan'}
@@ -274,52 +274,52 @@ export default function MusicPlayerModal({
               style={rangeStyle(volume)}
               onChange={(e) => onVolumeChange(Number(e.target.value))}
             />
-            <span className="w-[34px] text-right text-[11px] tabular-nums text-zinc-400">{volume}%</span>
+            <span className="w-9 text-right text-xs tabular-nums text-zinc-400 font-mono">{volume}%</span>
           </div>
         </section>
 
         {/* ─────────── Playlist / Custom ─────────── */}
         <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Playlist">
-          <div role="tablist" className="flex gap-1 rounded-xl border border-white/[0.07] bg-white/[0.04] p-1">
+          <div role="tablist" className="flex gap-1.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-1.5">
             <button
               type="button"
               role="tab"
               aria-selected={tab === 'playlist'}
-              className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border-none px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
-                tab === 'playlist' ? 'bg-white/10 text-white' : 'bg-transparent text-zinc-400'
+              className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none px-4 py-2.5 text-xs font-bold transition-all duration-150 ${
+                tab === 'playlist' ? 'bg-white/10 text-white shadow-sm' : 'bg-transparent text-zinc-400 hover:text-white'
               }`}
               onClick={() => setTab('playlist')}
             >
-              <Music size={14} />
+              <Music size={15} />
               Playlist ({USER_PLAYLIST.length})
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={tab === 'custom'}
-              className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border-none px-2.5 py-2 text-xs font-bold transition-all duration-150 ${
-                tab === 'custom' ? 'bg-white/10 text-white' : 'bg-transparent text-zinc-400'
+              className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-none px-4 py-2.5 text-xs font-bold transition-all duration-150 ${
+                tab === 'custom' ? 'bg-white/10 text-white shadow-sm' : 'bg-transparent text-zinc-400 hover:text-white'
               }`}
               onClick={() => setTab('custom')}
             >
-              <Link2 size={14} />
+              <Link2 size={15} />
               URL YouTube
             </button>
           </div>
 
-          <div className="mb-3 flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] px-3.5 py-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.08] p-3.5">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
-                <Sparkles size={13} /> Default: Executive Lo-Fi Focus
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                <Sparkles size={14} /> Default: Executive Lo-Fi Focus
               </div>
-              <div className="truncate text-[11px] text-zinc-400">YouTube Music Playlist ({DEFAULT_PLAYLIST_ID})</div>
+              <div className="truncate text-xs text-zinc-400 mt-0.5">YouTube Music Playlist ({DEFAULT_PLAYLIST_ID})</div>
             </div>
             <button
               type="button"
               onClick={() => onPlayCustomUrl(DEFAULT_PLAYLIST_URL, 'Executive Lo-Fi & Focus Beats', 'YouTube Music')}
-              className="flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-lg border-none bg-emerald-500 px-3 py-1.5 text-[11px] font-semibold text-[#04241a]"
+              className="flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-xl border-none bg-emerald-500 px-3.5 py-2 text-xs font-bold text-[#04241a] transition hover:bg-emerald-400"
             >
-              <Play size={11} /> Putar Default
+              <Play size={12} /> Putar Default
             </button>
           </div>
 
@@ -333,7 +333,7 @@ export default function MusicPlayerModal({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
-              <div className={`flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1 max-[860px]:max-h-[46vh] ${SCROLLBAR}`}>
+              <div className={`flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1 max-[860px]:max-h-[46vh] ${SCROLLBAR}`}>
                 {filtered.map(({ track, index }) => {
                   const active = currentTrack?.videoId === track.videoId;
                   return (
@@ -341,13 +341,13 @@ export default function MusicPlayerModal({
                       key={track.videoId}
                       type="button"
                       onClick={() => onSelectTrack(track, index)}
-                      className={`grid w-full cursor-pointer grid-cols-[26px_44px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-[11px] border px-2.5 py-[7px] text-left text-inherit transition-colors duration-100 hover:bg-white/5 ${
-                        active ? 'border-emerald-500/35 bg-emerald-500/10' : 'border-transparent bg-transparent'
+                      className={`grid w-full cursor-pointer grid-cols-[28px_48px_minmax(0,1fr)_auto] items-center gap-3.5 rounded-2xl border px-3.5 py-2.5 text-left text-inherit transition-all duration-100 hover:bg-white/5 ${
+                        active ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'border-transparent bg-transparent'
                       }`}
                     >
-                      <span className="text-right font-mono text-[11px] text-zinc-500">
+                      <span className="text-right font-mono text-xs text-zinc-500">
                         {active && isPlaying ? (
-                          <span className="inline-flex h-3 items-end gap-0.5">
+                          <span className="inline-flex h-3.5 items-end gap-0.5">
                             <i className="block h-full w-[3px] origin-bottom rounded-[1px] bg-emerald-500 animate-[eq-bounce_0.9s_ease-in-out_infinite]" />
                             <i className="block h-full w-[3px] origin-bottom rounded-[1px] bg-emerald-500 animate-[eq-bounce_0.9s_ease-in-out_infinite_0.2s]" />
                             <i className="block h-full w-[3px] origin-bottom rounded-[1px] bg-emerald-500 animate-[eq-bounce_0.9s_ease-in-out_infinite_0.4s]" />
@@ -356,12 +356,12 @@ export default function MusicPlayerModal({
                           index + 1
                         )}
                       </span>
-                      <img className="h-8 w-11 rounded-md bg-zinc-900 object-cover" src={track.cover} alt="" loading="lazy" />
+                      <img className="h-9 w-12 rounded-xl bg-zinc-900 object-cover shadow-sm" src={track.cover} alt="" loading="lazy" />
                       <span className="min-w-0">
-                        <div className={`truncate text-[12.5px] font-semibold ${active ? 'text-emerald-300' : 'text-zinc-100'}`}>{track.title}</div>
-                        <div className="truncate text-[11px] text-zinc-500">{track.artist}</div>
+                        <div className={`truncate text-sm font-semibold ${active ? 'text-emerald-300' : 'text-zinc-100'}`}>{track.title}</div>
+                        <div className="truncate text-xs text-zinc-500 mt-0.5">{track.artist}</div>
                       </span>
-                      <span className={`text-[11px] ${active ? 'text-emerald-300' : 'text-zinc-600'}`}>{active ? 'Diputar' : '▶'}</span>
+                      <span className={`text-xs font-semibold ${active ? 'text-emerald-300 font-bold' : 'text-zinc-600'}`}>{active ? 'Diputar' : '▶'}</span>
                     </button>
                   );
                 })}

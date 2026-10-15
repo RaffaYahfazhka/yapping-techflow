@@ -32,6 +32,7 @@ export interface AudioEngineOptions {
   onStateChange?: (state: AudioEngineState) => void;
   onTimeUpdate?: (time: AudioEngineTime) => void;
   onEnded?: () => void;
+  onTrackChange?: (track: { videoId: string; title: string; artist: string; cover: string }) => void;
 }
 
 /** Subset of the YouTube IFrame player instance used by this engine. */
@@ -42,6 +43,11 @@ export interface YTPlayer {
   cueVideoById(videoId: string): void;
   loadPlaylist(options: { list: string; listType: 'playlist' }): void;
   cuePlaylist(options: { list: string; listType: 'playlist' }): void;
+  nextVideo(): void;
+  previousVideo(): void;
+  setShuffle(shuffle: boolean): void;
+  setLoop(loop: boolean): void;
+  getVideoData(): { video_id?: string; title?: string; author?: string };
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   setVolume(volume: number): void;
   mute(): void;
@@ -178,6 +184,8 @@ export class AudioEngine {
   private readonly onStateChange: (state: AudioEngineState) => void;
   private readonly onTimeUpdate: (time: AudioEngineTime) => void;
   private readonly onEnded: () => void;
+  private readonly onTrackChange: NonNullable<AudioEngineOptions['onTrackChange']>;
+  private reportedVideoId = '';
 
   player: YTPlayer | null = null;
   mountEl: HTMLDivElement | null = null;
@@ -205,6 +213,7 @@ export class AudioEngine {
     this.onStateChange = options.onStateChange || (() => {});
     this.onTimeUpdate = options.onTimeUpdate || (() => {});
     this.onEnded = options.onEnded || (() => {});
+    this.onTrackChange = options.onTrackChange ?? (() => {});
   }
 
   /* ───────────────────────── lifecycle ───────────────────────── */
@@ -345,7 +354,9 @@ export class AudioEngine {
         break;
       case 0:
         this.setStatus('ended');
-        this.onEnded();
+        // YouTube owns progression within a loaded playlist; the local DJ queue
+        // is advanced by the application only for individually loaded videos.
+        if (!this.playlistId && this.wantsPlay) this.onEnded();
         break;
       case 5:
         if (this.wantsPlay) this.invoke('playVideo', (p) => p.playVideo());
@@ -367,7 +378,7 @@ export class AudioEngine {
     this.consecutiveErrors += 1;
     this.setStatus('error');
     // Auto-skip only permanently unplayable videos, at most 3 times in a row.
-    if (SKIPPABLE_ERROR_CODES.includes(code) && this.consecutiveErrors <= AUTO_SKIP_MAX_CONSECUTIVE) {
+    if (!this.playlistId && this.wantsPlay && SKIPPABLE_ERROR_CODES.includes(code) && this.consecutiveErrors <= AUTO_SKIP_MAX_CONSECUTIVE) {
       window.clearTimeout(this.errorTimer);
       this.errorTimer = window.setTimeout(() => {
         this.errorTimer = undefined;
@@ -423,6 +434,19 @@ export class AudioEngine {
       this.setStatus('loading');
       this.init();
     }
+  }
+
+  nextPlaylistTrack(): void {
+    if (this.playlistId) this.invoke('nextVideo', (p) => p.nextVideo());
+  }
+
+  previousPlaylistTrack(): void {
+    if (this.playlistId) this.invoke('previousVideo', (p) => p.previousVideo());
+  }
+
+  configurePlaylist(shuffle: boolean, loop: boolean): void {
+    this.invoke('setShuffle', (p) => p.setShuffle(shuffle));
+    this.invoke('setLoop', (p) => p.setLoop(loop));
   }
 
   play(): void {
@@ -526,6 +550,16 @@ export class AudioEngine {
 
   private pollProgress(): void {
     if (this.destroyed || !this.player || !this.isReady) return;
+    const track = this.invoke('getVideoData', (p) => p.getVideoData());
+    if (track?.video_id && track.video_id !== this.reportedVideoId) {
+      this.reportedVideoId = track.video_id;
+      this.onTrackChange({
+        videoId: track.video_id,
+        title: track.title || 'YouTube Music',
+        artist: track.author || 'YouTube Music',
+        cover: `https://i.ytimg.com/vi/${track.video_id}/mqdefault.jpg`,
+      });
+    }
     const cur = this.invoke('getCurrentTime', (p) => p.getCurrentTime());
     const dur = this.invoke('getDuration', (p) => p.getDuration());
     let changed = false;

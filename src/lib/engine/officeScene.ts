@@ -37,9 +37,9 @@ export class OfficeScene {
     this.holoLight = null;
     this.violetLight = null;
 
-    // Camera control & Drag-Pan
-    this.camTarget = new THREE.Vector3(0, 0, 0);
-    this.camCurrentLook = new THREE.Vector3(0, 0, 0);
+    // Camera control & Drag-Pan (Centered at 0.5, 0, 3.5 for spacious breathing room)
+    this.camTarget = new THREE.Vector3(0.5, 0, 3.5);
+    this.camCurrentLook = new THREE.Vector3(0.5, 0, 3.5);
     this.userPanOffset = new THREE.Vector3(0, 0, 0);
     this.zoomLevel = 1.0;
     this.targetZoom = 1.0;
@@ -106,8 +106,8 @@ export class OfficeScene {
     this.scene.background = new THREE.Color(palette.background);
     this.scene.fog = new THREE.FogExp2(palette.background, palette.fogDensity || 0.015);
 
-    // 2. Isometric Orthographic Camera (d = 10 fills the screen beautifully)
-    const d = 10;
+    // 2. Isometric Orthographic Camera (d = 12.2 gives balanced breathing room)
+    const d = 12.2;
     this.camera = new THREE.OrthographicCamera(
       -d * aspect,
       d * aspect,
@@ -116,8 +116,8 @@ export class OfficeScene {
       0.1,
       300
     );
-    this.camera.position.set(CAMERA_OFFSET.x, CAMERA_OFFSET.y, CAMERA_OFFSET.z);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.set(CAMERA_OFFSET.x + 0.5, CAMERA_OFFSET.y, CAMERA_OFFSET.z + 3.5);
+    this.camera.lookAt(0.5, 0, 3.5);
 
     // 3. Renderer (Opaque, crisp, high-performance)
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -133,6 +133,9 @@ export class OfficeScene {
 
     // 5. Environment & Floor
     this.setupArchitecture();
+
+    // 5b. Pantry Break Area
+    this.setupPantry();
 
     // 6. Workstations & AI Agents
     this.setupWorkstations();
@@ -191,15 +194,25 @@ export class OfficeScene {
     this.fillLight.position.set(-18, 14, -14);
     this.scene.add(this.fillLight);
 
-    // Holotable teal/violet accent light
+    // Holotable teal/emerald accent light
     this.holoLight = new THREE.PointLight('#10b981', 2.0, 10);
-    this.holoLight.position.set(9.5, 2.5, 0);
+    this.holoLight.position.set(8.5, 2.5, 0);
     this.scene.add(this.holoLight);
 
-    // Violet accent wash
+    // Violet accent wash for Executive Suite
     this.violetLight = new THREE.PointLight('#8b5cf6', 1.5, 12);
-    this.violetLight.position.set(-8, 3, -6.5);
+    this.violetLight.position.set(-11.0, 3, -6.5);
     this.scene.add(this.violetLight);
+
+    // Warm amber pendant light for Pantry Break Area
+    const pantryLight = new THREE.PointLight('#f97316', 1.4, 9);
+    pantryLight.position.set(8.5, 2.5, 8.5);
+    this.scene.add(pantryLight);
+
+    // Skyline Suite neon violet wash
+    const skylineLight = new THREE.PointLight('#a855f7', 1.8, 12);
+    skylineLight.position.set(13.8, 2.8, 0);
+    this.scene.add(skylineLight);
   }
 
   setSkyPhase(phase) {
@@ -293,8 +306,10 @@ export class OfficeScene {
     }
     this.scene.add(gridHelper);
 
+    const mullionMat = new THREE.MeshStandardMaterial({ color: '#18181f', roughness: 0.5, metalness: 0.6 });
+
     // Executive Suite Luxury Rug (for Bos Raffa & Khansaku's royal command suite)
-    const rugGeo = new THREE.PlaneGeometry(7.8, 6.2);
+    const rugGeo = new THREE.PlaneGeometry(8.4, 7.5);
     const rugMat = new THREE.MeshStandardMaterial({
       color: '#06281e',
       roughness: 0.85,
@@ -304,7 +319,7 @@ export class OfficeScene {
     });
     const rug = new THREE.Mesh(rugGeo, rugMat);
     rug.rotation.x = -Math.PI / 2;
-    rug.position.set(-8, 0.018, -6.5);
+    rug.position.set(-11.0, 0.018, -6.5);
     this.scene.add(rug);
 
     // Rug Gold Trim Border
@@ -313,10 +328,30 @@ export class OfficeScene {
       new THREE.LineBasicMaterial({ color: '#f59e0b', linewidth: 2 })
     );
     rugBorder.rotation.x = -Math.PI / 2;
-    rugBorder.position.set(-8, 0.019, -6.5);
+    rugBorder.position.set(-11.0, 0.019, -6.5);
     this.scene.add(rugBorder);
 
-    // War-Room Holographic Circle Inlay (under Holotable at x: 9.5, z: 0)
+    // Executive Suite Acoustic Glass Divider along x = -6.0 (z: -12 to -4.5)
+    const execGlassMat = new THREE.MeshPhysicalMaterial({
+      color: '#0f291e',
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.15,
+      transmission: 0.7,
+    });
+    const execDivider = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.6, 7.5), execGlassMat);
+    execDivider.position.set(-6.0, 1.8, -8.25);
+    this.scene.add(execDivider);
+
+    const execFrame = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 7.5), mullionMat);
+    execFrame.position.set(-6.0, 3.6, -8.25);
+    this.scene.add(execFrame);
+
+    const execCol = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.8, 0.16), mullionMat);
+    execCol.position.set(-6.0, 1.9, -4.5);
+    this.scene.add(execCol);
+
+    // War-Room Holographic Circle Inlay (under Holotable at x: 8.5, z: 0)
     const holoDiscGeo = new THREE.CircleGeometry(2.5, 36);
     const holoDiscMat = new THREE.MeshStandardMaterial({
       color: '#0b1322',
@@ -328,8 +363,59 @@ export class OfficeScene {
     });
     const holoDisc = new THREE.Mesh(holoDiscGeo, holoDiscMat);
     holoDisc.rotation.x = -Math.PI / 2;
-    holoDisc.position.set(9.5, 0.018, 0);
+    holoDisc.position.set(8.5, 0.018, 0);
     this.scene.add(holoDisc);
+
+    // The Skyline Glass Room Acoustic Enclosure (PRD §1.2 & §3.1 along x = 11.5)
+    const skylineGlassMat = new THREE.MeshPhysicalMaterial({
+      color: '#1e1b4b',
+      transparent: true,
+      opacity: 0.25,
+      roughness: 0.06,
+      transmission: 0.8,
+      metalness: 0.1,
+    });
+    // North partition (z: -12 to -1.5)
+    const skylineGlassN = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.6, 10.5), skylineGlassMat);
+    skylineGlassN.position.set(11.5, 1.8, -6.75);
+    this.scene.add(skylineGlassN);
+
+    // South partition (z: 1.5 to 11.8)
+    const skylineGlassS = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.6, 10.3), skylineGlassMat);
+    skylineGlassS.position.set(11.5, 1.8, 6.65);
+    this.scene.add(skylineGlassS);
+
+    // Skyline Doorway Columns at z = -1.5 and z = 1.5 (Doorway 3m wide!)
+    [-1.5, 1.5].forEach((cz) => {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.8, 0.16), mullionMat);
+      col.position.set(11.5, 1.9, cz);
+      this.scene.add(col);
+    });
+
+    // Overhead Header Beam along x = 11.5
+    const skylineHeader = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 23.8), mullionMat);
+    skylineHeader.position.set(11.5, 3.6, -0.1);
+    this.scene.add(skylineHeader);
+
+    // Violet Neon Floor Threshold Strip across doorway
+    const skylineThreshold = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 3.0), new THREE.MeshBasicMaterial({ color: '#8b5cf6' }));
+    skylineThreshold.rotation.x = -Math.PI / 2;
+    skylineThreshold.position.set(11.5, 0.02, 0);
+    this.scene.add(skylineThreshold);
+
+    // Pantry Herringbone Floor Tile Accent (x: 6.0 to 11.2, z: 5.5 to 11.5)
+    const pantryTileGeo = new THREE.PlaneGeometry(5.2, 5.8);
+    const pantryTileMat = new THREE.MeshStandardMaterial({
+      color: '#141824',
+      roughness: 0.7,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
+    const pantryTile = new THREE.Mesh(pantryTileGeo, pantryTileMat);
+    pantryTile.rotation.x = -Math.PI / 2;
+    pantryTile.position.set(8.5, 0.016, 8.5);
+    this.scene.add(pantryTile);
 
     // 3. Penthouse Rooftop Sky Terrace (Teak Deck from z = 12 to 28)
     const terraceD = ROOM.maxZ - 12; // 16m
@@ -374,7 +460,6 @@ export class OfficeScene {
       transmission: 0.75,
       metalness: 0.1,
     });
-    const mullionMat = new THREE.MeshStandardMaterial({ color: '#18181f', roughness: 0.5, metalness: 0.6 });
 
     // West Glass Partition (x: -16 to -3.2)
     const glassW = new THREE.Mesh(new THREE.BoxGeometry(12.8, 3.6, 0.08), glassMat);
@@ -585,6 +670,91 @@ export class OfficeScene {
     this.scene.add(signMesh);
   }
 
+  setupPantry() {
+    const pantryGroup = new THREE.Group();
+    pantryGroup.position.set(8.5, 0, 8.5);
+
+    // 1. Kitchen Island Bar Counter (W = 3.4, D = 1.0, H = 1.05)
+    const marbleMat = new THREE.MeshStandardMaterial({
+      color: '#1e222d',
+      roughness: 0.25,
+      metalness: 0.3,
+    });
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: '#0e1017',
+      roughness: 0.7,
+    });
+
+    // Base cabinet
+    const cabinet = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.95, 0.95), woodMat);
+    cabinet.position.y = 0.475;
+    cabinet.castShadow = true;
+    cabinet.receiveShadow = true;
+    pantryGroup.add(cabinet);
+
+    // Marble countertop with slight overhang
+    const top = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.1, 1.1), marbleMat);
+    top.position.y = 1.0;
+    top.castShadow = true;
+    pantryGroup.add(top);
+
+    // Neon amber LED undercounter strip
+    const ledMat = new THREE.MeshBasicMaterial({ color: '#f59e0b' });
+    const underLed = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.02, 0.04), ledMat);
+    underLed.position.set(0, 0.94, 0.52);
+    pantryGroup.add(underLed);
+
+    // 2. Commercial Dual-Group Espresso Machine
+    const steelMat = new THREE.MeshStandardMaterial({ color: '#d4d4d8', metalness: 0.85, roughness: 0.2 });
+    const machineBody = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.55, 0.55), steelMat);
+    machineBody.position.set(-0.9, 1.32, 0.0);
+    pantryGroup.add(machineBody);
+
+    // Drip Tray
+    const dripTray = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.05, 0.2), steelMat);
+    dripTray.position.set(-0.9, 1.07, 0.22);
+    pantryGroup.add(dripTray);
+
+    // Espresso Machine Indicator Light
+    const indLight = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: '#10b981' }));
+    indLight.position.set(-0.6, 1.5, 0.28);
+    pantryGroup.add(indLight);
+
+    // 3. Water Cooler & Dispenser Tower
+    const dispenserBody = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.3, 0.42), new THREE.MeshStandardMaterial({ color: '#f4f4f5', roughness: 0.4 }));
+    dispenserBody.position.set(1.2, 0.65, 0.0);
+    pantryGroup.add(dispenserBody);
+    const waterJugMat = new THREE.MeshPhysicalMaterial({ color: '#38bdf8', transmission: 0.85, transparent: true, opacity: 0.6 });
+    const jug = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.45, 16), waterJugMat);
+    jug.position.set(1.2, 1.48, 0.0);
+    pantryGroup.add(jug);
+
+    // 4. Ceramic Coffee Mugs & Tumblers
+    const mColors = ['#f43f5e', '#38bdf8', '#10b981'];
+    [-0.2, 0.1, 0.4].forEach((mx, idx) => {
+      const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.14, 12), new THREE.MeshStandardMaterial({ color: mColors[idx], roughness: 0.3 }));
+      mug.position.set(mx, 1.12, 0.1);
+      pantryGroup.add(mug);
+    });
+
+    // 5. Modern Barstools tucked along the south side of counter
+    const stoolSeatMat = new THREE.MeshStandardMaterial({ color: '#92400e', roughness: 0.5 });
+    const stoolLegMat = new THREE.MeshStandardMaterial({ color: '#18181b', metalness: 0.8 });
+    [-0.8, 0.3].forEach((sx) => {
+      const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.06, 16), stoolSeatMat);
+      seat.position.set(sx, 0.72, -0.65);
+      pantryGroup.add(seat);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 12), stoolLegMat);
+      post.position.set(sx, 0.35, -0.65);
+      pantryGroup.add(post);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 16), stoolLegMat);
+      base.position.set(sx, 0.02, -0.65);
+      pantryGroup.add(base);
+    });
+
+    this.scene.add(pantryGroup);
+  }
+
   setupWorkstations() {
     AGENTS.forEach((agent) => {
       const group = new THREE.Group();
@@ -743,13 +913,13 @@ export class OfficeScene {
 
         const signTex = new THREE.CanvasTexture(signCanvas);
         const signSpr = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTex, transparent: true }));
-        signSpr.scale.set(1.9, 0.42, 1);
-        signSpr.position.set(0, 1.35, 0.2);
+        signSpr.scale.set(1.6, 0.36, 1);
+        signSpr.position.set(0, 1.25, 0.2);
         group.add(signSpr);
 
         // Floating 3D Canvas Status Badge
         const badgeObj = this.createAgentBadge(agent);
-        badgeObj.sprite.position.set(0, 2.3, 0.3);
+        badgeObj.sprite.position.set(0, 1.95, 0.25);
         group.add(badgeObj.sprite);
 
         // Click hit target for desk interaction
@@ -781,73 +951,6 @@ export class OfficeScene {
         return;
       }
 
-      // AI Worker Avatar (Seated, typing)
-      const avatarGroup = new THREE.Group();
-      avatarGroup.position.set(0, 0.56, 0.58);
-      avatarGroup.rotation.y = Math.PI; // facing the desk
-
-      const skinMat = new THREE.MeshStandardMaterial({ color: agent.look.skin, roughness: 0.7 });
-      const clothesMat = new THREE.MeshStandardMaterial({ color: agent.look.shirt, roughness: 0.8 });
-      const pantsMat = new THREE.MeshStandardMaterial({ color: agent.look.pants, roughness: 0.85 });
-      const hairMat = new THREE.MeshStandardMaterial({ color: agent.look.hair, roughness: 0.9 });
-
-      // Torso
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.52, 0.28), clothesMat);
-      torso.position.y = 0.32;
-      torso.castShadow = true;
-      avatarGroup.add(torso);
-
-      // Head
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.28), skinMat);
-      head.position.y = 0.74;
-      head.castShadow = true;
-      avatarGroup.add(head);
-
-      // Hair
-      const hair = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.32), hairMat);
-      hair.position.set(0, 0.86, -0.02);
-      avatarGroup.add(hair);
-
-      // Role accessory (headphones, glasses, beanie, etc.)
-      if (agent.look.accessory === 'headphones') {
-        const hpMat = new THREE.MeshStandardMaterial({ color: '#10b981', metalness: 0.6 });
-        const band = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.025, 8, 16, Math.PI), hpMat);
-        band.position.set(0, 0.85, 0);
-        band.rotation.x = Math.PI / 2;
-        avatarGroup.add(band);
-      } else if (agent.look.accessory === 'beanie') {
-        const beanie = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.18, 0.3), clothesMat);
-        beanie.position.set(0, 0.87, 0);
-        avatarGroup.add(beanie);
-      }
-
-      // Seated Thighs
-      const thighL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.38), pantsMat);
-      thighL.position.set(-0.13, 0.05, 0.18);
-      avatarGroup.add(thighL);
-      const thighR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.38), pantsMat);
-      thighR.position.set(0.13, 0.05, 0.18);
-      avatarGroup.add(thighR);
-
-      // Typing Arms (animated in tick)
-      const armMat = clothesMat;
-      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), armMat);
-      armL.position.set(-0.27, 0.28, 0.12);
-      armL.rotation.x = -Math.PI / 3;
-      avatarGroup.add(armL);
-
-      const armR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.1), armMat);
-      armR.position.set(0.27, 0.28, 0.12);
-      armR.rotation.x = -Math.PI / 3;
-      avatarGroup.add(armR);
-
-      group.add(avatarGroup);
-
-      // Floating 3D Canvas Status Badge
-      const badgeObj = this.createAgentBadge(agent);
-      badgeObj.sprite.position.set(0, 2.3, 0.3);
-      group.add(badgeObj.sprite);
-
       // Click hit target for desk interaction (generous bounds for easy clicking)
       const hitBox = new THREE.Mesh(
         new THREE.BoxGeometry(deskW + 1.4, 2.8, deskD + 1.8),
@@ -860,9 +963,92 @@ export class OfficeScene {
 
       this.scene.add(group);
 
+      // AI Worker Avatar (Independent world-space entity that can leave desk to pantry/terrace)
+      const avatarGroup = new THREE.Group();
+      // Desk seated world coordinate
+      const deskChairLocal = new THREE.Vector3(0, 0, 0.58);
+      deskChairLocal.applyAxisAngle(new THREE.Vector3(0, 1, 0), agent.desk.rot);
+      const deskChairWorld = new THREE.Vector3(
+        agent.desk.x + deskChairLocal.x,
+        0,
+        agent.desk.z + deskChairLocal.z
+      );
+      avatarGroup.position.copy(deskChairWorld);
+      avatarGroup.rotation.y = agent.desk.rot + Math.PI;
+
+      const skinMat = new THREE.MeshStandardMaterial({ color: agent.look.skin, roughness: 0.7 });
+      const clothesMat = new THREE.MeshStandardMaterial({ color: agent.look.shirt, roughness: 0.8 });
+      const pantsMat = new THREE.MeshStandardMaterial({ color: agent.look.pants, roughness: 0.85 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: agent.look.hair, roughness: 0.9 });
+
+      // Torso
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.52, 0.28), clothesMat);
+      torso.position.y = 0.85;
+      torso.castShadow = true;
+      avatarGroup.add(torso);
+
+      // Head
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.28), skinMat);
+      head.position.y = 1.30;
+      head.castShadow = true;
+      avatarGroup.add(head);
+
+      // Hair
+      const hair = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.32), hairMat);
+      hair.position.set(0, 1.42, -0.02);
+      avatarGroup.add(hair);
+
+      // Role accessory (headphones, glasses, beanie, etc.)
+      if (agent.look.accessory === 'headphones') {
+        const hpMat = new THREE.MeshStandardMaterial({ color: '#10b981', metalness: 0.6 });
+        const band = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.025, 8, 16, Math.PI), hpMat);
+        band.position.set(0, 1.41, 0);
+        band.rotation.x = Math.PI / 2;
+        avatarGroup.add(band);
+      } else if (agent.look.accessory === 'beanie') {
+        const beanie = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.18, 0.3), clothesMat);
+        beanie.position.set(0, 1.43, 0);
+        avatarGroup.add(beanie);
+      }
+
+      // Left & Right Legs (pivot at hips)
+      const workerLegGeo = new THREE.BoxGeometry(0.14, 0.52, 0.15);
+      const legL = new THREE.Mesh(workerLegGeo, pantsMat);
+      legL.position.set(-0.13, 0.26, 0);
+      legL.castShadow = true;
+      avatarGroup.add(legL);
+
+      const legR = new THREE.Mesh(workerLegGeo, pantsMat);
+      legR.position.set(0.13, 0.26, 0);
+      legR.castShadow = true;
+      avatarGroup.add(legR);
+
+      // Left & Right Arms
+      const armMat = clothesMat;
+      const armGeo = new THREE.BoxGeometry(0.11, 0.48, 0.12);
+      const armL = new THREE.Mesh(armGeo, armMat);
+      armL.position.set(-0.28, 0.82, 0.08);
+      armL.rotation.x = -Math.PI / 3;
+      avatarGroup.add(armL);
+
+      const armR = new THREE.Mesh(armGeo, armMat);
+      armR.position.set(0.28, 0.82, 0.08);
+      armR.rotation.x = -Math.PI / 3;
+      avatarGroup.add(armR);
+
+      // Floating 3D Canvas Status Badge above avatar
+      const badgeObj = this.createAgentBadge(agent);
+      badgeObj.sprite.position.set(0, 2.3, 0);
+      avatarGroup.add(badgeObj.sprite);
+
+      this.scene.add(avatarGroup);
+
       this.agentMeshes.set(agent.id, {
         group,
         avatar: avatarGroup,
+        torso,
+        legL,
+        legR,
         armL,
         armR,
         head,
@@ -872,7 +1058,16 @@ export class OfficeScene {
         texture: badgeObj.texture,
         agent,
         deskPos: new THREE.Vector3(agent.desk.x, 0, agent.desk.z),
-        status: 'Idle',
+        chairPos: deskChairWorld.clone(),
+        deskRot: agent.desk.rot + Math.PI,
+        currentPos: deskChairWorld.clone(),
+        targetPos: deskChairWorld.clone(),
+        facing: agent.desk.rot + Math.PI,
+        targetFacing: agent.desk.rot + Math.PI,
+        isMoving: false,
+        walkCycle: 0,
+        bubble: null,
+        status: 'working',
       });
     });
   }
@@ -894,40 +1089,73 @@ export class OfficeScene {
     return { sprite, canvas, ctx, texture };
   }
 
-  renderBadgeCanvas(ctx, agent, statusText, statusColor) {
+  renderBadgeCanvas(ctx, agent, statusText, statusColor, bubbleText, bubbleEmoji) {
     ctx.clearRect(0, 0, 512, 160);
 
+    const hasBubble = Boolean(bubbleText);
+
     // Pill background
-    ctx.fillStyle = 'rgba(9, 9, 11, 0.88)';
+    ctx.fillStyle = hasBubble ? 'rgba(15, 17, 26, 0.96)' : 'rgba(9, 10, 15, 0.9)';
     ctx.beginPath();
-    ctx.roundRect(16, 16, 480, 128, 28);
+    ctx.roundRect(8, 8, 496, 144, 22);
     ctx.fill();
 
-    // Border with agent color accent
-    ctx.strokeStyle = statusColor || agent.color;
-    ctx.lineWidth = 4;
+    // Border with agent color or highlight
+    ctx.strokeStyle = hasBubble ? '#38bdf8' : (statusColor || agent.color);
+    ctx.lineWidth = hasBubble ? 4 : 3;
     ctx.stroke();
 
     // Role circle indicator
     ctx.fillStyle = statusColor || agent.color;
     ctx.beginPath();
-    ctx.arc(60, 80, 20, 0, Math.PI * 2);
+    ctx.arc(42, 46, 15, 0, Math.PI * 2);
     ctx.fill();
 
     // Name & Role
     ctx.fillStyle = '#f4f4f5';
-    ctx.font = 'bold 36px "Inter", sans-serif';
-    ctx.fillText(agent.name, 96, 68);
+    ctx.font = 'bold 26px "Inter", sans-serif';
+    ctx.fillText(agent.name, 68, 42);
 
     ctx.fillStyle = '#a1a1aa';
-    ctx.font = '500 22px "Inter", sans-serif';
-    ctx.fillText(agent.role, 96, 102);
+    ctx.font = '500 16px "Inter", sans-serif';
+    ctx.fillText(agent.role, 68, 66);
 
     // Status pill on right
     ctx.fillStyle = statusColor || agent.color;
-    ctx.font = 'bold 20px "JetBrains Mono", monospace';
-    const statusW = ctx.measureText(statusText.toUpperCase()).width;
-    ctx.fillText(statusText.toUpperCase(), 460 - statusW, 88);
+    ctx.font = 'bold 16px "JetBrains Mono", monospace';
+    const dispStatus = (statusText || 'WORKING').toUpperCase();
+    const statusW = ctx.measureText(dispStatus).width;
+    ctx.fillText(dispStatus, 488 - statusW, 46);
+
+    // Speech bubble section
+    if (hasBubble) {
+      // Separator line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(18, 80);
+      ctx.lineTo(494, 80);
+      ctx.stroke();
+
+      // Speech balloon background
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(16, 90, 480, 52, 12);
+      ctx.fill();
+
+      // Emoji and Speech Text
+      const emojiStr = bubbleEmoji || '💬';
+      ctx.font = '22px "Inter", sans-serif';
+      ctx.fillText(emojiStr, 28, 124);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '600 16px "Inter", sans-serif';
+      let snippet = String(bubbleText);
+      if (snippet.length > 40) {
+        snippet = snippet.substring(0, 38) + '...';
+      }
+      ctx.fillText(`"${snippet}"`, 64, 122);
+    }
   }
 
   updateAgentStatus(agentId, statusText, color) {
@@ -943,9 +1171,9 @@ export class OfficeScene {
   }
 
   setupHolotable() {
-    // War-room holographic planning table in corner / side (X = 9.5, Z = 0)
+    // War-room holographic planning table in central war-room zone (X = 8.5, Z = 0)
     const holoGroup = new THREE.Group();
-    holoGroup.position.set(9.5, 0, 0);
+    holoGroup.position.set(8.5, 0, 0);
 
     // Matte dark pedestal
     const baseGeo = new THREE.CylinderGeometry(1.6, 2.0, 0.9, 16);
@@ -1251,10 +1479,14 @@ export class OfficeScene {
       [-14.5, 10.5],
       [14.5, 10.5],
       [-0.5, -10.8],
+      [-5.5, -3.5],  // Executive entry divider plant
+      [6.0, 6.0],    // Pantry divider plant
       [-14.5, 14.0], // Terrace NW
       [14.5, 14.0],  // Terrace NE
-      [-14.5, 26.0], // Terrace SW
-      [14.5, 26.0],  // Terrace SE
+      [-14.5, 26.5], // Terrace SW
+      [14.5, 26.5],  // Terrace SE
+      [-7.0, 27.2],  // Terrace South Balustrade
+      [7.0, 27.2],   // Terrace South Balustrade
     ];
 
     plantLocations.forEach(([px, pz]) => {
@@ -1284,9 +1516,9 @@ export class OfficeScene {
       this.scene.add(potGroup);
     });
 
-    // 2. Penthouse Sky Terrace Outdoor Lounge (L-Sofa & Coffee Table at x: -8, z: 18.5)
+    // 2. Penthouse Sky Terrace Outdoor Lounge (L-Sofa & Coffee Table at x: -9.0, z: 18.0)
     const sofaGroup = new THREE.Group();
-    sofaGroup.position.set(-8, 0, 18.5);
+    sofaGroup.position.set(-9.0, 0, 18.0);
 
     const sofaMat = new THREE.MeshStandardMaterial({ color: '#27272a', roughness: 0.8 });
     const cushionMat = new THREE.MeshStandardMaterial({ color: '#3f3f46', roughness: 0.7 });
@@ -1321,6 +1553,17 @@ export class OfficeScene {
     p2.position.set(1.4, 0.65, -0.3);
     sofaGroup.add(p2);
 
+    // Beanbag Loungers
+    const beanMat1 = new THREE.MeshStandardMaterial({ color: '#10b981', roughness: 0.85 });
+    const beanbag1 = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.45, 12), beanMat1);
+    beanbag1.position.set(3.2, 0.22, 0.2);
+    sofaGroup.add(beanbag1);
+
+    const beanMat2 = new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 0.85 });
+    const beanbag2 = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.45, 12), beanMat2);
+    beanbag2.position.set(3.4, 0.22, 1.8);
+    sofaGroup.add(beanbag2);
+
     // Outdoor Modern Coffee Table
     const tableMat = new THREE.MeshStandardMaterial({ color: '#18181b', metalness: 0.6, roughness: 0.3 });
     const table = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.32, 1.0), tableMat);
@@ -1338,9 +1581,9 @@ export class OfficeScene {
 
     this.scene.add(sofaGroup);
 
-    // 3. Chrome Observation Telescope on Tripod (at x: -11.5, z: 24.5)
+    // 3. Chrome Observation Telescope on Tripod (at x: -12.5, z: 25.0)
     const teleGroup = new THREE.Group();
-    teleGroup.position.set(-11.5, 0, 24.5);
+    teleGroup.position.set(-12.5, 0, 25.0);
     const steelMat = new THREE.MeshStandardMaterial({ color: '#e4e4e7', metalness: 0.9, roughness: 0.15 });
 
     // Tripod Legs
@@ -1366,10 +1609,10 @@ export class OfficeScene {
 
     this.scene.add(teleGroup);
 
-    // 4. Retro Arcade Cabinet Machine (at x: 11, z: 16)
+    // 4. Retro Arcade Cabinet Machine (at x: 9.5, z: 17.5)
     const arcadeGroup = new THREE.Group();
-    arcadeGroup.position.set(11, 0, 16);
-    arcadeGroup.rotation.y = -Math.PI / 2; // facing toward lounge/center
+    arcadeGroup.position.set(9.5, 0, 17.5);
+    arcadeGroup.rotation.y = -Math.PI / 2; // facing toward terrace center
 
     const cabMat = new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.5 });
     const cabSideMat = new THREE.MeshStandardMaterial({ color: '#8b5cf6', roughness: 0.4 });
@@ -1400,9 +1643,9 @@ export class OfficeScene {
 
     this.scene.add(arcadeGroup);
 
-    // 5. Sky Darts Target Board Stand (at x: 12, z: 23)
+    // 5. Sky Darts Target Board Stand (at x: 12.0, z: 23.0)
     const dartsGroup = new THREE.Group();
-    dartsGroup.position.set(12, 0, 23);
+    dartsGroup.position.set(12.0, 0, 23.0);
     dartsGroup.rotation.y = -Math.PI / 2; // facing toward terrace center
 
     // Slate architectural feature column
@@ -1436,6 +1679,34 @@ export class OfficeScene {
     dartsGroup.add(bullseye);
 
     this.scene.add(dartsGroup);
+
+    // 5b. Outdoor High-Top Cocktail Bar Table (at x: 4.5, z: 23.5)
+    const cocktailTableGroup = new THREE.Group();
+    cocktailTableGroup.position.set(4.5, 0, 23.5);
+
+    const barTable = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.06, 24), steelMat);
+    barTable.position.y = 1.08;
+    cocktailTableGroup.add(barTable);
+
+    const barPost = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.05, 16), steelMat);
+    barPost.position.y = 0.54;
+    cocktailTableGroup.add(barPost);
+
+    const barBase = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.03, 24), steelMat);
+    barBase.position.y = 0.02;
+    cocktailTableGroup.add(barBase);
+
+    // 2 High Stools
+    [-0.6, 0.6].forEach((hx) => {
+      const hSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 16), new THREE.MeshStandardMaterial({ color: '#92400e', roughness: 0.6 }));
+      hSeat.position.set(hx, 0.76, 0);
+      cocktailTableGroup.add(hSeat);
+      const hLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.74, 12), steelMat);
+      hLeg.position.set(hx, 0.37, 0);
+      cocktailTableGroup.add(hLeg);
+    });
+
+    this.scene.add(cocktailTableGroup);
 
     // 6. Recessed Terrace Floor Warm Amber Deck Lights
     const deckLightMat = new THREE.MeshBasicMaterial({ color: '#f59e0b' });
@@ -1539,7 +1810,7 @@ export class OfficeScene {
     const height = this.container.clientHeight || window.innerHeight;
     const aspect = width / height;
 
-    const d = 10;
+    const d = 12.2;
     this.camera.left = -d * aspect;
     this.camera.right = d * aspect;
     this.camera.top = d;
@@ -1629,18 +1900,18 @@ export class OfficeScene {
       if (agent.id === 'tara') return; // Khansaku is already added as the roaming royal companion!
       let x = agent.desk.x;
       let z = agent.desk.z;
-      const state = employeeStates ? employeeStates[agent.id] : undefined;
-      if (state === 'pantry' || state === 'walking-pantry') {
-        x = 8.5;
-        z = 8.5;
-      } else if (state === 'terrace' || state === 'walking-terrace') {
-        x = 0;
-        z = 19;
+      let facing = agent.desk.rot;
+      const item = this.agentMeshes.get(agent.id);
+      if (item && item.currentPos) {
+        x = item.currentPos.x;
+        z = item.currentPos.z;
+        facing = item.facing;
       }
       list.push({
         id: agent.id,
         x,
         z,
+        facing,
         label: `${agent.name} (${agent.employeeId})`,
         color: agent.color || '#38bdf8',
       });
@@ -1848,23 +2119,184 @@ export class OfficeScene {
     }
   }
 
+  /**
+   * Sync social states and active speech bubbles from the social engine
+   */
+  setEmployeeSocial(states, bubbles) {
+    if (!states) return;
+    const now = Date.now();
+    const PANTRY_SPOTS = [
+      { x: 8.2, z: 7.4 },
+      { x: 8.8, z: 7.4 },
+      { x: 7.6, z: 7.8 },
+      { x: 9.4, z: 7.8 },
+      { x: 8.5, z: 6.8 },
+    ];
+    const TERRACE_SPOTS = [
+      { x: -7.5, z: 18.2 },
+      { x: -5.5, z: 18.2 },
+      { x: -4.0, z: 19.5 },
+      { x: -8.5, z: 19.8 },
+      { x: -6.0, z: 20.5 },
+    ];
+
+    let subordinateIdx = 0;
+    this.agentMeshes.forEach((item, id) => {
+      if (id === 'tara') return;
+      const state = states[id] || 'working';
+      const prevStatus = item.status;
+      item.status = state;
+
+      // Find active bubble for this agent
+      const activeBubble = bubbles ? bubbles.find((b) => b.agentId === id && b.expiresAt > now) : null;
+      const prevBubbleText = item.bubble?.text;
+      item.bubble = activeBubble;
+
+      // Assign target waypoint based on autonomous state
+      if (state === 'working' || state === 'walking-back') {
+        item.targetPos.copy(item.chairPos);
+        item.targetFacing = item.deskRot;
+      } else if (state === 'pantry' || state === 'walking-pantry') {
+        const spot = PANTRY_SPOTS[subordinateIdx % PANTRY_SPOTS.length];
+        item.targetPos.set(spot.x, 0, spot.z);
+        item.targetFacing = 0; // face south toward lounge/office
+      } else if (state === 'terrace' || state === 'walking-terrace') {
+        const spot = TERRACE_SPOTS[subordinateIdx % TERRACE_SPOTS.length];
+        item.targetPos.set(spot.x, 0, spot.z);
+        item.targetFacing = 0; // face scenic south skyline
+      } else if (state === 'chatting') {
+        // Face peers in either pantry or terrace
+        const isTerrace = item.currentPos.z > 14;
+        const spot = isTerrace
+          ? TERRACE_SPOTS[subordinateIdx % TERRACE_SPOTS.length]
+          : PANTRY_SPOTS[subordinateIdx % PANTRY_SPOTS.length];
+        item.targetPos.set(spot.x, 0, spot.z);
+        item.targetFacing = (subordinateIdx % 2 === 0) ? Math.PI * 0.25 : -Math.PI * 0.75;
+      } else if (state === 'shelter') {
+        item.targetPos.copy(item.chairPos);
+        item.targetFacing = item.deskRot;
+      }
+
+      // If status or speech bubble changed, redraw the badge canvas
+      if (prevStatus !== state || prevBubbleText !== activeBubble?.text) {
+        let statusLabel = state.toUpperCase();
+        let statusColor = item.agent.color;
+        if (state === 'pantry') {
+          statusLabel = '☕ PANTRY';
+          statusColor = '#f59e0b';
+        } else if (state === 'terrace') {
+          statusLabel = '🌿 SKY TERAS';
+          statusColor = '#10b981';
+        } else if (state === 'chatting') {
+          statusLabel = activeBubble?.kind === 'ghibah-savage' ? '🔥 GHIBAH BOS' : '🗣️ NGOBROL';
+          statusColor = '#ec4899';
+        } else if (state.startsWith('walking-')) {
+          statusLabel = '🚶 JALAN';
+          statusColor = '#38bdf8';
+        } else if (state === 'shelter') {
+          statusLabel = '☔ BERTEDUH';
+          statusColor = '#64748b';
+        }
+
+        this.renderBadgeCanvas(
+          item.ctx,
+          item.agent,
+          statusLabel,
+          statusColor,
+          activeBubble?.text,
+          activeBubble?.emoji
+        );
+        item.texture.needsUpdate = true;
+      }
+
+      subordinateIdx++;
+    });
+  }
+
   updateAgents(dt, elapsed) {
     this.agentMeshes.forEach((item, id) => {
-      if (id === 'tara' || !item.armL) return;
-      // Typing animation speed based on status
-      const isWorking = item.status !== 'Idle';
-      const speed = isWorking ? 14 : 4;
+      if (id === 'tara' || !item.avatar || !item.armL) return;
+
       const typingOffset = id.charCodeAt(0) * 0.5;
+      const distToTarget = item.currentPos.distanceTo(item.targetPos);
 
-      const armSwing = Math.sin(elapsed * speed + typingOffset) * (isWorking ? 0.22 : 0.08);
-      item.armL.rotation.x = -Math.PI / 3 + armSwing;
-      item.armR.rotation.x = -Math.PI / 3 - armSwing;
+      if (distToTarget > 0.12) {
+        // 1. Walking Locomotion to destination (Pantry, Terrace, or Desk)
+        item.isMoving = true;
+        const moveDir = new THREE.Vector3().subVectors(item.targetPos, item.currentPos).normalize();
+        const walkSpeed = 2.4;
+        item.currentPos.x += moveDir.x * walkSpeed * dt;
+        item.currentPos.z += moveDir.z * walkSpeed * dt;
 
-      // Gentle head bob / looking at screens
-      item.head.rotation.y = Math.sin(elapsed * 1.5 + typingOffset) * 0.12;
+        // Face travel direction
+        const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+        item.facing = dampAngle(item.facing, targetAngle, 12, dt);
 
-      // Floating status badge gentle floating bob
-      item.badgeSprite.position.y = 2.3 + Math.sin(elapsed * 2.5 + typingOffset) * 0.06;
+        // Walking cycle
+        item.walkCycle += dt * 11;
+        const swing = Math.sin(item.walkCycle) * 0.42;
+        if (item.legL && item.legR) {
+          item.legL.rotation.x = swing;
+          item.legR.rotation.x = -swing;
+        }
+        item.armL.rotation.x = -swing * 0.7;
+        item.armR.rotation.x = swing * 0.7;
+        if (item.torso) {
+          item.torso.position.y = 0.85 + Math.abs(Math.sin(item.walkCycle * 2)) * 0.035;
+        }
+        if (item.head) {
+          item.head.position.y = 1.30 + Math.abs(Math.sin(item.walkCycle * 2)) * 0.035;
+          item.head.rotation.y = 0;
+        }
+      } else {
+        // 2. Stationary / Idle / Typing / Socializing at spot
+        item.isMoving = false;
+        item.facing = dampAngle(item.facing, item.targetFacing, 6, dt);
+
+        // Reset legs to neutral standing/sitting
+        if (item.legL && item.legR) {
+          item.legL.rotation.x *= 0.8;
+          item.legR.rotation.x *= 0.8;
+        }
+
+        const isAtDesk = item.status === 'working' || item.status === 'shelter' || (!item.status && distToTarget <= 0.15);
+
+        if (isAtDesk) {
+          // Seated at workstation: typing animation
+          const speed = item.status !== 'Idle' ? 14 : 4;
+          const armSwing = Math.sin(elapsed * speed + typingOffset) * (item.status !== 'Idle' ? 0.22 : 0.08);
+          item.armL.rotation.x = -Math.PI / 3 + armSwing;
+          item.armR.rotation.x = -Math.PI / 3 - armSwing;
+          if (item.head) {
+            item.head.rotation.y = Math.sin(elapsed * 1.5 + typingOffset) * 0.12;
+            item.head.position.y = 1.30;
+          }
+          if (item.torso) item.torso.position.y = 0.85;
+        } else {
+          // Relaxing at Pantry or Terrace: standing, sipping, or gesturing
+          const isChatting = item.status === 'chatting';
+          const gestureRate = isChatting ? 5.5 : 2.0;
+          const armGest = Math.sin(elapsed * gestureRate + typingOffset) * (isChatting ? 0.35 : 0.12);
+          item.armL.rotation.x = -0.3 + armGest;
+          item.armR.rotation.x = -0.4 - armGest;
+          if (item.head) {
+            item.head.rotation.y = Math.sin(elapsed * 2.2 + typingOffset) * (isChatting ? 0.25 : 0.1);
+            item.head.position.y = 1.30 + Math.sin(elapsed * 2.5) * 0.015;
+          }
+          if (item.torso) {
+            item.torso.position.y = 0.85 + Math.sin(elapsed * 2.0) * 0.01;
+          }
+        }
+      }
+
+      // Update avatar world transform
+      item.avatar.position.set(item.currentPos.x, 0, item.currentPos.z);
+      item.avatar.rotation.y = item.facing;
+
+      // Floating status badge gentle floating bob above avatar
+      if (item.badgeSprite) {
+        item.badgeSprite.position.y = 2.3 + Math.sin(elapsed * 2.5 + typingOffset) * 0.06;
+      }
     });
   }
 
@@ -1899,11 +2331,11 @@ export class OfficeScene {
     if (this.focusingOnAgent) {
       targetLook = this.focusingOnAgent;
     } else {
-      // Keep center of the office in view with subtle parallax follow and free user pan
+      // Keep center of the entire penthouse suite in view with balanced margins and subtle parallax follow
       targetLook = new THREE.Vector3(
-        this.playerPos.x * 0.32 + this.userPanOffset.x,
+        0.5 + this.playerPos.x * 0.25 + this.userPanOffset.x,
         0,
-        this.playerPos.z * 0.32 + this.userPanOffset.z
+        3.5 + this.playerPos.z * 0.25 + this.userPanOffset.z
       );
     }
 
@@ -1937,13 +2369,14 @@ export class OfficeScene {
       return;
     }
 
-    // Check if Raffa is currently walking near a subordinate's desk
+    // Check if Raffa is currently walking near a subordinate (desk or roaming)
     let nearestSubordinate = null;
     let minDist = 3.8;
 
     this.agentMeshes.forEach((item) => {
       if (item.agent.id === 'tara') return;
-      const dist = this.playerPos.distanceTo(item.deskPos);
+      const posToCheck = item.currentPos || item.deskPos;
+      const dist = this.playerPos.distanceTo(posToCheck);
       if (dist < minDist) {
         minDist = dist;
         nearestSubordinate = item.agent;

@@ -431,33 +431,39 @@ export default function RetroArcadeModal({ isOpen, onClose, onSelectMode, player
   const inRound = phase !== 'menu' && mode !== null;
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-slate-950/70 p-3" role="dialog" aria-label="Retro Arcade">
-      <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-violet-500/25 bg-slate-950/95 p-4 shadow-2xl sm:p-5">
-        <header className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-200">
-            <Gamepad2 size={16} className="text-violet-400" /> Retro Arcade · TechFlow Terminal
-          </h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-200" aria-label="Close arcade">
-            <X size={16} />
+    <div className="pointer-events-auto fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 md:p-6 backdrop-blur-md" role="dialog" aria-label="Retro Arcade">
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-violet-500/30 bg-[#0c0d12]/95 p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+        <header className="mb-6 pb-3 flex items-center justify-between border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/15">
+              <Gamepad2 size={18} className="text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white tracking-wide">Retro Arcade · TechFlow Cabinet</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Rooftop Sky Terrace Arcade Machine · Pilih Mini-Game</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-xl p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" aria-label="Close arcade">
+            <X size={18} />
           </button>
         </header>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_230px]">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_260px]">
           <section aria-label="Arcade game">
             {phase === 'menu' && (
-              <div className="grid gap-3">
-                <button type="button" onClick={() => beginRound('candle-runner')} className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-left hover:bg-emerald-500/20">
-                  <span className="text-2xl">📈</span>
+              <div className="grid gap-4">
+                <button type="button" onClick={() => beginRound('candle-runner')} className="flex items-center gap-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-left hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all hover:-translate-y-0.5">
+                  <span className="text-3xl shrink-0">📈</span>
                   <div>
-                    <strong className="text-xs text-emerald-300">{GAME_LABELS['crypto-runner']}</strong>
-                    <p className="text-[10px] text-slate-400">Kumpulkan koin $ dan hindari wick merah selama 60 detik. Arrow Up/Down, W/S, atau tahan dan geser pointer.</p>
+                    <strong className="text-sm font-bold text-emerald-300 block">{GAME_LABELS['crypto-runner']}</strong>
+                    <p className="text-xs text-zinc-400 leading-relaxed mt-1">Kumpulkan koin $ dan hindari wick merah selama 60 detik. Arrow Up/Down, W/S, atau tahan dan geser kursor.</p>
                   </div>
                 </button>
-                <button type="button" onClick={() => beginRound('whack-a-bug')} className="flex items-center gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-left hover:bg-rose-500/20">
-                  <span className="text-2xl">🐛</span>
+                <button type="button" onClick={() => beginRound('whack-a-bug')} className="flex items-center gap-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5 text-left hover:bg-rose-500/20 hover:border-rose-500/50 transition-all hover:-translate-y-0.5">
+                  <span className="text-3xl shrink-0">🐛</span>
                   <div>
-                    <strong className="text-xs text-rose-300">{GAME_LABELS['whack-a-bug']}</strong>
-                    <p className="text-[10px] text-slate-400">Pukul bug merah selama 30 detik; jangan pukul Khansaku biru (friendly fire −75). Klik atau sentuh layar.</p>
+                    <strong className="text-sm font-bold text-rose-300 block">{GAME_LABELS['whack-a-bug']}</strong>
+                    <p className="text-xs text-zinc-400 leading-relaxed mt-1">Pukul bug merah selama 30 detik; hindari Khansaku biru (friendly fire −75). Klik atau tap layar.</p>
                   </div>
                 </button>
               </div>

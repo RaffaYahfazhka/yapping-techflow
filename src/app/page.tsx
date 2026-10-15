@@ -9,7 +9,7 @@ import { AGENTS, BOSS } from '../lib/data/agents';
 import { REPOS } from '../lib/data/repos';
 import { TICKETS } from '../lib/data/tickets';
 import { parseFigmaInput } from '../lib/data/figma';
-import { USER_PLAYLIST } from '../lib/data/userPlaylist';
+import { USER_PLAYLIST, DEFAULT_PLAYLIST_ID } from '../lib/data/userPlaylist';
 
 // Modular Components
 import Navbar from '../components/navigation/Navbar';
@@ -19,7 +19,7 @@ import MusicPlayerWidget from '../components/music/MusicPlayerWidget';
 import MusicPlayerModal, { RepeatMode } from '../components/music/MusicPlayerModal';
 import SplashScreen from '../components/ui/SplashScreen';
 import OfficeMinimap, { blipsFromScene, type Blip } from '@/components/map/OfficeMinimap';
-import { type SkyPhase } from '@/lib/engine/skyEngine';
+import { clockWibString, type SkyPhase } from '@/lib/engine/skyEngine';
 import OfficeGroupChatModal from '@/components/chat/OfficeGroupChatModal';
 import SkyDartsModal from '@/components/minigames/SkyDartsModal';
 import RetroArcadeModal from '@/components/minigames/RetroArcadeModal';
@@ -28,6 +28,7 @@ import PhotoModeController from '@/components/executive/PhotoModeController';
 import NotificationToasts, { useNotificationToasts, type ToastKind } from '@/components/ui/NotificationToasts';
 import WallboardHologram from '@/components/canvas/WallboardHologram';
 import { createEmployeeSim, employeeStateTick, applyEmployeeTreat, applyWeatherToSim, visibleBubble, type EmployeeSim, type OfficeEvent } from '@/lib/engine/socialEngine';
+import { fetchEmployeeDialogue, createAiSpeechBubble } from '@/lib/engine/employeeDialogue';
 import TerminalDrawer from '../components/terminal/TerminalDrawer';
 import SubordinateModal from '../components/SubordinateModal';
 import TradingBotsModal from '../components/finance/TradingBotsModal';
@@ -35,7 +36,10 @@ import KhansaChatModal from '../components/khansa/KhansaChatModal';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import { Compass, Coffee, Shirt, Target, Gamepad2, Camera, BarChart3, PartyPopper } from 'lucide-react';
-
+import { Dock, DockItem } from '@/components/ui/dock';
+import { HaloButton } from '@/components/ui/halo-button';
+import { HaloBadge } from '@/components/ui/halo-badge';
+import { PredictionBotProvider } from '@/components/trading/PredictionBotRuntime';
 export default function OfficePage() {
   const stageRef = useRef(null);
   const photoCaptureRef = useRef<(() => Promise<{ width: number; height: number }>) | null>(null);
@@ -64,10 +68,10 @@ export default function OfficePage() {
   const [audioTime, setAudioTime] = useState({ currentTime: 0, duration: 196 });
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [currentTrack, setCurrentTrack] = useState({
-    title: USER_PLAYLIST[0]?.title || 'DJ IM LADY X AVANGARD X SWEET LOVE',
-    artist: USER_PLAYLIST[0]?.artist || 'YouTube Music',
-    videoId: USER_PLAYLIST[0]?.videoId || 'NA7hmTexZ0E',
-    cover: USER_PLAYLIST[0]?.cover || 'https://i.ytimg.com/vi/NA7hmTexZ0E/mqdefault.jpg',
+    title: 'Playlist Utama · Jazz Smooth',
+    artist: 'YouTube Music',
+    videoId: '',
+    cover: '',
   });
   const [isMusicModalOpen, setIsMusicModalOpen] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -186,8 +190,7 @@ export default function OfficePage() {
   // Clock Timer
   useEffect(() => {
     const timer = setInterval(() => {
-      const now = new Date();
-      setClockStr(now.toTimeString().split(' ')[0]);
+      setClockStr(clockWibString());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -249,27 +252,37 @@ export default function OfficePage() {
       simTickRef.current += 1;
       const now = Date.now();
       setEmployeeSim((prev) => {
-        const next = employeeStateTick({ ...prev, boss: { x: prev.boss.x, z: prev.boss.z } }, now, simTickRef.current);
+        const sc = sceneRef.current as any;
+        const bossPos = sc?.playerPos ? { x: sc.playerPos.x, z: sc.playerPos.z } : prev.boss;
+        const livePositions: Record<string, { x: number; z: number }> = {};
+        if (sc?.agentMeshes) {
+          sc.agentMeshes.forEach((item: any, id: string) => {
+            if (item.currentPos) {
+              livePositions[id] = { x: item.currentPos.x, z: item.currentPos.z };
+            }
+          });
+        }
+        const next = employeeStateTick(
+          { ...prev, boss: bossPos, positions: { ...prev.positions, ...livePositions } },
+          now,
+          simTickRef.current
+        );
+
+        // Update 3D scene agents with new social states and speech bubbles
+        if (sc?.setEmployeeSocial) {
+          sc.setEmployeeSocial(next.states, next.bubbles);
+        }
+
         // read live positions from the imperative scene
-        const sc = sceneRef.current as unknown as { playerPos?: { x: number; z: number }; khansaPos?: { x: number; z: number } } | null;
-        const blips: Blip[] = sc
-          ? blipsFromScene(
-              sc.playerPos ?? { x: -2.5, z: 2.6 },
-              sc.khansaPos ?? { x: -1.2, z: 3.2 },
-              (() => {
-                const list: { id: string; x: number; z: number; name: string; color: string }[] = [];
-                for (const [id] of Object.entries(next.states)) {
-                  const agent = AGENTS.find((a) => a.id === id);
-                  if (agent) list.push({ id: agent.id, x: agent.desk.x, z: agent.desk.z, name: agent.name, color: agent.color });
-                }
-                return list;
-              })(),
-            )
+        const blips: Blip[] = sc?.getLiveBlips
+          ? sc.getLiveBlips(next.states)
           : [];
-        setOfficeBlips(blips);
+        if (blips.length > 0) {
+          setOfficeBlips(blips);
+        }
         return next;
       });
-    }, 15_000);
+    }, 4_000); // 4-second reactive tick for responsive social dynamics and proximity silence
     return () => { cancelled = true; clearInterval(poll); };
   }, [booted]);
 
@@ -318,11 +331,12 @@ export default function OfficePage() {
       containerId: 'yt-player-host',
       onStateChange: (state) => setAudioState({ ...state }),
       onTimeUpdate: (time) => setAudioTime({ ...time }),
+      onTrackChange: setCurrentTrack,
       onEnded: () => {
         handleNextTrackRef.current?.();
       },
     });
-    audio.init();
+    audio.loadPlaylist(DEFAULT_PLAYLIST_ID, false);
     audioRef.current = audio;
 
     // 3. Pipeline Runner
@@ -449,6 +463,10 @@ export default function OfficePage() {
   }, []);
 
   const handleNextTrack = useCallback(() => {
+    if (audioRef.current?.playlistId) {
+      audioRef.current.nextPlaylistTrack();
+      return;
+    }
     if (!USER_PLAYLIST || USER_PLAYLIST.length === 0) return;
     if (repeatMode === 'one') {
       audioRef.current?.seekTo(0);
@@ -465,6 +483,10 @@ export default function OfficePage() {
   }, [currentTrackIndex, handleSelectTrack, isShuffle, repeatMode]);
 
   const handlePrevTrack = useCallback(() => {
+    if (audioRef.current?.playlistId) {
+      audioRef.current.previousPlaylistTrack();
+      return;
+    }
     if (!USER_PLAYLIST || USER_PLAYLIST.length === 0) return;
     const prevIdx = (currentTrackIndex - 1 + USER_PLAYLIST.length) % USER_PLAYLIST.length;
     handleSelectTrack(USER_PLAYLIST[prevIdx], prevIdx);
@@ -477,6 +499,10 @@ export default function OfficePage() {
   const handleToggleShuffle = useCallback(() => {
     setIsShuffle((prev) => !prev);
   }, []);
+
+  useEffect(() => {
+    audioRef.current?.configurePlaylist(isShuffle, repeatMode === 'all');
+  }, [isShuffle, repeatMode, audioState.ready]);
 
   useEffect(() => {
     handleNextTrackRef.current = handleNextTrack;
@@ -564,7 +590,7 @@ export default function OfficePage() {
   const handleEnterOffice = () => {
     setBooted(true);
     // Primary playlist is cued paused on entry; playback starts only from a visible Play control.
-    audioRef.current?.loadPlaylist('PLZVXIrT2s1CE', false);
+    audioRef.current?.loadPlaylist(DEFAULT_PLAYLIST_ID, false);
   };
 
   const activeTicketForSubordinate =
@@ -573,8 +599,24 @@ export default function OfficePage() {
   const handleTreatAll = useCallback(() => {
     const now = Date.now();
     setEmployeeSim((prev) => applyEmployeeTreat(prev, now));
+    void fetchEmployeeDialogue({
+      id: 'tara',
+      name: 'Tara',
+      role: 'Operations & Treat Coordinator',
+      event: 'treat',
+      weather: 'clear',
+    }).then((aiText) => {
+      if (aiText) {
+        const bubble = createAiSpeechBubble('tara', '🎉', aiText, Date.now() + 20_000, 'status');
+        if (bubble) {
+          setEmployeeSim((prev) => ({
+            ...prev,
+            bubbles: [...prev.bubbles.filter((b) => b.agentId !== 'tara'), bubble],
+          }));
+        }
+      }
+    });
     setOfficeEvents((prev) => [
-      ...prev,
       {
         id: `tr-${now}`,
         at: now,
@@ -591,9 +633,10 @@ export default function OfficePage() {
   }, [pushToast]);
 
   return (
-    <main id="app" className="relative w-screen h-screen overflow-hidden">
+    <PredictionBotProvider>
+      <main id="app" className="relative w-screen h-screen overflow-hidden">
       <h1 className="sr-only">
-        Kantor Raffa — Interactive 3D Virtual AI Office &amp; Autonomous Mission Control
+        Yapping Techflow — Interactive 3D Virtual AI Penthouse &amp; Autonomous Mission Control
       </h1>
 
       {/* 3D WebGL Canvas (interactive isometric office runtime) */}
@@ -673,9 +716,9 @@ export default function OfficePage() {
           className="interact-prompt glass"
           style={{
             cursor: 'pointer',
-            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.28), rgba(251, 191, 36, 0.18))',
-            borderColor: 'rgba(244, 63, 94, 0.55)',
-            boxShadow: '0 8px 32px rgba(244, 63, 94, 0.25)',
+            background: 'linear-gradient(135deg, rgba(20, 20, 28, 0.94), rgba(30, 20, 28, 0.92))',
+            borderColor: 'rgba(244, 63, 94, 0.45)',
+            boxShadow: '0 16px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(244, 63, 94, 0.22)',
           }}
           onClick={() => {
             if (interactAgent.commandTarget) {
@@ -819,30 +862,84 @@ export default function OfficePage() {
       <Modal
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
-        size="sm"
+        size="md"
         title="Kontrol & Shortcut"
         subtitle="Navigasi kantor dan keyboard shortcuts"
         icon={<span>⌨</span>}
       >
-        <div className="grid grid-cols-2 gap-y-2 text-xs font-mono text-zinc-300">
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">W</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-white/10">↑</kbd></div><div>Jalan ke ATAS layar</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">S</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-white/10">↓</kbd></div><div>Jalan ke BAWAH layar</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">A</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-white/10">←</kbd></div><div>Jalan ke KIRI layar</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">D</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-white/10">→</kbd></div><div>Jalan ke KANAN layar</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">⇧ Shift</kbd></div><div>Sprint Cepat</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">E</kbd></div><div>Bicara dengan agen terdekat</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">K</kbd></div><div>Chat Khansa &amp; Prompt Antigravity</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">F</kbd></div><div>Slicing Figma ke Jajang</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">J</kbd></div><div>Mission Control Jira</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">T</kbd></div><div>Buka / Tutup Terminal</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">M</kbd></div><div>Radar Minimap Penthouse</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">N</kbd></div><div>Warung Kopi (Chat Kantor)</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">O</kbd></div><div>Setelan Wardrobe Bos Raffa</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">G</kbd></div><div>Sky Darts (Rooftop Mini-Game)</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">B</kbd></div><div>Retro Arcade Machine</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">P</kbd></div><div>Photo Drone Mode (Capture PNG)</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">C</kbd></div><div>Reset Kamera ke Raffa</div>
-          <div><kbd className="px-1.5 py-0.5 rounded bg-white/10">Esc</kbd></div><div>Tutup Modal Aktif</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3.5 text-xs text-zinc-300 py-1">
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">W</kbd> / <kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">↑</kbd></span>
+            <span className="text-zinc-300">Jalan ke ATAS layar</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">S</kbd> / <kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">↓</kbd></span>
+            <span className="text-zinc-300">Jalan ke BAWAH layar</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">A</kbd> / <kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">←</kbd></span>
+            <span className="text-zinc-300">Jalan ke KIRI layar</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">D</kbd> / <kbd className="px-2 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">→</kbd></span>
+            <span className="text-zinc-300">Jalan ke KANAN layar</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">⇧ Shift</kbd></span>
+            <span className="text-zinc-300">Sprint Cepat</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">E</kbd></span>
+            <span className="text-zinc-300">Bicara dengan agen terdekat</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">K</kbd></span>
+            <span className="text-zinc-300">Chat Khansa &amp; Prompt AI</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">F</kbd></span>
+            <span className="text-zinc-300">Slicing Figma ke Jajang</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">J</kbd></span>
+            <span className="text-zinc-300">Mission Control Jira</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">T</kbd></span>
+            <span className="text-zinc-300">Buka / Tutup Terminal</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">M</kbd></span>
+            <span className="text-zinc-300">Radar Minimap Penthouse</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">N</kbd></span>
+            <span className="text-zinc-300">Warung Kopi (Chat Kantor)</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">O</kbd></span>
+            <span className="text-zinc-300">Setelan Wardrobe Bos Raffa</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">G</kbd></span>
+            <span className="text-zinc-300">Sky Darts (Rooftop Mini-Game)</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">B</kbd></span>
+            <span className="text-zinc-300">Retro Arcade Machine</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">P</kbd></span>
+            <span className="text-zinc-300">Photo Drone Mode (Capture PNG)</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">C</kbd></span>
+            <span className="text-zinc-300">Reset Kamera ke Raffa</span>
+          </div>
+          <div className="flex items-center justify-between sm:justify-start gap-3 py-0.5">
+            <span className="shrink-0"><kbd className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 font-mono text-[11px] font-bold text-white shadow-sm">Esc</kbd></span>
+            <span className="text-zinc-300">Tutup Modal Aktif</span>
+          </div>
         </div>
       </Modal>
 
@@ -927,89 +1024,97 @@ export default function OfficePage() {
 
       {/* Penthouse Quick Actions Dock — Glassmorphic with Lucide Icons */}
       {booted && (
-        <div
-          role="toolbar"
-          aria-label="Penthouse Quick Actions"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 p-2 px-3 rounded-2xl bg-[#0a0a0e]/95 backdrop-blur-2xl border border-white/[0.12] shadow-[0_16px_48px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)] select-none text-[11px]"
-        >
-          <button
-            type="button"
-            onClick={() => setIsMinimapOpen((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(52,211,153,0.15)]"
-            title="Radar Minimap Penthouse (M)"
-          >
-            <Compass size={13} className="transition-transform duration-300 group-hover:rotate-45" />
-            <span>Radar</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsOfficeChatOpen((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 hover:border-amber-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(251,191,36,0.15)]"
-            title="Warung Kopi TechFlow (N)"
-          >
-            <Coffee size={13} />
-            <span>Warung Kopi</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleTreatAll}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-rose-300 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 hover:border-rose-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(244,63,94,0.2)]"
-            title="Traktir Kopi & Pizza Se-Kantor via Khansaku (100% Buff)"
-          >
-            <PartyPopper size={13} className="text-rose-400 transition-transform duration-200 group-hover:scale-110" />
-            <span>Traktir Kopi</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsWallboardOpen((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/20 hover:border-cyan-400/40 font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(34,211,238,0.15)]"
-            title="Giant Wallboard Hologram (War Room)"
-          >
-            <BarChart3 size={13} />
-            <span>Wallboard</span>
-          </button>
+        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 select-none max-w-[calc(100vw-2rem)] overflow-x-auto no-scrollbar shrink-0">
+          <Dock className="p-2 gap-1.5 sm:gap-2">
+            <DockItem
+              onClick={() => setIsMinimapOpen((o) => !o)}
+              title="Radar Minimap Penthouse (M)"
+              className="text-emerald-300 hover:bg-emerald-500/20"
+            >
+              <span className="flex items-center gap-1.5">
+                <Compass size={14} className="text-emerald-400" />
+                <span className="font-bold">Radar</span>
+              </span>
+            </DockItem>
 
-          {/* Divider */}
-          <div className="h-6 w-px bg-white/10 mx-0.5" aria-hidden="true" />
+            <DockItem
+              onClick={() => setIsOfficeChatOpen((o) => !o)}
+              title="Warung Kopi TechFlow (N)"
+              className="text-amber-300 hover:bg-amber-500/20"
+            >
+              <span className="flex items-center gap-1.5">
+                <Coffee size={14} className="text-amber-400" />
+                <span className="font-bold">Warung Kopi</span>
+              </span>
+            </DockItem>
 
-          <button
-            type="button"
-            onClick={() => setIsWardrobeOpen((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
-            title="Setelan Wardrobe Bos Raffa (O)"
-          >
-            <Shirt size={13} />
-            <span>Wardrobe</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsDartsOpen((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
-            title="Mini-Game Sky Darts Penthouse (G)"
-          >
-            <Target size={13} />
-            <span>Darts</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsArcadeOpen((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
-            title="Retro Arcade: Crypto Scalper & Whack-A-Bug (B)"
-          >
-            <Gamepad2 size={13} />
-            <span>Arcade</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPhotoActive((o) => !o)}
-            className="group flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white font-medium transition-all duration-200 hover:-translate-y-0.5"
-            title="Photo Drone Mode (P)"
-          >
-            <Camera size={13} />
-            <span>Photo</span>
-          </button>
+            <DockItem
+              onClick={handleTreatAll}
+              title="Traktir Kopi & Pizza Se-Kantor via Khansaku (100% Buff)"
+              className="text-rose-300 hover:bg-rose-500/20"
+            >
+              <span className="flex items-center gap-1.5">
+                <PartyPopper size={14} className="text-rose-400" />
+                <span className="font-bold">Traktir Kopi</span>
+              </span>
+            </DockItem>
+
+            <DockItem
+              onClick={() => setIsWallboardOpen((o) => !o)}
+              title="Giant Wallboard Hologram (War Room)"
+              className="text-cyan-300 hover:bg-cyan-500/20"
+            >
+              <span className="flex items-center gap-1.5">
+                <BarChart3 size={14} className="text-cyan-400" />
+                <span className="font-bold">Wallboard</span>
+              </span>
+            </DockItem>
+
+            <div className="h-5 w-px bg-white/20 mx-1" aria-hidden="true" />
+
+            <DockItem
+              onClick={() => setIsWardrobeOpen((o) => !o)}
+              title="Setelan Wardrobe Bos Raffa (O)"
+            >
+              <span className="flex items-center gap-1.5">
+                <Shirt size={14} />
+                <span className="hidden sm:inline">Wardrobe</span>
+              </span>
+            </DockItem>
+
+            <DockItem
+              onClick={() => setIsDartsOpen((o) => !o)}
+              title="Mini-Game Sky Darts Penthouse (G)"
+            >
+              <span className="flex items-center gap-1.5">
+                <Target size={14} />
+                <span className="hidden sm:inline">Darts</span>
+              </span>
+            </DockItem>
+
+            <DockItem
+              onClick={() => setIsArcadeOpen((o) => !o)}
+              title="Retro Arcade: Crypto Scalper & Whack-A-Bug (B)"
+            >
+              <span className="flex items-center gap-1.5">
+                <Gamepad2 size={14} />
+                <span className="hidden sm:inline">Arcade</span>
+              </span>
+            </DockItem>
+
+            <DockItem
+              onClick={() => setIsPhotoActive((o) => !o)}
+              title="Photo Drone Mode (P)"
+            >
+              <span className="flex items-center gap-1.5">
+                <Camera size={14} />
+                <span className="hidden sm:inline">Photo</span>
+              </span>
+            </DockItem>
+          </Dock>
         </div>
       )}
-    </main>
+      </main>
+    </PredictionBotProvider>
   );
 }

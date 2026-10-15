@@ -2,10 +2,28 @@
 
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import {
+  RotateCcw,
+  Wallet,
+  Radio,
+  ShieldCheck,
+  GitBranch,
+  DollarSign,
+  AlertCircle,
+  Clock,
+  TrendingUp,
+  Inbox,
+  Sparkles,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
+} from 'lucide-react';
 import { ShivBadge, ShivButton, ShivModal } from '@/components/ui/shiv';
 import { useVenueFeed } from '@/components/trading/useVenueFeed';
 import BacktestSimulator from '@/components/laptop/BacktestSimulator';
+import TradingViewXauChart from '@/components/laptop/TradingViewXauChart';
+import { usePredictionBot } from '@/components/trading/PredictionBotRuntime';
+import { Play, Pause, Cpu } from 'lucide-react';
 import { AGENTS } from '@/lib/data/agents';
 import {
   isUsablePrice,
@@ -60,14 +78,14 @@ const TONE_COLOR: Record<FeedTone, string> = {
 
 const POLL_MS = 6000;
 
-const PANEL = 'flex min-w-0 flex-col gap-3 rounded-2xl border border-white/10 bg-[#111218] p-4';
-const LABEL = 'font-mono text-[10px] uppercase tracking-widest text-zinc-500';
+const PANEL = 'flex min-w-0 flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 backdrop-blur-sm shadow-sm';
+const LABEL = 'font-mono text-[11px] font-semibold uppercase tracking-wider text-zinc-400';
 const MONO = 'font-mono tabular-nums';
-const TABLE_WRAP = 'overflow-x-auto rounded-xl border border-white/10 bg-[#0d0e13]';
-const TH = 'whitespace-nowrap border-b border-white/10 px-2.5 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-zinc-500';
-const TD = 'border-b border-white/5 px-2.5 py-2 align-top text-zinc-200';
+const TABLE_WRAP = 'overflow-x-auto rounded-xl border border-white/10 bg-black/40';
+const TH = 'whitespace-nowrap border-b border-white/10 px-4 py-3 text-left font-mono text-xs uppercase tracking-wider text-zinc-400 bg-white/[0.02]';
+const TD = 'border-b border-white/5 px-4 py-3.5 align-middle text-sm text-zinc-200';
 const INPUT =
-  'w-28 rounded-lg border border-white/15 bg-black/40 px-3 py-2 font-mono text-xs text-white focus:border-emerald-400/60 focus:outline-none';
+  'w-32 rounded-xl border border-white/15 bg-black/50 py-2.5 pl-8 pr-3 font-mono text-sm font-semibold text-white focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400';
 
 function feedTone<T>(envelope: MarketFeedEnvelope<T> | null, failed: boolean): FeedTone {
   if (!envelope) return failed ? 'stale' : 'connecting';
@@ -76,24 +94,48 @@ function feedTone<T>(envelope: MarketFeedEnvelope<T> | null, failed: boolean): F
 
 function Banner({ tone = 'info', children }: { tone?: 'info' | 'danger' | 'warn'; children: React.ReactNode }) {
   const palette = {
-    info: 'border-sky-400/30 bg-sky-500/10 text-sky-100',
-    danger: 'border-rose-400/30 bg-rose-500/10 text-rose-200',
-    warn: 'border-amber-400/30 bg-amber-500/10 text-amber-100',
+    info: 'border-sky-500/30 bg-sky-500/10 text-sky-100 shadow-[0_0_24px_rgba(56,189,248,0.06)]',
+    danger: 'border-rose-500/30 bg-rose-500/10 text-rose-100 shadow-[0_0_24px_rgba(244,63,94,0.06)]',
+    warn: 'border-amber-500/30 bg-amber-500/10 text-amber-100 shadow-[0_0_24px_rgba(245,158,11,0.06)]',
   } as const;
   return (
-    <div className={`rounded-xl border px-4 py-3 text-xs leading-relaxed ${palette[tone]}`} role={tone === 'danger' ? 'alert' : undefined}>
-      {children}
+    <div className={`flex items-start gap-3 rounded-2xl border p-4.5 text-xs md:text-sm leading-relaxed ${palette[tone]}`} role={tone === 'danger' ? 'alert' : undefined}>
+      <Sparkles size={18} className="mt-0.5 shrink-0 opacity-80" />
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
 
-function Metric({ label, value, color = '#ffffff', title }: { label: string; value: React.ReactNode; color?: string; title?: string }) {
+function MetricCard({
+  label,
+  value,
+  subtext,
+  icon,
+  color,
+  title,
+}: {
+  label: string;
+  value: React.ReactNode;
+  subtext?: string;
+  icon?: React.ReactNode;
+  color?: string;
+  title?: string;
+}) {
   return (
-    <div className="flex min-w-0 flex-col gap-1" title={title}>
-      <span className={LABEL}>{label}</span>
-      <span className={`${MONO} break-words text-lg font-extrabold`} style={{ color }}>
-        {value}
-      </span>
+    <div
+      className="flex min-w-0 flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4.5 transition hover:border-white/20 hover:bg-white/[0.05] backdrop-blur-sm shadow-sm"
+      title={title}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={LABEL}>{label}</span>
+        {icon && <div className="text-zinc-500">{icon}</div>}
+      </div>
+      <div className="mt-2.5 flex flex-col gap-1">
+        <div className={`${MONO} break-words text-xl font-bold tracking-tight`} style={{ color: color || '#ffffff' }}>
+          {value}
+        </div>
+        {subtext && <span className="text-[11px] text-zinc-500">{subtext}</span>}
+      </div>
     </div>
   );
 }
@@ -103,10 +145,16 @@ function NativePriceChart({ points, strokeColor, label }: { points: number[]; st
     return (
       <div className={PANEL}>
         <div className="flex items-center justify-between text-xs font-semibold text-zinc-400">
-          <span>{label}</span>
-          <span>Waiting for candle/tick series...</span>
+          <div className="flex items-center gap-2">
+            <Activity size={15} style={{ color: strokeColor }} />
+            <span className="font-bold text-zinc-200">{label}</span>
+          </div>
+          <span className="font-mono text-zinc-500">Waiting for candle/tick series...</span>
         </div>
-        <div className="flex h-36 items-center justify-center text-xs text-zinc-500">No price points recorded yet</div>
+        <div className="flex h-44 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 bg-black/20 text-xs text-zinc-500">
+          <Clock size={20} className="opacity-40" />
+          <span>No price points recorded yet</span>
+        </div>
       </div>
     );
   }
@@ -114,9 +162,9 @@ function NativePriceChart({ points, strokeColor, label }: { points: number[]; st
   const min = Math.min(...points);
   const max = Math.max(...points);
   const range = max - min || 1;
-  const width = 600;
-  const height = 140;
-  const pad = 12;
+  const width = 800;
+  const height = 160;
+  const pad = 14;
 
   const coords = points.map((val, idx) => {
     const x = pad + (idx / (points.length - 1)) * (width - pad * 2);
@@ -129,20 +177,28 @@ function NativePriceChart({ points, strokeColor, label }: { points: number[]; st
 
   return (
     <div className={PANEL}>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-zinc-400">
-        <span>{label}</span>
-        <span className={MONO} style={{ color: strokeColor }}>
-          Current: {currentVal.toFixed(4)} (Min: {min.toFixed(4)} · Max: {max.toFixed(4)})
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-semibold text-zinc-400 pb-2 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <Activity size={16} style={{ color: strokeColor }} />
+          <span className="text-sm font-bold text-white">{label}</span>
+        </div>
+        <div className="flex items-center gap-4 text-xs">
+          <span className="font-mono text-zinc-400">Min: <strong className="text-zinc-200">{min.toFixed(4)}</strong></span>
+          <span className="font-mono text-zinc-400">Max: <strong className="text-zinc-200">{max.toFixed(4)}</strong></span>
+          <span className="rounded-lg px-2.5 py-1 font-mono font-bold text-sm" style={{ background: `${strokeColor}20`, color: strokeColor }}>
+            Current: {currentVal.toFixed(4)}
+          </span>
+        </div>
       </div>
-      <div className="relative h-44 w-full">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible">
+      <div className="relative h-48 w-full pt-2">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full overflow-visible" preserveAspectRatio="none">
           {[pad, height / 2, height - pad].map((y) => (
-            <line key={y} x1={pad} y1={y} x2={width - pad} y2={y} stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+            <line key={y} x1={pad} y1={y} x2={width - pad} y2={y} stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
           ))}
           <path d={`${pathD} L ${width - pad},${height - pad} L ${pad},${height - pad} Z`} fill={`${strokeColor}15`} />
-          <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={last.x} cy={last.y} r="4" fill={strokeColor} />
+          <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={last.x} cy={last.y} r="5" fill={strokeColor} />
+          <circle cx={last.x} cy={last.y} r="9" fill={strokeColor} opacity="0.3" className="animate-ping" />
         </svg>
       </div>
     </div>
@@ -158,6 +214,7 @@ export default function TradingBotsModal({
   const tradingBots = useMemo(() => AGENTS.filter((a) => a.workspace === 'trading'), []);
 
   const [activeBotId, setActiveBotId] = useState(initialBotId);
+  const { telemetry, toggleRunning } = usePredictionBot();
   const [ledgerState, setLedgerState] = useState<LedgerState>({ status: 'loading' });
   const [busy, setBusy] = useState(false);
   const [polyStake, setPolyStake] = useState('2.00');
@@ -429,11 +486,18 @@ export default function TradingBotsModal({
   const actionsDisabled = !ledgerV2 || busy;
 
   return (
-    <ShivModal isOpen={isOpen} onClose={onClose} size="xl" title="Trading Bots Workspace" subtitle="Paper-trading & real-time market feeds — virtual balances only, no live execution">
-      <div className="-mx-4 -mt-1">
+    <ShivModal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="2xl"
+      noPadding={true}
+      title="Trading Bots Workspace"
+      subtitle="Paper-trading & real-time market feeds — virtual balances only, no live execution"
+    >
+      <div className="flex flex-col h-full">
         {/* Bot tabs & Reset Portfolio Action */}
-        <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-white/10 bg-[#12141d]/70 px-4 pb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 overflow-x-auto border-b border-white/10 bg-[#0c0d14] px-6 py-3.5 shrink-0">
+          <div className="flex items-center gap-2.5">
             {tradingBots.map((bot) => {
               const isActive = bot.id === activeBotId;
               const color = bot.color || '#10b981';
@@ -445,16 +509,19 @@ export default function TradingBotsModal({
                     setActiveBotId(bot.id);
                     onFocusAgentInScene?.(bot.id);
                   }}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-xl border px-3.5 py-2 text-[13px] font-semibold transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  className="flex items-center gap-2.5 whitespace-nowrap rounded-xl border px-4 py-2 text-xs md:text-[13px] font-semibold transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                   style={{
                     borderColor: isActive ? color : 'rgba(255,255,255,0.08)',
                     background: isActive ? `${color}18` : 'rgba(255,255,255,0.03)',
                     color: isActive ? '#ffffff' : '#a1a1aa',
+                    boxShadow: isActive ? `0 0 16px ${color}22` : 'none',
                   }}
                 >
-                  <span className="size-2 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                  <span className="size-2.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
                   <span>{bot.name}</span>
-                  <span className="text-[11px] opacity-60">({bot.employeeId})</span>
+                  <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-mono opacity-80">
+                    {bot.employeeId}
+                  </span>
                 </button>
               );
             })}
@@ -464,26 +531,32 @@ export default function TradingBotsModal({
             type="button"
             disabled={busy}
             onClick={() => void handleResetLedger()}
-            className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-rose-500/25 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20 active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 whitespace-nowrap rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20 active:scale-95 disabled:opacity-50"
             title="Reset saldo paper trading ke nilai default awal ($10,000 USD / 150 SOL / $5,000 USDC)"
           >
-            <RotateCcw size={12} className={busy ? 'animate-spin' : ''} />
+            <RotateCcw size={13} className={busy ? 'animate-spin' : ''} />
             <span>Reset Balance / Portfolio</span>
           </button>
         </div>
 
-        <div className="flex max-h-[calc(85vh-160px)] flex-col gap-5 overflow-y-auto p-4">
-          {ledgerState.status === 'loading' && <div className="p-3 text-xs text-zinc-500">Memuat buku besar paper...</div>}
+        {/* Scrollable Workspace Body */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-6">
+          {ledgerState.status === 'loading' && (
+            <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-xs text-zinc-400">
+              <RotateCcw size={14} className="animate-spin text-emerald-400" />
+              <span>Memuat buku besar paper trading...</span>
+            </div>
+          )}
 
           {ledgerState.status === 'recovery-required' && (
             <Banner tone="danger">
               <div className="flex flex-col gap-3">
-                <span>
+                <span className="font-semibold">
                   Data paper trading lokal tidak dapat dibaca dengan aman ({ledgerState.reason}). Tidak ada saldo baru yang dibuat otomatis.
                 </span>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   <ShivButton variant="danger" size="sm" disabled={busy} onClick={() => void handleRecovery('reset')}>
-                    <RotateCcw size={12} />
+                    <RotateCcw size={13} />
                     Reset Saldo ke Default
                   </ShivButton>
                   {ledgerState.hasLegacy && (
@@ -499,41 +572,64 @@ export default function TradingBotsModal({
           {stickyWarning && (
             <Banner tone="warn">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <span role="status">{stickyWarning}</span>
+                <span role="status" className="font-medium">{stickyWarning}</span>
                 <ShivButton variant="secondary" size="sm" disabled={busy} onClick={() => void handleResetLedger()}>
-                  <RotateCcw size={12} />
+                  <RotateCcw size={13} />
                   Reset Saldo ke Default
                 </ShivButton>
               </div>
             </Banner>
           )}
 
-          {/* Header metrics */}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-            <Metric label="Virtual Balance (Paper)" value={balanceLabel} color={botColor} />
+          {/* KPI Metrics: Balanced 4-column cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              label="Virtual Balance (Paper)"
+              value={balanceLabel}
+              subtext="Zero risk · Virtual simulation"
+              icon={<Wallet size={16} style={{ color: botColor }} />}
+              color={botColor}
+            />
 
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className={LABEL}>Connection Feed</span>
-              {activeBotId === 'altair-raditya' && (
-                <ShivBadge color={TONE_COLOR[meteoraStatus]}>{meteoraStatus.toUpperCase()} (Meteora DLMM)</ShivBadge>
-              )}
-              {activeBotId === 'kenzo-danendra' && (
-                <ShivBadge color={TONE_COLOR[polyStatus]}>{polyStatus.toUpperCase()} (Polymarket Gamma)</ShivBadge>
-              )}
-              {activeBotId === 'damian-prasetya' && (
-                <ShivBadge color={TONE_COLOR[exnessStatus]}>{exnessStatus.toUpperCase()} (Exness Demo)</ShivBadge>
-              )}
-            </div>
+            <MetricCard
+              label="Connection Feed"
+              value={
+                activeBotId === 'altair-raditya' ? (
+                  <ShivBadge color={TONE_COLOR[meteoraStatus]} glow>
+                    {meteoraStatus.toUpperCase()} (Meteora DLMM)
+                  </ShivBadge>
+                ) : activeBotId === 'kenzo-danendra' ? (
+                  <ShivBadge color={TONE_COLOR[polyStatus]} glow>
+                    {polyStatus.toUpperCase()} (Polymarket Gamma)
+                  </ShivBadge>
+                ) : (
+                  <ShivBadge color={TONE_COLOR[exnessStatus]} glow>
+                    {exnessStatus.toUpperCase()} (Exness Demo)
+                  </ShivBadge>
+                )
+              }
+              subtext="Auto-polled every 6 seconds"
+              icon={<Radio size={16} className="text-sky-400" />}
+            />
 
-            <Metric label="Execution Mode" value={<span className="text-[13px] font-bold text-zinc-200">Paper Only (Simulation)</span>} />
+            <MetricCard
+              label="Execution Mode"
+              value={<span className="text-base font-bold text-zinc-100">Paper Only (Simulation)</span>}
+              subtext="Isolated non-custodial ledger"
+              icon={<ShieldCheck size={16} className="text-emerald-400" />}
+            />
 
-            <Metric
+            <MetricCard
               label="Strategy Status"
               value={
-                <span className="text-[13px] font-semibold text-zinc-400">
-                  {activeBotId === 'kenzo-danendra' ? 'Repo belum dipilih' : activeBot.duties.split(';')[0]}
+                <span className="text-sm font-semibold text-zinc-300">
+                  {activeBotId === 'kenzo-danendra'
+                    ? (telemetry.running ? 'Otomasi Aktif (Kelly Sizing)' : 'Otomasi Di-pause')
+                    : activeBot.duties.split(';')[0]}
                 </span>
               }
+              subtext={activeBotId === 'kenzo-danendra' ? (telemetry.running ? 'Algoritma BTC Scalper & Momentum berjalan' : 'Eksekusi otomatis dijeda oleh user') : 'Active worker pipeline'}
+              icon={<GitBranch size={16} className="text-amber-400" />}
             />
           </div>
 
@@ -547,10 +643,24 @@ export default function TradingBotsModal({
               <NativePriceChart points={meteoraCandles} strokeColor="#14f195" label="Meteora Top Pool Price Index" />
 
               <div className={PANEL}>
-                <div className="text-[13px] font-bold text-zinc-200">Top Ranked DLMM Pools (Sorted by 24h Fee/TVL Ratio)</div>
+                <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                  <div className="flex items-center gap-2.5">
+                    <TrendingUp size={16} className="text-[#14f195]" />
+                    <span className="text-sm font-bold text-zinc-100">Top Ranked DLMM Pools (Sorted by 24h Fee/TVL Ratio)</span>
+                    <span className="rounded-full bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                      {meteoraPools.length}
+                    </span>
+                  </div>
+                </div>
+
                 {meteoraPools.length === 0 ? (
-                  <div className="p-3 text-xs text-zinc-500">
-                    {meteoraStatus === 'stale' ? 'Meteora feed stale / offline' : 'Loading pools...'}
+                  <div className="flex flex-col items-center justify-center gap-2.5 py-10 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 border border-white/10 text-zinc-500">
+                      <Inbox size={22} />
+                    </div>
+                    <div className="text-sm font-semibold text-zinc-300">
+                      {meteoraStatus === 'stale' ? 'Meteora feed stale / offline' : 'Loading pools...'}
+                    </div>
                   </div>
                 ) : (
                   <div className={TABLE_WRAP}>
@@ -566,15 +676,17 @@ export default function TradingBotsModal({
                       </thead>
                       <tbody>
                         {meteoraPools.slice(0, 8).map((pool) => (
-                          <tr key={pool.address}>
-                            <td className={`${TD} font-semibold`}>{pool.name || pool.address.slice(0, 8)}</td>
-                            <td className={`${TD} font-mono text-[#14f195]`}>
+                          <tr key={pool.address} className="hover:bg-white/[0.02] transition">
+                            <td className={`${TD} font-semibold text-zinc-100`}>{pool.name || pool.address.slice(0, 8)}</td>
+                            <td className={`${TD} font-mono font-bold text-[#14f195]`}>
                               {pool.feeTvlRatio ? `${(pool.feeTvlRatio * 100).toFixed(2)}%` : '—'}
                             </td>
                             <td className={`${TD} font-mono`}>${Number(pool.volume24h || 0).toLocaleString()}</td>
                             <td className={`${TD} font-mono`}>{pool.priceUsd ? `$${Number(pool.priceUsd).toFixed(4)}` : '—'}</td>
                             <td className={TD}>
-                              <span className="text-[11px] text-emerald-400">Eligible</span>
+                              <span className="inline-flex items-center rounded-full bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
+                                Eligible
+                              </span>
                             </td>
                           </tr>
                         ))}
@@ -588,31 +700,134 @@ export default function TradingBotsModal({
 
           {activeBotId === 'kenzo-danendra' && (
             <>
-              <Banner>
-                <strong>Polymarket 5m Crypto Worker:</strong> Memfilter pasar prediksi crypto Up/Down berdurasi 300 detik. Mendukung simulasi paper trade manual. Otomasi bot berstatus <em>Repo belum dipilih</em> hingga URL repositori GitHub diserahkan dan ditinjau.
-              </Banner>
+              {/* Automated Prediction Bot Control Banner */}
+              <div className="rounded-2xl border border-violet-500/30 bg-violet-950/20 p-4.5 backdrop-blur-sm shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${telemetry.running ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/15 text-amber-400 border-amber-500/30'}`}>
+                    <Cpu size={22} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white tracking-wide">Automated Prediction Paper Bot</span>
+                      <ShivBadge color={telemetry.running ? '#34d399' : '#fbbf24'} glow>
+                        {telemetry.running ? 'RUNNING' : 'PAUSED'}
+                      </ShivBadge>
+                    </div>
+                    <div className="text-xs text-zinc-400 mt-1 flex flex-wrap items-center gap-3">
+                      <span>Strategi: <strong className="text-violet-300">BTC Scalper + Momentum (Kelly)</strong></span>
+                      {telemetry.btcPrice && (
+                        <span>BTC Spot: <strong className="font-mono text-zinc-200">${telemetry.btcPrice.toLocaleString()}</strong></span>
+                      )}
+                      <span>Eksekusi: <strong className="font-mono text-emerald-300">{telemetry.totalExecutions}</strong></span>
+                      <span>Settle: <strong className="font-mono text-cyan-300">{telemetry.totalSettlements}</strong></span>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] p-3.5">
-                <span className="text-[13px] font-semibold text-zinc-200">Paper Stake ($):</span>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.1"
-                  max={currentBalance}
-                  value={polyStake}
-                  onChange={(e) => setPolyStake(e.target.value)}
-                  className={INPUT}
-                />
-                <span className="text-[11px] text-zinc-500">Tersedia: {balanceLabel}</span>
-                {polyStakeError && <span className="text-xs font-semibold text-rose-400">{polyStakeError}</span>}
+                <button
+                  type="button"
+                  onClick={toggleRunning}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold tracking-wide border transition-all ${
+                    telemetry.running
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+                  }`}
+                >
+                  {telemetry.running ? <><Pause size={14} /> Pause Bot</> : <><Play size={14} /> Resume Bot</>}
+                </button>
               </div>
 
-              <div className={PANEL}>
-                <div className="text-[13px] font-bold text-zinc-200">
-                  Active 5-Minute Crypto Up/Down Markets ({polymarkets.length})
+              {/* Order Configuration Panel */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5.5 backdrop-blur-sm shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-400 border border-violet-500/25">
+                      <DollarSign size={22} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white tracking-wide">Paper Stake Amount</div>
+                      <div className="text-xs text-zinc-400 mt-0.5">
+                        Tersedia untuk simulasi order: <span className="font-mono font-semibold text-violet-300">{balanceLabel}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono text-xs font-semibold text-zinc-400">$</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0.1"
+                        max={currentBalance}
+                        value={polyStake}
+                        onChange={(e) => setPolyStake(e.target.value)}
+                        className={INPUT}
+                      />
+                    </div>
+
+                    {/* Quick Stake Preset Chips */}
+                    <div className="flex items-center gap-1.5">
+                      {['1', '2', '5', '10', '50'].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setPolyStake(preset)}
+                          className={`rounded-xl border px-3 py-2 font-mono text-xs font-semibold transition ${
+                            polyStake === preset
+                              ? 'border-violet-500/50 bg-violet-500/25 text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.3)]'
+                              : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          ${preset}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setPolyStake(Math.min(currentBalance, 100).toString())}
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs font-semibold text-zinc-400 hover:bg-white/10 hover:text-white transition"
+                      >
+                        Max
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {polyStakeError && (
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-400">
+                    <AlertCircle size={15} />
+                    <span>{polyStakeError}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Active 5-Minute Markets Panel */}
+              <div className={PANEL}>
+                <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                  <div className="flex items-center gap-2.5">
+                    <Clock size={16} className="text-violet-400" />
+                    <span className="text-sm font-bold text-zinc-100">
+                      Active 5-Minute Crypto Up/Down Markets
+                    </span>
+                    <span className="rounded-full bg-violet-500/15 border border-violet-500/25 px-2.5 py-0.5 font-mono text-xs font-bold text-violet-300">
+                      {polymarkets.length}
+                    </span>
+                  </div>
+                  <span className="text-xs text-zinc-500 font-mono">Window: 300s</span>
+                </div>
+
                 {polymarkets.length === 0 ? (
-                  <div className="p-4 text-[13px] text-zinc-400">{polyMessage || 'No active 5-minute crypto Up/Down market'}</div>
+                  <div className="flex flex-col items-center justify-center gap-2.5 py-10 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 border border-white/10 text-zinc-500">
+                      <Inbox size={22} />
+                    </div>
+                    <div className="text-sm font-semibold text-zinc-300">
+                      {polyMessage || 'No active 5-minute crypto Up/Down market'}
+                    </div>
+                    <div className="text-xs text-zinc-500 max-w-md">
+                      Polymarket feed sedang memindai kontrak 300s secara real-time. Pasar baru akan otomatis muncul di sini.
+                    </div>
+                  </div>
                 ) : (
                   <div className={TABLE_WRAP}>
                     <table className="w-full border-collapse text-xs">
@@ -629,20 +844,22 @@ export default function TradingBotsModal({
                           const upOutcome = m.outcomes?.find((o) => o.outcome.toLowerCase() === 'up');
                           const downOutcome = m.outcomes?.find((o) => o.outcome.toLowerCase() === 'down');
                           return (
-                            <tr key={m.id}>
-                              <td className={`${TD} max-w-[300px] font-semibold`}>{m.question}</td>
-                              <td className={`${TD} font-mono text-emerald-400`}>
+                            <tr key={m.id} className="hover:bg-white/[0.02] transition">
+                              <td className={`${TD} max-w-[320px] font-semibold text-zinc-100`}>{m.question}</td>
+                              <td className={`${TD} font-mono font-bold text-emerald-400`}>
                                 ${upOutcome?.price != null ? upOutcome.price.toFixed(2) : '—'}
                               </td>
-                              <td className={`${TD} font-mono text-rose-400`}>
+                              <td className={`${TD} font-mono font-bold text-rose-400`}>
                                 ${downOutcome?.price != null ? downOutcome.price.toFixed(2) : '—'}
                               </td>
                               <td className={TD}>
-                                <div className="flex gap-1.5">
+                                <div className="flex gap-2">
                                   <ShivButton variant="primary" size="sm" disabled={actionsDisabled} onClick={() => handlePolyOrder('up', m)}>
+                                    <ArrowUpRight size={13} />
                                     Paper UP
                                   </ShivButton>
                                   <ShivButton variant="danger" size="sm" disabled={actionsDisabled} onClick={() => handlePolyOrder('down', m)}>
+                                    <ArrowDownRight size={13} />
                                     Paper DOWN
                                   </ShivButton>
                                 </div>
@@ -670,15 +887,15 @@ export default function TradingBotsModal({
                 </Banner>
               )}
 
+              <TradingViewXauChart height={360} className="mb-2" />
               <NativePriceChart points={xauTicks} strokeColor="#f59e0b" label="XAUUSD Real-Time Price (Exness)" />
-
               <BacktestSimulator />
 
               {latestXau && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-                  <Metric label="Bid" value={latestXau.bid.toFixed(2)} color="#f59e0b" />
-                  <Metric label="Ask" value={latestXau.ask.toFixed(2)} color="#f59e0b" />
-                  <Metric label="Spread" value={(latestXau.ask - latestXau.bid).toFixed(2)} color="#a1a1aa" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <MetricCard label="Bid" value={latestXau.bid.toFixed(2)} color="#f59e0b" icon={<TrendingUp size={16} className="text-amber-400" />} />
+                  <MetricCard label="Ask" value={latestXau.ask.toFixed(2)} color="#f59e0b" icon={<TrendingUp size={16} className="text-amber-400" />} />
+                  <MetricCard label="Spread" value={(latestXau.ask - latestXau.bid).toFixed(2)} color="#a1a1aa" icon={<Activity size={16} className="text-zinc-400" />} />
                 </div>
               )}
             </>
@@ -686,9 +903,30 @@ export default function TradingBotsModal({
 
           {/* Paper trades ledger */}
           <div className={PANEL}>
-            <div className="text-[13px] font-bold text-zinc-200">Recent Paper Trades &amp; Signals ({recentTrades.length})</div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+              <div className="flex items-center gap-2.5">
+                <TrendingUp size={16} className="text-emerald-400" />
+                <span className="text-sm font-bold text-zinc-100">
+                  Recent Paper Trades &amp; Signals
+                </span>
+                <span className="rounded-full bg-white/10 px-2.5 py-0.5 font-mono text-xs font-bold text-zinc-300">
+                  {recentTrades.length}
+                </span>
+              </div>
+            </div>
+
             {recentTrades.length === 0 ? (
-              <div className="p-3 text-xs text-zinc-500">Belum ada riwayat paper trade untuk bot ini.</div>
+              <div className="flex flex-col items-center justify-center gap-2.5 py-10 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 border border-white/10 text-zinc-500">
+                  <Inbox size={22} />
+                </div>
+                <div className="text-sm font-semibold text-zinc-300">
+                  Belum ada riwayat paper trade untuk bot ini.
+                </div>
+                <div className="text-xs text-zinc-500 max-w-md">
+                  Simulasi paper trade yang Anda buka akan dicatat secara otomatis dalam buku besar lokal.
+                </div>
+              </div>
             ) : (
               <div className={TABLE_WRAP}>
                 <table className="w-full border-collapse text-xs">
@@ -706,11 +944,15 @@ export default function TradingBotsModal({
                   </thead>
                   <tbody>
                     {recentTrades.map((t) => (
-                      <tr key={t.id}>
-                        <td className={`${TD} font-mono text-[11px]`}>{new Date(t.openedAt).toLocaleTimeString()}</td>
-                        <td className={TD}>{t.market}</td>
-                        <td className={`${TD} font-bold uppercase`}>{t.side}</td>
-                        <td className={`${TD} font-mono`}>
+                      <tr key={t.id} className="hover:bg-white/[0.02] transition">
+                        <td className={`${TD} font-mono text-xs text-zinc-400`}>{new Date(t.openedAt).toLocaleTimeString()}</td>
+                        <td className={`${TD} font-semibold text-zinc-100`}>{t.market}</td>
+                        <td className={`${TD} font-bold uppercase`}>
+                          <span className={t.side === 'up' ? 'text-emerald-400' : 'text-rose-400'}>
+                            {t.side}
+                          </span>
+                        </td>
+                        <td className={`${TD} font-mono font-semibold`}>
                           {t.stake.toLocaleString('en-US', { maximumFractionDigits: 4 })} {activeAccount?.currency || ''}
                         </td>
                         <td className={`${TD} font-mono`}>${t.entryPrice.toFixed(4)}</td>
@@ -724,28 +966,30 @@ export default function TradingBotsModal({
                           {t.grossPnl !== undefined ? `$${t.grossPnl.toFixed(4)}` : '—'}
                         </td>
                         <td className={TD}>
-                          <span
-                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                              t.outcome === 'win'
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : t.outcome === 'loss'
-                                  ? 'bg-rose-500/20 text-rose-400'
-                                  : 'bg-white/10 text-zinc-400'
-                            }`}
-                          >
-                            {t.outcome || 'pending'}
-                          </span>
-                          {activeBotId === 'kenzo-danendra' && t.outcome === 'pending' && (
-                            <button
-                              type="button"
-                              disabled={actionsDisabled}
-                              onClick={() => handlePolySettle(t.id)}
-                              title="Settle paper order secara manual (demo 50/50)"
-                              className="ml-2 rounded-md bg-violet-500 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-violet-400 disabled:opacity-50"
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                t.outcome === 'win'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : t.outcome === 'loss'
+                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                    : 'bg-white/10 text-zinc-300 border border-white/10'
+                              }`}
                             >
-                              Settle
-                            </button>
-                          )}
+                              {t.outcome || 'pending'}
+                            </span>
+                            {activeBotId === 'kenzo-danendra' && t.outcome === 'pending' && (
+                              <button
+                                type="button"
+                                disabled={actionsDisabled}
+                                onClick={() => handlePolySettle(t.id)}
+                                title="Settle paper order secara manual (demo 50/50)"
+                                className="rounded-lg bg-violet-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-violet-500 transition disabled:opacity-50 shadow-sm"
+                              >
+                                Settle
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

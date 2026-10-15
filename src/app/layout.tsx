@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'Kantor Raffa — 3D Virtual AI Office & Autonomous Mission Control',
+  title: 'Yapping Techflow — 3D Virtual AI Penthouse & Mission Control',
   description:
-    'Kantor Raffa: Interactive 3D Virtual AI Office & Autonomous Mission Control featuring 6 autonomous AI agents executing Figma slicing pixel-perfect and Jira tickets to GitLab Merge Requests.',
+    'Yapping Techflow: Interactive 3D Virtual AI Penthouse Office & Autonomous Mission Control featuring autonomous quant agents, paper trading, and engineering workflows.',
   icons: {
     icon: '/favicon.svg',
   },

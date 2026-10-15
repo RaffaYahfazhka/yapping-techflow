@@ -43,7 +43,7 @@ export default function AgentIdentityCard({
 
   return (
     <div
-      className={`relative flex flex-col justify-between gap-3.5 p-5 rounded-2xl bg-[#111218] border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)] transition-all duration-200 overflow-hidden font-sans select-none ${className}`}
+      className={`relative flex flex-col justify-between gap-4 p-5.5 rounded-3xl bg-[#111218] border border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.5)] hover:border-white/25 hover:shadow-[0_18px_48px_rgba(0,0,0,0.65)] transition-all duration-200 overflow-hidden font-sans select-none ${className}`}
       style={{ borderColor: `${color}40` }}
     >
       {/* Top glow accent */}
@@ -57,15 +57,15 @@ export default function AgentIdentityCard({
         <span className="font-mono text-xs font-bold text-zinc-400">
           {agent.employeeId || `EMP-${agent.id?.toUpperCase()}`}
         </span>
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
           ACTIVE
         </span>
       </div>
 
       {/* Profile info */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3.5">
         <div
-          className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border flex items-center justify-center bg-black/40"
+          className="w-13 h-13 rounded-2xl overflow-hidden shrink-0 border flex items-center justify-center bg-black/40"
           style={{ borderColor: `${color}60` }}
         >
           {agent.avatar ? (
@@ -79,7 +79,7 @@ export default function AgentIdentityCard({
         <div className="flex flex-col min-w-0">
           <div className="text-sm font-bold text-white truncate">{agent.fullName || agent.name}</div>
           <div
-            className="inline-block mt-0.5 text-[11px] font-semibold truncate"
+            className="inline-block mt-0.5 text-xs font-semibold truncate"
             style={{ color }}
           >
             {agent.role}
@@ -96,11 +96,11 @@ export default function AgentIdentityCard({
 
       {/* Skills list */}
       {agent.skills && agent.skills.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {agent.skills.map((s, idx) => (
             <span
               key={idx}
-              className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300"
+              className="px-2.5 py-1 rounded-lg text-[10px] font-mono bg-white/5 border border-white/10 text-zinc-300"
             >
               {s}
             </span>
@@ -109,12 +109,12 @@ export default function AgentIdentityCard({
       )}
 
       {/* Action buttons */}
-      <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+      <div className="flex items-center gap-2.5 pt-3 border-t border-white/5">
         {onOpenWorkspace && (
           <button
             type="button"
             onClick={() => onOpenWorkspace(agent.id)}
-            className="flex-1 py-1.5 px-3 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
+            className="flex-1 py-2 px-3.5 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
             style={{ backgroundColor: color }}
           >
             Buka Workspace
@@ -125,7 +125,7 @@ export default function AgentIdentityCard({
             type="button"
             onClick={() => onFocusDesk(agent.id)}
             title="Sorot meja di scene 3D"
-            className="py-1.5 px-3 rounded-xl text-xs font-semibold text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-colors"
+            className="py-2 px-3.5 rounded-xl text-xs font-semibold text-zinc-300 bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white transition-colors"
           >
             Meja 🎯
           </button>

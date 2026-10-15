@@ -845,19 +845,19 @@ body {
   transform: scale(1.05);
 }
 
-/* YouTube player host: visible, >=200x200, interactive (policy-compliant visible player). */
+/* YouTube player host: placed off-screen safely to prevent overlapping right-bottom UI while maintaining policy-compliant active audio playback */
 #yt-player-host {
   position: fixed;
-  bottom: 0px;
-  right: 0px;
+  bottom: -9999px;
+  left: -9999px;
   width: 200px;
   height: 200px;
   min-width: 200px;
   min-height: 200px;
-  z-index: 40;
-  pointer-events: auto;
+  z-index: -100;
+  pointer-events: none;
   overflow: hidden;
-  opacity: 1;
+  opacity: 0.001;
 }
 
 #yt-player-host iframe {
@@ -921,24 +921,24 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* ==================== INTERACTION PROMPT ==================== */
 .interact-prompt {
-  position: absolute;
-  bottom: 104px;
+  bottom: 82px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 24px;
+  padding: 8px 22px;
   border-radius: 9999px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 13.5px;
+  gap: 10px;
+  font-size: 13px;
   font-weight: 600;
-  z-index: 90;
-  background: rgba(15, 23, 42, 0.9);
+  z-index: 50;
+  max-width: min(92vw, 680px);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(16, 185, 129, 0.45);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(16, 185, 129, 0.35);
-  animation: pulse-prompt 1.8s infinite ease-in-out;
+  animation: pulse-prompt 2s infinite ease-in-out;
   pointer-events: auto;
   white-space: nowrap;
 }
@@ -949,7 +949,7 @@ input[type="range"]::-webkit-slider-thumb {
     transform: translateX(-50%) translateY(0);
   }
   50% {
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 24px rgba(16, 185, 129, 0.5);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 24px rgba(16, 185, 129, 0.4);
     transform: translateX(-50%) translateY(-2px);
   }
 }

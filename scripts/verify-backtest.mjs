@@ -18,12 +18,7 @@ const M5 = generateXauUsdM5(SEED, YEAR);
 const TIMEFRAMES = ['M5', 'M15', 'H1'];
 const PERIODS = ['1M', '6M', '1Y'];
 
-/**
- * Engineered loss-bearing input: a 2000 / 2000.2 zigzag on M5 bars.
- * The EMA difference flips sign on every bar, so the engine opens and reverses
- * a position each bar. Each closed leg moves at most 0.2 against a 0.4 round-trip
- * cost (spread 0.3 + slippage 0.05 per side), so every closed trade must lose.
- */
+/** Choppy prices never recover enough to cover round-trip transaction costs. */
 function zigzagM5(count) {
   const bars = [];
   for (let i = 0; i < count; i++) {
@@ -33,22 +28,23 @@ function zigzagM5(count) {
   return bars;
 }
 
-const LOSS_OPTS = { period: '1M', seed: SEED, target: 3, stop: 5 };
+const LOSS_OPTS = { period: '1M', seed: SEED, target: 3, gridAtrMultiplier: 1.5 };
 
-check('(a) engineered zigzag input reports losses>0 and a negative-pnl trade', () => {
+check('(a) never-close-loss retains underwater exposure in equity and drawdown', () => {
   const r = runBacktest(zigzagM5(300), { ...LOSS_OPTS, timeframe: 'M5' });
   assert.deepEqual(r.errors, []);
-  assert.ok(r.trades > 0, 'engineered input must close trades');
-  assert.ok(r.losses > 0, `expected losses>0, got ${r.losses}`);
-  assert.ok(r.tradeLog.some((t) => t.pnl < 0), 'expected at least one trade with negative pnl');
-  assert.ok(r.netPnl < 0, `expected net realized loss, got ${r.netPnl}`);
+  assert.equal(r.trades, 0);
+  assert.equal(r.openBaskets, 1);
+  assert.ok(r.unrealizedPnl < 0);
+  assert.ok(r.finalEquity < r.costModel.initialEquity);
+  assert.ok(r.maxDrawdownPct > 0);
 });
 
 for (const tf of TIMEFRAMES) {
   for (const p of PERIODS) {
     check(`(b) ${tf}/${p}: finalEquity = initialEquity + realized + unrealized; curve ends at finalEquity`, () => {
       const bars = aggregateBars(M5, tf);
-      const r = runBacktest(bars, { period: p, seed: SEED, target: 3, stop: 5, timeframe: tf });
+      const r = runBacktest(bars, { period: p, seed: SEED, target: 3, gridAtrMultiplier: 1.5, timeframe: tf });
       assert.deepEqual(r.errors, []);
       const initialEquity = r.costModel.initialEquity;
       assert.equal(r.finalEquity, initialEquity + r.realizedPnl + r.unrealizedPnl);
@@ -80,7 +76,7 @@ check('(d) empty and malformed input returns errors and does not throw', () => {
     ['NaN OHLC', [{ t: T0, open: NaN, high: NaN, low: NaN, close: NaN }], LOSS_OPTS],
     ['undefined options', zigzagM5(300), undefined],
     ['unsupported period', zigzagM5(300), { ...LOSS_OPTS, period: '5Y' }],
-    ['non-positive stop', zigzagM5(300), { ...LOSS_OPTS, stop: 0 }],
+    ['non-positive ATR grid spacing', zigzagM5(300), { ...LOSS_OPTS, gridAtrMultiplier: 0 }],
   ];
   for (const [label, bars, opts] of cases) {
     let r;
@@ -96,7 +92,7 @@ check('(e) same seed yields identical series and identical engine results', () =
   const a = generateXauUsdM5(SEED, YEAR);
   const b = generateXauUsdM5(SEED, YEAR);
   assert.deepStrictEqual(a, b);
-  const opts = { period: '6M', seed: SEED, target: 3, stop: 5, timeframe: 'M15' };
+  const opts = { period: '6M', seed: SEED, target: 3, gridAtrMultiplier: 1.5, timeframe: 'M15' };
   const ra = runBacktest(aggregateBars(a, 'M15'), opts);
   const rb = runBacktest(aggregateBars(b, 'M15'), opts);
   assert.deepStrictEqual(ra, rb);

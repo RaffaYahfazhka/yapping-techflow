@@ -47,6 +47,11 @@ Several PRD statements are technically or ethically impossible as absolute guara
 - **Cult UI/Tailwind replaces authored component CSS and Emotion.** (session-settled: user-directed — chosen over continuing plain CSS/Emotion: the user requires Cult UI-based components and no ordinary component CSS.) Governs R18, R19.
 - **The seven immersion ideas are in scope.** (session-settled: user-approved — chosen over leaving the v3.4 feature set unchanged: the user approved weather, spatial audio, office treats, wallboard, wardrobe/emotes, toasts, and photo mode.) Governs R11-R17.
 - **Paper trading remains simulation-only.** Governs R6-R8, R22.
+- **Brand application is Yapping Techflow.** (session-settled: user-directed — UI, metadata, favicon, documentation, and photo watermark use Yapping Techflow with AI-generated logo; employee/account IDs and storage keys remain preserved for compatibility.) Governs R26.
+- **Full R3F scene without Spline.** (session-settled: user-directed — all visible 3D geometry uses pre-generated AI local GLBs from a typed manifest with accessible non-3D fallback on error; no Spline runtime and no visible procedural placeholders.) Governs R25.
+- **AI dialogue for employee speech on demand.** (session-settled: user-directed — dynamic Gemini generation for employee speech bubbles on social/weather/treat events; invalid/timeout output dropped with no static quote fallback; AI never mutates movement or world state.) Governs R24.
+- **Damian panel embeds official TradingView XAUUSD chart.** (session-settled: user-directed — embed TradingView Advanced Chart OANDA:XAUUSD with keyboard-accessible fallback link; Exness feed remains the independent source for paper EA.) Governs R27.
+- **Automated prediction paper bot runtime.** (session-settled: user-directed — application-scoped runtime executes BTC scalper, arbitrage, momentum, and Kelly strategies using real CoinGecko and Polymarket Gamma/CLOB quotes/settlements; modal only inspects/pauses.) Governs R28.
 
 ### Requirements
 
@@ -84,6 +89,14 @@ Several PRD statements are technically or ethically impossible as absolute guara
 - R21. In-app toasts deduplicate bursts, remain accessible without audio, label paper/simulated profit, and never request OS notification permission.
 - R22. No feature may connect private keys, place live orders, or present simulated performance as guaranteed future profit.
 - R23. Existing Jira, repository inspection, terminal, mission pipeline, employee directory, and subordinate interactions remain operational.
+
+**AI dialogue, generated assets, brand, and automated trading**
+
+- R24. **AI dialogue:** Send event and minimum office context to Gemini API for employee speech bubbles on-demand; strictly validate output and drop failed/timed-out/stale responses without falling back to static quotes; runtime retains deterministic movement and state control.
+- R25. **Generated 3D assets:** All visible 3D objects (architecture, characters, furniture, props) use local AI-generated GLBs specified in a typed manifest; missing or failed assets degrade to an accessible non-3D indicator rather than visible procedural mesh placeholders.
+- R26. **Brand and identity:** The platform brand is Yapping Techflow, featuring an AI-generated logo across UI, metadata, favicon, documentation, and photo watermarks, preserving legacy employee and account IDs and storage keys.
+- R27. **TradingView XAUUSD chart:** Damian's panel embeds the official TradingView Advanced Chart configured for `OANDA:XAUUSD`, with a direct keyboard-accessible link fallback (`https://id.tradingview.com/chart/m0726Zvv/?symbol=OANDA%3AXAUUSD`); Exness remains the independent data source for paper EA trading.
+- R28. **Automated paper bot:** A single application-level runtime executes automated paper prediction strategies (BTC scalper, arbitrage, momentum, Kelly sizing) against real CoinGecko spot and Polymarket Gamma/CLOB executable quotes and official settlements; ledger v2 records all paper orders and positions; modal toggle controls monitoring and pausing without owning bot lifecycle.
 
 ### Key Flows
 
@@ -201,6 +214,53 @@ sequenceDiagram
   S->>K: restore Follow or Stay
 ```
 
+```mermaid
+sequenceDiagram
+  participant E as Employee State
+  participant D as Dialogue Engine
+  participant G as Gemini API (/api/khansa/chat)
+  participant B as Speech Bubble UI
+  E->>D: Trigger event (social, weather, treat)
+  D->>G: Request speech snippet (bounded context, role)
+  alt Success & Validated
+    G-->>D: Speech text
+    D->>B: Render temporary speech bubble
+  else Timeout / Malformed / Error
+    G-->>D: Error or stale response
+    D->>B: Drop bubble (NO static quote fallback)
+  end
+```
+
+```mermaid
+flowchart LR
+  CG[CoinGecko API] -->|BTC Spot Ticker| Poller[Market Poller Singleton]
+  PolyGamma[Polymarket Gamma] -->|Market / Resolution| Poller
+  PolyCLOB[Polymarket CLOB] -->|Executable Bid/Ask Book| Poller
+  Poller -->|Validated Fresh Quotes| BotRuntime[Application Prediction Bot Runtime]
+  BotRuntime -->|Signals & Risk Sizing| Ledger[LedgerStore v2 (Paper Positions & Orders)]
+  PolyGamma -.->|Official Settlement Event| BotRuntime
+  BotRuntime -.->|Settlement PnL| Ledger
+```
+
+```mermaid
+flowchart TD
+  AI[AI 3D Generator / Pipeline] -->|Pre-generated GLB| Assets[public/models/**]
+  Assets --> Manifest[src/lib/data/modelManifest.ts]
+  Manifest --> Loader[GLB Asset Loader Hook / Drei]
+  Loader -->|Asset Found & Valid| Scene[R3F Penthouse Scene Object]
+  Loader -->|Asset Missing / Load Error| AccessibleFallback[Accessible Non-3D Indicator]
+```
+
+### Requirements & Units Cross-Reference
+
+|Requirement|Unit dan file utama|Acceptance minimum|Risiko utama|
+|---|---|---|---|
+|R24 — AI dialogue|U6; `src/lib/engine/employeeDialogue.ts`, `src/app/api/khansa/chat/route.ts`, `src/components/chat/**`, `scripts/verify-employee-dialogue.mjs`|Respons valid/current muncul; error, timeout, malformed output, atau event usang tidak menghasilkan quote statis; output AI tidak dapat mengubah gerakan/perintah.|Provider gagal/lambat; respons teks tak tepercaya atau bocor ke log.|
+|R25 — generated 3D assets|U15/U4; `public/models/**`, `src/lib/data/modelManifest.ts`, `src/components/canvas/**`, `scripts/verify-generated-assets.mjs`|Manifest mencakup semua karakter dan visible geometry; model GLB dapat dimuat; missing asset memakai fallback aksesibel non-3D, bukan mesh visible buatan.|Asset/generator/rigging tidak tersedia; ukuran asset merusak waktu muat atau performa.|
+|R26 — brand/logo|U10/U16/U11; `public/brand/**`, `src/app/layout.tsx`, splash/nav/cards, favicon, photo watermark, README brand-only|Branding browser/metadata/logo/watermark konsisten; tidak ada perubahan employee/account IDs atau storage keys; perubahan README tidak menimpa WIP lain.|Perubahan merusak referensi lama atau menimpa README milik pengguna.|
+|R27 — chart|U7; `src/components/laptop/TradingViewXauChart.tsx`, laptop panel, `scripts/verify-tradingview-chart.mjs`, E2E|Widget dikonfigurasi `OANDA:XAUUSD`; bila diblokir link persis di atas dapat dibuka dengan keyboard; status/feed Exness tetap independen dan jujur.|Widget pihak ketiga diblokir; layout privat chart tidak dapat disalin ke widget publik.|
+|R28 — automated paper bot|U12/U4; `src/app/api/markets/bitcoin/route.ts`, `src/app/api/markets/polymarket/route.ts`, `src/app/api/markets/polymarket/[id]/route.ts`, `src/lib/engine/predictionBot.ts`, `src/components/trading/PredictionBotRuntime.tsx`, modal, `scripts/verify-prediction-bot.mjs`|Simulasikan feed valid/stale, tick duplikat, reset, modal reopen, dan outcome unresolved/resolved; hanya satu poller; hanya quote/resolution sah memengaruhi ledger paper.|Rate limit feed/order book; token quote atau hasil pasar ambigu.|
+
 ### Output Structure
 
 ```text
@@ -270,17 +330,18 @@ tests/
 | U2 | Typed office state and persistence | `src/lib/types/**`, `src/lib/engine/officeSimulation.ts`, `src/lib/storage/**` | U1 |
 | U3 | Roster and identity cutover | `src/lib/data/agents.ts`, prompts, scene/pipeline mappings | U1, U2 |
 | U12 | Paper-ledger and market-surface cutover | `src/lib/engine/paperTrading.ts`, trading hooks/modal/routes | U1, U2, U3 |
-| U4 | R3F office and terrace cutover | `src/components/canvas/**`, `src/components/office/**` | U1, U2, U3 |
+| U4 | R3F office and terrace cutover | `src/components/canvas/**`, `src/components/office/**` | U1, U2, U3, U15 |
 | U5 | Time, weather, and spatial audio | `src/lib/engine/skyEngine.ts`, `src/lib/engine/weatherEngine.ts`, `src/lib/engine/spatialAudio.ts` | U2, U4 |
-| U6 | Social, delegation, group chat, and treats | `src/lib/engine/socialEngine.ts`, `src/lib/engine/delegationEngine.ts`, `src/components/chat/**` | U2, U4, U5 |
+| U6 | Social, delegation, group chat, and treats | `src/lib/engine/socialEngine.ts`, `src/lib/engine/delegationEngine.ts`, `src/components/chat/**`, `src/lib/engine/employeeDialogue.ts` | U2, U4, U5 |
 | U7 | Laptop inspection, backtest, and wallboard | `src/lib/engine/backtest.ts`, `src/components/laptop/**`, `src/components/canvas/WallboardHologram.tsx` | U4, U12 |
 | U8 | Music and media compliance | `src/lib/engine/audioEngine.ts`, `src/lib/data/userPlaylist.ts`, `src/components/music/**` | U1, U2, U4 |
 | U9 | Office overlays and personalization | `src/components/map/**`, `src/components/executive/BossWardrobeModal.tsx`, `src/components/ui/NotificationToasts.tsx` | U2, U4, U6 |
 | U13 | Photo mode and capture lifecycle | `src/components/executive/PhotoModeController.tsx` | U4, U9 |
 | U14 | Deterministic minigames and leaderboards | `src/components/minigames/**`, `src/lib/engine/minigames.ts` | U2, U4, U9 |
-| U10 | UI migration audit and obsolete-code removal | Enumerated legacy UI consumers, `src/app/globals.css`, prompts | U1-U9, U12-U14 |
-| U11 | Aggregate browser proof and documentation | `src/app/error.tsx`, `tests/e2e/**`, `scripts/**`, `PRD_PAPER_BOTS_IMPROVEMENT.md` | U1-U10, U12-U14 |
-
+| U15 | Pre-generated AI 3D assets & manifest | `public/models/**`, `src/lib/data/modelManifest.ts`, `src/components/canvas/**`, `scripts/verify-generated-assets.mjs` | U1, U4 |
+| U16 | Brand migration and documentation | `public/brand/**`, `src/app/layout.tsx`, splash/nav/cards, favicon, photo watermark, README brand-only | U1, U10, U11 |
+| U10 | UI migration audit and obsolete-code removal | Enumerated legacy UI consumers, `src/app/globals.css`, prompts | U1-U9, U12-U16 |
+| U11 | Aggregate browser proof and documentation | `src/app/error.tsx`, `tests/e2e/**`, `scripts/**` | U1-U10, U12-U16 |
 ### U1. Platform and design-system foundation
 
 - **Goal:** Establish supported dependencies, Geist typography, Tailwind/Cult UI tokens, and Lucide conventions.
@@ -462,6 +523,32 @@ tests/
   - Storage failure keeps a session score with a visible not-saved state; game reset changes no non-score store.
 - **Verification:** Engine and browser checks prove scoring, lifecycle cleanup, persistence bounds, reset isolation, and keyboard/touch fallback.
 
+### U15. Pre-generated AI 3D assets & manifest
+
+- **Goal:** Provide local pre-generated GLBs for all visible 3D characters, architecture, and props from a typed manifest; ensure accessible non-3D fallback on load errors without visible procedural meshes.
+- **Requirements:** R25.
+- **Dependencies:** U1, U4.
+- **Files:** `public/models/**`, `src/lib/data/modelManifest.ts`, `src/components/canvas/**`, `scripts/verify-generated-assets.mjs`.
+- **Approach:** Bundle locally verified AI-generated GLBs with Draco/meshopt optimization. Maintain a typed `modelManifest.ts` mapping each character/prop/zone to its GLB path, scale, bounding box, and fallback aria-label. Provide an asset loader hook that handles loading, errors, and unmounts cleanly. If a model fails to load, display an accessible non-3D indicator rather than a visible procedural mesh placeholder.
+- **Test scenarios:**
+  - Load every asset declared in `modelManifest.ts` and verify file presence, GLTF header, and scale metadata.
+  - Simulate asset load error and assert accessible non-3D fallback is rendered with no unhandled crash.
+  - Verify scene contains no procedural visible placeholder meshes for missing assets.
+- **Verification:** `scripts/verify-generated-assets.mjs` confirms all manifest entries exist locally and parse correctly.
+
+### U16. Brand migration and documentation
+
+- **Goal:** Consistently apply the Yapping Techflow brand and AI logo across metadata, layout, splash, nav, cards, favicon, and photo watermark while preserving compatibility IDs and user WIP in README.
+- **Requirements:** R26.
+- **Dependencies:** U1, U10, U11.
+- **Files:** `public/brand/**`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/components/ui/SplashScreen/SplashScreen.tsx`, `src/components/navigation/Navbar/Navbar.tsx`, `src/components/cards/**`, `src/components/executive/PhotoModeController.tsx`, `public/favicon.svg`.
+- **Approach:** Place AI-generated logo SVGs/PNGs into `public/brand/`. Update root layout metadata title and description to Yapping Techflow. Update splash screen, navbar header, team cards, and photo watermark. Keep employee IDs (`EMP-001` through `EMP-009`), account IDs, and storage keys completely intact. Only touch README branding sections if permitted, preserving user WIP.
+- **Test scenarios:**
+  - Check metadata in layout and rendered title/header across all pages.
+  - Verify favicon and logo render correctly with dark/light theme tokens.
+  - Verify photo mode watermark renders "Yapping Techflow".
+  - Verify storage keys and employee IDs are byte-for-byte unchanged.
+- **Verification:** Brand verification script and browser smoke verify consistent branding and uncorrupted persistence keys.
 ### U10. UI migration audit and obsolete-code removal
 
 - **Goal:** Audit untouched legacy surfaces, migrate the finite remaining consumer list, and delete obsolete styling, instructions, exports, routes, and dependencies.
@@ -511,8 +598,36 @@ tests/
 
 ## Definition of Done
 
-- Every requirement R1-R23 is implemented or represented by its explicit unavailable/manual fallback.
-- All U1-U14 verification outcomes pass on the final commit state.
+- [x] Every requirement R1-R28 is implemented or represented by its explicit unavailable/manual fallback:
+  - [x] R1 (Altair, Kenzo, Damian identity & accounts): `src/lib/data/agents.ts`, `src/lib/engine/paperLedgerV2.ts` (`yarn test:paper-ledger-v2` pass)
+  - [x] R2 (Male QA engineer Vani Aryasetya): `src/lib/data/agents.ts` (`yarn test:brand` pass)
+  - [x] R3 (Penhouse & terrace 6 zones): `src/lib/data/zones.ts`, `src/components/canvas/OfficeCanvas.tsx` (`yarn test:movement` pass)
+  - [x] R4 (Asia/Jakarta WIB clock & sky phase): `src/lib/engine/skyEngine.ts` (`yarn test:sky` pass)
+  - [x] R5 (WebGL fallback & context recovery): `src/components/office/OfficeFallback.tsx`
+  - [x] R6 (Paper ledger v2 multi-currency seed 150 SOL, 5k USDC, 10k USD): `src/lib/engine/paperLedgerV2.ts` (`yarn test:paper-ledger-v2` pass)
+  - [x] R7 (Atomic paper reset with confirmation): `src/lib/engine/paperLedgerV2.ts`, `src/lib/storage/paperLedger.ts` (`yarn test:paper-reset` pass)
+  - [x] R8 (Damian XAUUSD backtest 9 combinations): `src/lib/engine/backtest.ts` (`yarn test:backtest` pass)
+  - [x] R9 (Synthetic backtest non-guarantee disclosure): `src/components/laptop/BacktestSimulator.tsx` (`yarn test:backtest` pass)
+  - [x] R10 (Wallboard aggregated equity): `src/components/canvas/WallboardHologram.tsx`
+  - [x] R11 (Weather states & terrace shelter): `src/lib/engine/weatherEngine.ts`, `src/lib/engine/socialEngine.ts` (`yarn test:weather` pass)
+  - [x] R12 (Spatial audio & policy compliant media): `src/lib/engine/spatialAudio.ts`, `src/lib/engine/audioEngine.ts`
+  - [x] R13 (Khansaku Follow/Stay delegation): `src/lib/engine/delegationEngine.ts` (`yarn test:delegation` pass)
+  - [x] R14 (Employee routines, gossip, boss proximity silence): `src/lib/engine/socialEngine.ts` (`yarn test:social` pass)
+  - [x] R15 (Office treat 100% stamina/focus boost): `src/lib/engine/socialEngine.ts` (`yarn test:social` pass)
+  - [x] R16 (YouTube playlist PLZVXIrT2s1CE primary): `src/lib/data/userPlaylist.ts`
+  - [x] R17 (Deterministic minigames & leaderboards): `src/lib/engine/minigames.ts` (`yarn test:minigames` pass)
+  - [x] R18 (Cult UI / Tailwind / Lucide primitives): `src/components/ui/**`, `src/app/globals.css`
+  - [x] R19 (Emotion / legacy CSS cutover audit): `package.json`, `src/app/globals.css`
+  - [x] R20 (Wardrobe presets & drone photo mode): `src/components/executive/PhotoModeController.tsx`
+  - [x] R21 (In-app toasts deduplicated): `src/components/ui/NotificationToasts.tsx`
+  - [x] R22 (Paper-only boundary, zero live keys/orders): `src/lib/engine/paperTrading.ts`, `src/lib/engine/predictionBot.ts` (`yarn test:paper-bots` pass)
+  - [x] R23 (Jira, repo inspect, terminal, mission control preserved): `src/app/api/repo/local-inspect/route.ts`, `src/components/mission/**`
+  - [x] R24 (AI dialogue for employee speech on demand, no static fallbacks): `src/lib/engine/employeeDialogue.ts`, `src/app/api/khansa/chat/route.ts` (`yarn test:employee-dialogue` pass)
+  - [x] R25 (Pre-generated AI 3D local GLBs & manifest): `public/models/**`, `src/lib/data/modelManifest.ts`, `src/components/canvas/GlbModel.tsx` (`yarn test:generated-assets` pass)
+  - [x] R26 (Yapping Techflow brand & AI logo, compatibility preserved): `public/brand/**`, `public/favicon.svg`, `src/app/layout.tsx` (`yarn test:brand` pass)
+  - [x] R27 (TradingView OANDA:XAUUSD embed & fallback link): `src/components/laptop/TradingViewXauChart.tsx`, `src/lib/data/chartConfig.ts` (`yarn test:tradingview-chart` pass)
+  - [x] R28 (Automated prediction paper bot with Kelly sizing): `src/app/api/markets/bitcoin/route.ts`, `src/app/api/markets/polymarket/[id]/route.ts`, `src/lib/engine/predictionBot.ts`, `src/components/trading/PredictionBotRuntime.tsx` (`yarn test:prediction-bot` pass)
+- [x] All U1-U16 verification outcomes pass on the final commit state.
 - The app has one authoritative navigable R3F renderer, one application-scoped paper ledger provider, explicit office/media/pipeline ownership boundaries, and one UI styling convention.
 - All named call sites, tests, prompts, routes, and documentation are migrated; obsolete code, aliases, exports, and compatibility layers are removed.
 - Browser smoke observes the changed UI and 3D surface; automated tests alone are not considered proof.

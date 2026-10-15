@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, X } from 'lucide-react';
 import { BOSS } from '@/lib/data/agents';
 
 export type WardrobePreset = 'stealth-ceo' | 'casual-founder' | 'relaxed-terrace';
@@ -85,26 +85,109 @@ export default function BossWardrobeModal({ isOpen, onClose, onApply, onEmote }:
   const previewOption = WARDROBE_OPTIONS.find((option) => option.id === preview);
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="wardrobe-title">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-950/95 p-5 shadow-2xl">
-        <header className="mb-4 flex items-center justify-between">
-          <h2 id="wardrobe-title" className="flex items-center gap-2 text-sm font-bold text-slate-200"><Sparkles size={14} className="text-violet-400" /> Wardrobe Bos Raffa</h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-slate-500 hover:bg-white/10 hover:text-slate-300" aria-label="Tutup wardrobe">✕</button>
+    <div className="pointer-events-auto fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 md:p-6 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="wardrobe-title">
+      <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#0c0d12]/95 p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl flex flex-col gap-5">
+        <header className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/15">
+              <Sparkles size={18} className="text-violet-400" />
+            </div>
+            <div>
+              <h2 id="wardrobe-title" className="text-base font-bold text-white tracking-wide">Wardrobe Bos Raffa</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Setelan aktif: <span className="text-emerald-400 font-semibold">{applied ? WARDROBE_OPTIONS.find((option) => option.id === applied)?.name : 'Default'}</span>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
+            aria-label="Tutup wardrobe"
+          >
+            <X size={18} />
+          </button>
         </header>
-        <p className="mb-3 text-[10px] text-slate-400" aria-live="polite">Setelan aktif: {applied ? WARDROBE_OPTIONS.find((option) => option.id === applied)?.name : 'belum dipilih'} · Pilih setelan untuk menerapkannya.</p>
-        {previewOption && <div className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3" aria-live="polite"><span className="grid h-12 w-12 place-items-center rounded-lg text-2xl" style={{ background: previewOption.look.shirt, color: previewOption.look.accent }}>{previewOption.emoji}</span><div><p className="text-xs font-bold text-white">Preview · {previewOption.name}</p><p className="text-[10px] text-slate-400">{previewOption.description}</p></div></div>}
-        <div className="mb-5 grid gap-2 sm:grid-cols-3">
-          {WARDROBE_OPTIONS.map((option) => (
-            <button key={option.id} type="button" onMouseEnter={() => setPreview(option.id)} onMouseLeave={() => setPreview(applied)} onFocus={() => setPreview(option.id)} onBlur={() => setPreview(applied)} onClick={() => apply(option.id)} aria-pressed={applied === option.id} className={`rounded-xl border px-3 py-3 text-left transition ${applied === option.id ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-200' : 'border-white/10 bg-white/5 text-slate-200 hover:border-white/25'}`}>
-              <div className="mb-1 flex items-center gap-2"><span className="rounded-md px-1.5 py-0.5 text-base" style={{ background: option.look.shirt, color: option.look.accent }}>{option.emoji}</span><strong className="text-xs">{option.name}</strong>{applied === option.id && <Check size={11} className="text-emerald-400" />}</div>
-              <p className="text-[10px] leading-relaxed text-slate-400">{option.description}</p>
-              <span className="mt-2 block text-[9px] font-semibold text-emerald-300">{applied === option.id ? 'Aktif' : 'Terapkan setelan'}</span>
-            </button>
-          ))}
+
+        {previewOption && (
+          <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4.5" aria-live="polite">
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-2xl shadow-inner border border-white/10" style={{ background: previewOption.look.shirt, color: previewOption.look.accent }}>
+              {previewOption.emoji}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white">Preview · {previewOption.name}</p>
+              <p className="text-xs text-zinc-400 leading-relaxed mt-0.5">{previewOption.description}</p>
+            </div>
+          </div>
+        )}
+
+        <div>
+          <span className="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-400 mb-3">
+            Pilihan Setelan Busana
+          </span>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {WARDROBE_OPTIONS.map((option) => {
+              const isSelected = applied === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onMouseEnter={() => setPreview(option.id)}
+                  onMouseLeave={() => setPreview(applied)}
+                  onFocus={() => setPreview(option.id)}
+                  onBlur={() => setPreview(applied)}
+                  onClick={() => apply(option.id)}
+                  aria-pressed={isSelected}
+                  className={`rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between gap-3 ${
+                    isSelected
+                      ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-200 shadow-[0_0_16px_rgba(16,185,129,0.2)]'
+                      : 'border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-xl px-2.5 py-1 text-lg" style={{ background: option.look.shirt, color: option.look.accent }}>
+                      {option.emoji}
+                    </span>
+                    {isSelected && <Check size={16} className="text-emerald-400 shrink-0" />}
+                  </div>
+                  <div>
+                    <strong className="text-xs block text-white font-bold">{option.name}</strong>
+                    <p className="text-[11px] leading-relaxed text-zinc-400 mt-1 line-clamp-2">{option.description}</p>
+                  </div>
+                  <span className={`text-[10px] font-bold block pt-1 border-t border-white/5 ${isSelected ? 'text-emerald-300' : 'text-zinc-500'}`}>
+                    {isSelected ? '✓ Aktif Digunakan' : 'Klik untuk pakai'}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-300"><Sparkles size={11} className="text-violet-400" /> Emote Bos Raffa</p>
-          <div className="grid grid-cols-2 gap-2">{EMOTES.map((emote, index) => <button key={emote.id} type="button" onClick={() => onEmote?.(emote.id)} className="rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-left text-[10px] text-slate-300 hover:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400" aria-label={`${emote.label}: ${emote.description}`}><span className="mr-1.5">{emote.icon}</span>{emote.label}<span className="ml-1 text-slate-600">[{index + 1}]</span><span className="mt-1 block text-slate-500">{emote.description}</span></button>)}</div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          <p className="mb-3.5 flex items-center gap-2 text-xs font-bold text-zinc-200 uppercase tracking-wider font-mono">
+            <Sparkles size={13} className="text-violet-400" /> Pose &amp; Emote Santai Bos Raffa
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {EMOTES.map((emote, index) => (
+              <button
+                key={emote.id}
+                type="button"
+                onClick={() => onEmote?.(emote.id)}
+                className="rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 text-left transition-all duration-150 hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400"
+                aria-label={`${emote.label}: ${emote.description}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white flex items-center gap-2">
+                    <span>{emote.icon}</span> {emote.label}
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-500 font-bold bg-white/5 px-1.5 py-0.5 rounded">
+                    [{index + 1}]
+                  </span>
+                </div>
+                <span className="mt-1 block text-[11px] text-zinc-400">{emote.description}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

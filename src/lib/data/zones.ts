@@ -21,8 +21,8 @@ export const ZONES: ZoneDef[] = [
     label: 'Executive Suite',
     shortLabel: 'Executive',
     color: '#f43f5e',
-    rect: { x1: -16, z1: -12, x2: -5.2, z2: -0.5 },
-    focus: [-8, 0, -6.5],
+    rect: { x1: -16, z1: -12, x2: -6.0, z2: 0 },
+    focus: [-10.5, 0, -5.5],
     description: 'Meja Komando Bos Raffa & Royal Command Khansaku',
   },
   {
@@ -30,8 +30,8 @@ export const ZONES: ZoneDef[] = [
     label: 'Engineering Open Space',
     shortLabel: 'Engineering',
     color: '#38bdf8',
-    rect: { x1: -5.2, z1: -12, x2: 5.5, z2: 11.8 },
-    focus: [-2.5, 0, 3],
+    rect: { x1: -6.0, z1: -12, x2: 6.0, z2: 11.8 },
+    focus: [0.0, 0, 0.0],
     description: 'Workstation 5 Senior Dev & QA (Arga, Jajang, Kian, Vani, Reno)',
   },
   {
@@ -39,8 +39,8 @@ export const ZONES: ZoneDef[] = [
     label: 'War Room Central Table',
     shortLabel: 'War Room',
     color: '#10b981',
-    rect: { x1: 5.5, z1: -5, x2: 11.8, z2: 5 },
-    focus: [9.5, 0, 0],
+    rect: { x1: 6.0, z1: -5.0, x2: 11.5, z2: 5.0 },
+    focus: [8.5, 0, 0.0],
     description: 'Holotable Diskusi & Giant Wallboard Hologram',
   },
   {
@@ -48,8 +48,8 @@ export const ZONES: ZoneDef[] = [
     label: 'The Skyline Glass Room',
     shortLabel: 'Skyline Suite',
     color: '#8b5cf6',
-    rect: { x1: 11.8, z1: -12, x2: 16, z2: 11.8 },
-    focus: [13.5, 0, 0],
+    rect: { x1: 11.5, z1: -12, x2: 16, z2: 11.8 },
+    focus: [13.8, 0, 0.0],
     description: 'Trading Bots & Quant Division (Altair, Kenzo, Damian)',
   },
   {
@@ -57,7 +57,7 @@ export const ZONES: ZoneDef[] = [
     label: 'Pantry Break Area',
     shortLabel: 'Pantry',
     color: '#f97316',
-    rect: { x1: 5.5, z1: 5.5, x2: 11.8, z2: 11.8 },
+    rect: { x1: 6.0, z1: 5.0, x2: 11.5, z2: 11.8 },
     focus: [8.5, 0, 8.5],
     description: 'Espresso Bar, Water Dispenser, & Tempat Ghibah',
   },
@@ -77,10 +77,10 @@ export const ZONES: ZoneDef[] = [
  */
 export function detectZone(x: number, z: number): ZoneDef {
   if (z >= 12) return ZONES[5]; // terrace
-  if (x >= 11.8) return ZONES[3]; // skyline
-  if (x >= 5.5 && z >= 5.5) return ZONES[4]; // pantry
-  if (x >= 5.5 && z >= -5 && z < 5.5) return ZONES[2]; // war-room
-  if (x < -5.2 && z < -0.5) return ZONES[0]; // executive
+  if (x >= 11.5) return ZONES[3]; // skyline
+  if (x >= 6.0 && z >= 5.0) return ZONES[4]; // pantry
+  if (x >= 6.0 && z >= -5.0 && z < 5.0) return ZONES[2]; // war-room
+  if (x < -6.0 && z < 0.0) return ZONES[0]; // executive
   return ZONES[1]; // engineering
 }
 

@@ -46,14 +46,14 @@ const styles = {
   container: css`
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 22px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   `,
 
   grid: css`
     display: grid;
     grid-template-columns: 4.8fr 7.2fr;
-    gap: 18px;
+    gap: 22px;
 
     @media (max-width: 960px) {
       grid-template-columns: 1fr;
@@ -63,9 +63,9 @@ const styles = {
   backlogPane: css`
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-    border-radius: 18px;
+    gap: 14px;
+    padding: 20px;
+    border-radius: 20px;
     background: #111218;
     border: 1px solid rgba(255, 255, 255, 0.1);
   `,
@@ -77,34 +77,36 @@ const styles = {
 
   searchInput: css`
     width: 100%;
-    padding: 9px 12px 9px 36px;
+    padding: 11px 14px 11px 40px;
     font-size: 13px;
-    border-radius: 12px;
+    border-radius: 14px;
     background: #14151b;
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
     outline: none;
+    transition: border 0.15s ease;
 
     &::placeholder {
       color: #71717a;
     }
     &:focus {
       border-color: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
     }
   `,
 
   statusFilterScroll: css`
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     overflow-x: auto;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
   `,
 
   statusBtn: (isActive: boolean) => css`
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 11px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 11.5px;
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
@@ -122,15 +124,15 @@ const styles = {
   ticketScrollList: css`
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: 440px;
+    gap: 14px;
+    max-height: 520px;
     overflow-y: auto;
     padding-right: 4px;
   `,
 
   ticketCard: (isSelected: boolean) => css`
-    padding: 14px;
-    border-radius: 14px;
+    padding: 18px;
+    border-radius: 18px;
     cursor: pointer;
     border: 1px solid ${isSelected ? 'rgba(16, 185, 129, 0.6)' : 'rgba(255, 255, 255, 0.06)'};
     background: ${isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.02)'};
@@ -147,9 +149,9 @@ const styles = {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 16px;
-    padding: 20px;
-    border-radius: 18px;
+    gap: 20px;
+    padding: 24px 28px;
+    border-radius: 20px;
     background: #111218;
     border: 1px solid rgba(255, 255, 255, 0.1);
   `,
@@ -265,7 +267,7 @@ export default function MissionControlModal({
       isOpen={isOpen}
       onClose={onClose}
       size="full"
-      maxWidth="1180px"
+      maxWidth="1260px"
       title="Mission Control — Jira Backlog & Autonomous Execution"
       subtitle="Pilih folder lokal, verifikasi branch dev, dan delegasikan eksekusi tiket Jira ke agen Antigravity AI"
       icon={<span>⚡</span>}

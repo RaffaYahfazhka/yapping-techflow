@@ -34,7 +34,7 @@ export default function PhotoModeController({
   dof,
   onDofChange,
   maxTierMegapixels = TIER_PX.medium,
-  watermark = 'Kantor Raffa — TechFlow Executive Suite',
+  watermark = 'Yapping Techflow — Executive Penthouse Suite',
 }: PhotoModeProps) {
   const [status, setStatus] = useState<'idle' | 'capturing' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export default function PhotoModeController({
       <div
         ref={barRef}
         tabIndex={-1}
-        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/90 px-4 py-3 shadow-2xl backdrop-blur-xl"
+        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-3.5 rounded-2xl border border-white/10 bg-slate-950/90 px-5 py-3.5 shadow-2xl backdrop-blur-xl"
         role="toolbar"
         aria-label="Photo mode controls"
       >
@@ -86,38 +86,38 @@ export default function PhotoModeController({
           type="button"
           onClick={takeCapture}
           disabled={status === 'capturing'}
-          className="flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-emerald-950 hover:bg-emerald-400 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold text-emerald-950 hover:bg-emerald-400 disabled:opacity-50 transition shadow-sm"
           aria-label="Tangkap foto"
         >
-          <Camera size={13} /> {status === 'capturing' ? 'Menangkap…' : 'Capture'}
+          <Camera size={14} /> {status === 'capturing' ? 'Menangkap…' : 'Capture'}
         </button>
 
         {dofAvailable ? (
-          <label className="flex items-center gap-2 text-[10px] text-slate-400">
-            <Aperture size={13} />
+          <label className="flex items-center gap-2.5 text-xs text-slate-300">
+            <Aperture size={14} className="text-violet-400" />
             <input
               type="range"
               min={0}
               max={100}
               value={Math.round((dof ?? 0) * 100)}
               onChange={(e) => onDofChange!(Number(e.target.value) / 100)}
-              className="h-1 w-16 accent-violet-400"
+              className="h-1.5 w-24 accent-violet-400 cursor-pointer"
               aria-label="Depth of field"
             />
           </label>
         ) : (
-          <span className="flex items-center gap-1 text-[10px] text-slate-500">
-            <Aperture size={11} /> DoF unavailable
+          <span className="flex items-center gap-1.5 text-xs text-slate-500">
+            <Aperture size={13} /> DoF unavailable
           </span>
         )}
 
         <button
           type="button"
           onClick={onExit}
-          className="flex items-center gap-2 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-300 hover:bg-rose-500/20"
+          className="flex items-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition"
           aria-label="Keluar photo mode"
         >
-          <X size={13} /> Exit
+          <X size={14} /> Exit
         </button>
 
         {message && (

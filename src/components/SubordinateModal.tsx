@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { css } from '@emotion/css';
+import { X } from 'lucide-react';
 import { AGENTS } from '../lib/data/agents';
 import { REPOS } from '../lib/data/repos';
 import { TYPE_META, PRIORITY_META } from '../lib/data/tickets';
@@ -62,14 +63,14 @@ const styles = {
   dialogContainer: css`
     position: relative;
     width: 100%;
-    max-width: 1140px;
-    max-height: 90vh;
+    max-width: 1260px;
+    max-height: 92vh;
     display: flex;
     flex-direction: column;
-    background: #0d0e12;
+    background: #0c0d12;
     border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 24px;
-    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-radius: 28px;
+    box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
     color: #f4f4f5;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -79,8 +80,8 @@ const styles = {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 24px;
-    background: #121318;
+    padding: 20px 32px;
+    background: #111218;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
     gap: 16px;
@@ -183,16 +184,15 @@ const styles = {
   `,
 
   closeModalBtn: css`
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: #a1a1aa;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
     cursor: pointer;
     transition: all 0.15s ease;
 
@@ -206,8 +206,8 @@ const styles = {
   tabNavRow: css`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 24px;
+    gap: 12px;
+    padding: 14px 32px;
     background: #0f1015;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     overflow-x: auto;
@@ -220,22 +220,22 @@ const styles = {
     text-transform: uppercase;
     color: #71717a;
     letter-spacing: 0.08em;
-    margin-right: 6px;
+    margin-right: 8px;
     flex-shrink: 0;
   `,
 
   tabPill: (isActive: boolean, activeColor: string) => css`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 14px;
-    border-radius: 12px;
-    font-size: 12px;
+    gap: 10px;
+    padding: 9px 18px;
+    border-radius: 16px;
+    font-size: 13px;
     font-weight: ${isActive ? 700 : 500};
     color: ${isActive ? '#ffffff' : '#a1a1aa'};
     background: ${isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'};
     border: 1px solid ${isActive ? activeColor : 'transparent'};
-    box-shadow: ${isActive ? `0 2px 10px ${activeColor}25` : 'none'};
+    box-shadow: ${isActive ? `0 2px 14px ${activeColor}30` : 'none'};
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
@@ -247,9 +247,9 @@ const styles = {
   `,
 
   tabThumbImg: (borderColor: string) => css`
-    width: 22px;
-    height: 22px;
-    border-radius: 7px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
     overflow: hidden;
     border: 1px solid ${borderColor};
     flex-shrink: 0;
@@ -264,10 +264,10 @@ const styles = {
   scrollBody: css`
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 28px 32px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
   `,
 
   roleBanner: (bgColor: string, borderColor: string, textColor: string) => css`
@@ -345,10 +345,10 @@ const styles = {
 
   ticketGrid: css`
     display: grid;
-    grid-template-columns: 4.5fr 7.5fr;
-    gap: 20px;
+    grid-template-columns: 4.8fr 7.2fr;
+    gap: 24px;
 
-    @media (max-width: 900px) {
+    @media (max-width: 960px) {
       grid-template-columns: 1fr;
     }
   `,
@@ -356,18 +356,18 @@ const styles = {
   ticketListPane: css`
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     background: #111217;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
-    padding: 14px;
-    max-height: 480px;
+    border-radius: 20px;
+    padding: 18px;
+    max-height: 560px;
     overflow-y: auto;
   `,
 
   ticketItemCard: (isSelected: boolean) => css`
-    padding: 14px;
-    border-radius: 14px;
+    padding: 16px;
+    border-radius: 16px;
     cursor: pointer;
     transition: all 0.15s ease;
     border: 1px solid ${isSelected ? 'rgba(245, 158, 11, 0.6)' : 'rgba(255, 255, 255, 0.06)'};
@@ -383,12 +383,12 @@ const styles = {
   ticketDetailPane: css`
     background: #111217;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
-    padding: 22px;
+    border-radius: 20px;
+    padding: 26px 30px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 16px;
+    gap: 20px;
   `,
 
   descBox: css`
@@ -771,7 +771,7 @@ export default function TicketFeatureComponent() {
               onClick={onClose}
               aria-label="Tutup Modal"
             >
-              ✕
+              <X size={18} />
             </button>
           </div>
         </div>

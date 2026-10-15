@@ -37,6 +37,69 @@ export async function POST(request: Request) {
   if (denied) return denied;
   try {
     const body = await request.json();
+    if (body.mode === 'employee_dialogue') {
+      const apiKey = process.env.GEMINI_API_KEY || '';
+      if (!apiKey) {
+        return NextResponse.json({ ok: false, error: 'GEMINI_API_KEY unconfigured' }, { status: 503 });
+      }
+      const employee = body.employee;
+      if (!employee || typeof employee.name !== 'string') {
+        return NextResponse.json({ ok: false, error: 'Invalid employee payload' }, { status: 400 });
+      }
+
+      const instruction = `You are ${employee.name}, ${employee.role || 'Staff'} at Yapping Techflow virtual penthouse office.
+Current situation: event=${employee.event || 'working'}, weather=${employee.weather || 'clear'}.
+Output ONE concise natural sentence in Indonesian/Jakarta tech slang reacting to this moment.
+Rules: Maximum 12 words. Do NOT include quotes, name prefix, markdown, or emojis. Plain text only.`;
+
+      const dialoguePayload = {
+        systemInstruction: { parts: [{ text: instruction }] },
+        contents: [{ role: 'user', parts: [{ text: `Say something natural for the moment: ${employee.event || 'working'}` }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 60 },
+      };
+
+      let dialogueText: string | null = null;
+      let usedModel = '';
+
+      for (const modelName of CANDIDATE_MODELS) {
+        try {
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+              body: JSON.stringify(dialoguePayload),
+              cache: 'no-store',
+              signal: AbortSignal.timeout(3000),
+            }
+          );
+          if (geminiRes.ok) {
+            const data = await geminiRes.json();
+            const candidate = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof candidate === 'string' && candidate.trim().length > 0) {
+              dialogueText = candidate.trim();
+              usedModel = modelName;
+              break;
+            }
+          }
+        } catch {
+          // Try next candidate model
+        }
+      }
+
+      if (!dialogueText) {
+        return NextResponse.json({ ok: false, error: 'dialogue-generation-failed' }, { status: 503 });
+      }
+
+      let clean = dialogueText.replace(/^["'«“]+|["'»”]+$/g, '').trim();
+      clean = clean.replace(new RegExp(`^${employee.name}:?\\s*`, 'i'), '').trim();
+      if (!clean || clean.length > 140) {
+        return NextResponse.json({ ok: false, error: 'dialogue-validation-failed' }, { status: 422 });
+      }
+
+      return NextResponse.json({ ok: true, text: clean, model: usedModel });
+    }
+
     const { messages = [], activeTicket, allTickets = [] } = body;
     if (!Array.isArray(messages) || messages.length > 50 || messages.some((m: { content?: unknown }) => typeof m.content !== 'string' || m.content.length > 4000)) {
       return NextResponse.json({ error: 'messages tidak valid atau terlalu banyak' }, { status: 400 });

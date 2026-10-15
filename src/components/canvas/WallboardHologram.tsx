@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState, useEffect } from 'react';
-import { TrendingUp, Calendar, Activity, Zap, BarChart3 } from 'lucide-react';
+import { TrendingUp, Calendar, Activity, Zap, BarChart3, X } from 'lucide-react';
 
 interface WallboardProps {
   isOpen: boolean;
@@ -92,17 +92,17 @@ export default function WallboardHologram({ isOpen, onClose }: WallboardProps) {
         />
 
         {/* Header */}
-        <header className="relative z-20 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 via-transparent to-emerald-500/5 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-cyan-500/10">
-              <BarChart3 size={18} className="text-cyan-400" />
+        <header className="relative z-20 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 via-transparent to-emerald-500/5 px-6 sm:px-8 py-5">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/40 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.15)]">
+              <BarChart3 size={20} className="text-cyan-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold tracking-wide text-white">
+              <h2 className="text-base font-bold tracking-wide text-white">
                 WALL STREET EXECUTIVE WALLBOARD
               </h2>
-              <p className="text-[10px] font-mono text-cyan-400/70">
-                Hologram Projection · War Room · Real-Time Aggregated
+              <p className="text-xs font-mono text-cyan-400/80 mt-0.5">
+                Hologram Projection · War Room · Real-Time Aggregated Portfolio
               </p>
             </div>
           </div>
@@ -112,18 +112,18 @@ export default function WallboardHologram({ isOpen, onClose }: WallboardProps) {
             className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
             aria-label="Tutup wallboard"
           >
-            ✕
+            <X size={18} />
           </button>
         </header>
 
         {/* Running Ticker Bar */}
-        <div className="relative z-20 overflow-hidden border-b border-emerald-500/20 bg-emerald-500/[0.03] px-0 py-2">
+        <div className="relative z-20 overflow-hidden border-b border-emerald-500/20 bg-emerald-500/[0.04] px-0 py-3">
           <div
-            className="flex whitespace-nowrap font-mono text-[11px] font-bold tracking-wider"
+            className="flex whitespace-nowrap font-mono text-xs font-bold tracking-wider"
             style={{ transform: `translateX(-${tickerOffset % 1200}px)` }}
           >
             {[...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={`${item.sym}-${i}`} className="mx-6 inline-flex items-center gap-2">
+              <span key={`${item.sym}-${i}`} className="mx-8 inline-flex items-center gap-2.5">
                 <span className="text-zinc-500">{item.sym}</span>
                 <span style={{ color: item.color }}>{item.price}</span>
                 <span className={item.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}>
@@ -136,20 +136,20 @@ export default function WallboardHologram({ isOpen, onClose }: WallboardProps) {
         </div>
 
         {/* Content Grid */}
-        <div className="relative z-20 grid grid-cols-1 gap-4 p-5 lg:grid-cols-3">
+        <div className="relative z-20 grid grid-cols-1 gap-6 p-6 sm:p-8 lg:grid-cols-3">
           {/* Aggregated Portfolio Curve */}
-          <div className="col-span-1 lg:col-span-2 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-            <div className="mb-3 flex items-center gap-2 text-xs font-bold text-white">
-              <TrendingUp size={14} className="text-emerald-400" />
+          <div className="col-span-1 lg:col-span-2 rounded-3xl border border-white/10 bg-white/[0.02] p-6 flex flex-col gap-5">
+            <div className="flex items-center gap-2.5 text-sm font-bold text-white">
+              <TrendingUp size={16} className="text-emerald-400" />
               Aggregated Portfolio Equity Curve
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <EquitySVG label="Forex & Gold (Damian)" data={forexCurve} color="#f59e0b" prefix="$" />
               <EquitySVG label="Solana DLMM (Altair)" data={solanaCurve} color="#10b981" prefix="" suffix=" SOL" />
               <EquitySVG label="Polymarket (Kenzo)" data={polyCurve} color="#8b5cf6" prefix="$" />
             </div>
             {/* Summary Metrics */}
-            <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="mt-2 grid grid-cols-3 gap-4">
               <MetricBox label="Total AUM" value="$15,000+" color="#22d3ee" />
               <MetricBox label="Win Rate" value="100.00%" color="#34d399" />
               <MetricBox label="Max Drawdown" value="0.00%" color="#f59e0b" />
@@ -157,36 +157,38 @@ export default function WallboardHologram({ isOpen, onClose }: WallboardProps) {
           </div>
 
           {/* Macro Calendar */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-            <div className="mb-3 flex items-center gap-2 text-xs font-bold text-white">
-              <Calendar size={14} className="text-amber-400" />
-              Global Economic Calendar
-            </div>
-            <div className="space-y-2">
-              {MACRO_EVENTS.map((ev) => (
-                <div
-                  key={ev.id}
-                  className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5"
-                >
-                  <span className="text-[10px] font-mono text-zinc-500 w-12 shrink-0">{ev.date}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold text-zinc-200 truncate">{ev.name}</p>
-                    <p className="text-[9px] text-zinc-500">{ev.region}</p>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 flex flex-col justify-between gap-5">
+            <div>
+              <div className="mb-4 flex items-center gap-2.5 text-sm font-bold text-white">
+                <Calendar size={16} className="text-amber-400" />
+                Global Economic Calendar
+              </div>
+              <div className="space-y-3">
+                {MACRO_EVENTS.map((ev) => (
+                  <div
+                    key={ev.id}
+                    className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3"
+                  >
+                    <span className="text-xs font-mono text-zinc-500 w-14 shrink-0">{ev.date}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-zinc-200 truncate">{ev.name}</p>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">{ev.region}</p>
+                    </div>
+                    <span className={`rounded-lg border px-2 py-0.5 text-[10px] font-bold uppercase ${IMPACT_BADGE[ev.impact]}`}>
+                      {ev.impact}
+                    </span>
                   </div>
-                  <span className={`rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase ${IMPACT_BADGE[ev.impact]}`}>
-                    {ev.impact}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Live Status */}
-            <div className="mt-4 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-cyan-300">
-                <Activity size={11} className="animate-pulse" />
+            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+              <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                <Activity size={13} className="animate-pulse" />
                 LIVE MARKET FEED
               </div>
-              <p className="mt-1 text-[10px] text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-400 leading-relaxed">
                 Semua data agregat dari Exness, Meteora DLMM, dan Polymarket WebSocket relay.
               </p>
             </div>

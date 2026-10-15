@@ -34,6 +34,7 @@ import {
   Radio,
   MapPin,
   Layers,
+  Users,
 } from 'lucide-react';
 import { ZONES, detectZone, type ZoneDef } from '@/lib/data/zones';
 import { AGENTS, BOSS } from '@/lib/data/agents';
@@ -98,6 +99,8 @@ export default function OfficeMinimap({
 }: OfficeMinimapProps) {
   const [selectedAgentInfo, setSelectedAgentInfo] = useState<string | null>(null);
   const [clickPing, setClickPing] = useState<{ x: number; y: number; id: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<'agents' | 'zones'>('agents');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const tradingDesks = AGENTS.filter((a) => a.workspace === 'trading');
   const engDesks = AGENTS.filter((a) => a.workspace !== 'trading' && a.id !== 'tara');
@@ -126,6 +129,22 @@ export default function OfficeMinimap({
   // COMPACT HUD MODE (Always docked in top-right when not expanded)
   // ───────────────────────────────────────────────────────────────────────────
   if (!open) {
+    if (isCollapsed) {
+      return (
+        <aside
+          className="pointer-events-auto fixed right-4 top-20 z-40 flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-[#0a0b10]/90 shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-200 hover:border-emerald-500/40 select-none cursor-pointer"
+          onClick={() => setIsCollapsed(false)}
+          title="Buka Radar HUD (M)"
+          aria-label="Radar HUD Mini"
+        >
+          <Compass size={13} className="text-emerald-400 animate-spin-slow shrink-0" />
+          <span className="text-[11px] font-bold text-white tracking-wide">RADAR</span>
+          <span className="text-[10px] font-medium text-zinc-300">· {currentZone.shortLabel}</span>
+          <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+        </aside>
+      );
+    }
+
     return (
       <aside
         className="pointer-events-auto fixed right-4 top-20 z-40 flex w-[230px] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#0a0b10]/90 shadow-[0_14px_40px_rgba(0,0,0,0.75)] backdrop-blur-2xl transition-all duration-300 hover:border-emerald-500/40 select-none"
@@ -149,6 +168,14 @@ export default function OfficeMinimap({
                 <Crosshair size={12} />
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(true)}
+              className="rounded-md p-1 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
+              title="Kecilkan Radar (Sembunyikan HUD)"
+            >
+              <Minimize2 size={12} />
+            </button>
             <button
               type="button"
               onClick={onToggleOpen}
@@ -323,7 +350,7 @@ export default function OfficeMinimap({
   // ───────────────────────────────────────────────────────────────────────────
   return (
     <aside
-      className="pointer-events-auto fixed right-4 top-20 z-40 flex max-h-[85vh] w-[410px] flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#0a0b10]/95 shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all duration-300 select-none"
+      className="pointer-events-auto fixed right-4 top-20 z-40 flex h-[min(82vh,740px)] w-[400px] flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#0a0b10]/95 shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition-all duration-300 select-none"
       role="dialog"
       aria-label="Radar Penthouse Blueprint Penuh"
     >
@@ -389,72 +416,72 @@ export default function OfficeMinimap({
       </div>
 
       {/* Timezone / Sky Phase Override HUD Toggle (PRD §3.3 & §4) */}
-      <div className="border-b border-white/10 bg-[#0d0e15] px-4 py-2.5">
-        <div className="flex items-center justify-between gap-1 mb-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-            <Clock size={11} className="text-amber-400" /> Sky &amp; Lighting Engine
+      <div className="border-b border-white/10 bg-[#0d0e15] px-5 py-3">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+            <Clock size={12} className="text-amber-400" /> Sky &amp; Lighting Engine
           </span>
-          <span className="text-[9px] text-zinc-500 font-mono">
+          <span className="text-[10px] text-zinc-500 font-mono">
             {activeSkyPhase === 'auto' ? 'WIB Auto-Sync' : 'Manual Override'}
           </span>
         </div>
-        <div className="grid grid-cols-5 gap-1 text-[10px] font-semibold">
+        <div className="grid grid-cols-5 gap-1.5 text-xs font-semibold">
           <button
             type="button"
             onClick={() => onSelectSkyPhase?.('auto')}
-            className={`flex flex-col items-center gap-0.5 rounded-lg py-1 px-1 border transition-all ${
+            className={`flex flex-col items-center gap-1 rounded-xl py-1.5 px-1.5 border transition-all ${
               activeSkyPhase === 'auto'
                 ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
                 : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
             }`}
             title="Sinkronisasi jam nyata otomatis WIB"
           >
-            <Clock size={11} />
-            <span className="text-[9px]">Auto</span>
+            <Clock size={12} />
+            <span className="text-[10px]">Auto</span>
           </button>
           <button
             type="button"
             onClick={() => onSelectSkyPhase?.('morning')}
-            className={`flex flex-col items-center gap-0.5 rounded-lg py-1 px-1 border transition-all ${
+            className={`flex flex-col items-center gap-1 rounded-xl py-1.5 px-1.5 border transition-all ${
               activeSkyPhase === 'morning'
                 ? 'border-amber-400/50 bg-amber-400/20 text-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.2)]'
                 : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
             }`}
             title="Pagi: Golden sunrise (05:30 - 09:30 WIB)"
           >
-            <Sunrise size={11} />
-            <span className="text-[9px]">Pagi</span>
+            <Sunrise size={12} />
+            <span className="text-[10px]">Pagi</span>
           </button>
           <button
             type="button"
             onClick={() => onSelectSkyPhase?.('day')}
-            className={`flex flex-col items-center gap-0.5 rounded-lg py-1 px-1 border transition-all ${
+            className={`flex flex-col items-center gap-1 rounded-xl py-1.5 px-1.5 border transition-all ${
               activeSkyPhase === 'day'
                 ? 'border-sky-400/50 bg-sky-400/20 text-sky-200 shadow-[0_0_10px_rgba(56,189,248,0.2)]'
                 : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
             }`}
             title="Siang: Clear bright daylight (09:30 - 15:30 WIB)"
           >
-            <Sun size={11} />
-            <span className="text-[9px]">Siang</span>
+            <Sun size={12} />
+            <span className="text-[10px]">Siang</span>
           </button>
           <button
             type="button"
             onClick={() => onSelectSkyPhase?.('sunset')}
-            className={`flex flex-col items-center gap-0.5 rounded-lg py-1 px-1 border transition-all ${
+            className={`flex flex-col items-center gap-1 rounded-xl py-1.5 px-1.5 border transition-all ${
               activeSkyPhase === 'sunset'
                 ? 'border-orange-400/50 bg-orange-400/20 text-orange-200 shadow-[0_0_10px_rgba(249,115,22,0.2)]'
                 : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
             }`}
             title="Sore: Sunset peach-magenta glow (15:30 - 18:15 WIB)"
           >
-            <Sunset size={11} />
-            <span className="text-[9px]">Sore</span>
+            <Sunset size={12} />
+            <span className="text-[10px]">Sore</span>
           </button>
           <button
             type="button"
             onClick={() => onSelectSkyPhase?.('night')}
-            className={`flex flex-col items-center gap-0.5 rounded-lg py-1 px-1 border transition-all ${
+            className={`flex flex-col items-center gap-1 rounded-xl py-1.5 px-1.5 border transition-all ${
               activeSkyPhase === 'night'
                 ? 'border-violet-400/50 bg-violet-400/20 text-violet-200 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
                 : 'border-white/5 bg-white/[0.02] text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
@@ -947,106 +974,150 @@ export default function OfficeMinimap({
           </div>
         </div>
 
-        {/* Section: VIP & Trading Division */}
-        <div>
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Sparkles size={12} className="text-amber-400" /> Executive &amp; Trading Bots
-            </span>
-            <span className="text-[9px] text-zinc-500 font-mono">Klik untuk navigasi</span>
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-left text-xs text-rose-200 hover:bg-rose-500/20 transition-all hover:-translate-y-0.5"
-              onClick={() => onFocusAgent('tara')}
-            >
-              <span className="text-base">💖</span>
-              <div className="truncate">
-                <span className="font-bold text-rose-300">Khansaku</span>
-                <span className="block text-[10px] text-zinc-400">First Lady · {employeeStates['tara'] || 'Active'}</span>
+        {/* Segmented Sub-Navigation: Tim & Bot vs 6 Zona */}
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/[0.04] border border-white/10 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setActiveTab('agents')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
+              activeTab === 'agents'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-bold'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5 font-medium'
+            }`}
+          >
+            <Users size={14} />
+            <span>Tim &amp; Bot ({AGENTS.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('zones')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl transition-all ${
+              activeTab === 'zones'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-bold'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5 font-medium'
+            }`}
+          >
+            <MapPin size={14} />
+            <span>6 Zona Penthouse</span>
+          </button>
+        </div>
+
+        {activeTab === 'agents' && (
+          <div className="space-y-4">
+            {/* Section: VIP & Trading Division */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-amber-400" /> Executive &amp; Trading Bots
+                </span>
+                <span className="text-[10px] text-zinc-500 font-mono">Klik untuk navigasi</span>
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  className="flex items-center gap-2.5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-left text-xs text-rose-200 hover:bg-rose-500/20 transition-all hover:-translate-y-0.5"
+                  onClick={() => onFocusAgent('tara')}
+                >
+                  <span className="text-base shrink-0">💖</span>
+                  <div className="truncate">
+                    <span className="font-bold text-rose-300 text-xs block">Khansaku</span>
+                    <span className="block text-[10px] text-zinc-400 truncate mt-0.5">First Lady · {employeeStates['tara'] || 'Active'}</span>
+                  </div>
+                </button>
+
+                {tradingDesks.map((a) => {
+                  const state = employeeStates[a.id] || 'working';
+                  const focus = employeeFocus[a.id] ?? 100;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-left text-xs text-zinc-300 hover:border-emerald-400/40 hover:bg-emerald-500/10 transition-all hover:-translate-y-0.5"
+                      onClick={() => onFocusAgent(a.id)}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                      <div className="truncate">
+                        <span className="font-semibold text-white text-xs block">{a.name}</span>
+                        <span className="block text-[10px] text-zinc-400 truncate mt-0.5">
+                          {a.short} · {state === 'pantry' ? 'Ngopi' : state === 'terrace' ? 'Teras' : `${focus}% Focus`}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </button>
+            </div>
 
-            {tradingDesks.map((a) => {
-              const state = employeeStates[a.id] || 'working';
-              const focus = employeeFocus[a.id] ?? 100;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs text-zinc-300 hover:border-emerald-400/40 hover:bg-emerald-500/10 transition-all hover:-translate-y-0.5"
-                  onClick={() => onFocusAgent(a.id)}
-                >
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-                  <div className="truncate">
-                    <span className="font-semibold text-white">{a.name}</span>
-                    <span className="block text-[10px] text-zinc-400">
-                      {a.short} · {state === 'pantry' ? 'Ngopi' : state === 'terrace' ? 'Teras' : `${focus}% Focus`}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+            {/* Section: Engineering Wing */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Compass size={13} className="text-sky-400" /> Engineering Staff ({engDesks.length})
+                </span>
+                <span className="text-[10px] text-emerald-400/80 font-mono">100% Ready</span>
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {engDesks.map((a) => {
+                  const state = employeeStates[a.id] || 'working';
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-left text-xs text-zinc-300 hover:bg-white/10 hover:text-white transition-all hover:-translate-y-0.5"
+                      onClick={() => onFocusAgent(a.id)}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                      <div className="truncate">
+                        <span className="font-semibold text-white text-xs block">{a.name}</span>
+                        <span className="block text-[10px] text-zinc-400 truncate mt-0.5">
+                          {a.short} · {state === 'pantry' ? 'Ngopi' : state === 'terrace' ? 'Teras' : 'Coding'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Section: Engineering Wing */}
-        <div>
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Compass size={12} className="text-sky-400" /> Engineering Staff ({engDesks.length})
-            </span>
-            <span className="text-[9px] text-zinc-500 font-mono">100% Green Test</span>
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {engDesks.map((a) => {
-              const state = employeeStates[a.id] || 'working';
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/10 hover:text-white transition-all hover:-translate-y-0.5"
-                  onClick={() => onFocusAgent(a.id)}
-                >
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-                  <div className="truncate">
-                    <span className="font-semibold text-white">{a.name}</span>
-                    <span className="block text-[10px] text-zinc-400">
-                      {a.short} · {state === 'pantry' ? 'Ngopi' : state === 'terrace' ? 'Teras' : 'Coding'}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+        {activeTab === 'zones' && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Eye size={13} className="text-emerald-400" /> 6 Integrated Penthouse Zones
+              </span>
+              <span className="text-[10px] text-zinc-500 font-mono">Klik untuk fokus kamera</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              {ZONES.map((z) => {
+                const isCurrent = currentZone.id === z.id;
+                return (
+                  <button
+                    key={`btn-zone-${z.id}`}
+                    type="button"
+                    onClick={() => onFocusZone(z)}
+                    className={`rounded-2xl border p-3 text-left text-xs transition-all hover:-translate-y-0.5 ${
+                      isCurrent
+                        ? 'border-emerald-400/60 bg-emerald-500/20 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                        : 'border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/20 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs">{z.label}</span>
+                      {isCurrent && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-400/30 text-emerald-200 font-mono font-bold">
+                          Lokasi Bos
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-zinc-400 block line-clamp-1">{z.shortLabel}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-
-        {/* Section: 6 Zones Quick Teleport */}
-        <div>
-          <h3 className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center gap-1.5">
-            <Eye size={12} className="text-emerald-400" /> 6 Integrated Penthouse Zones
-          </h3>
-          <div className="grid grid-cols-3 gap-1.5">
-            {ZONES.map((z) => {
-              const isCurrent = currentZone.id === z.id;
-              return (
-                <button
-                  key={`btn-zone-${z.id}`}
-                  type="button"
-                  onClick={() => onFocusZone(z)}
-                  className={`rounded-lg border p-1.5 text-center text-[10px] font-semibold transition-all ${
-                    isCurrent
-                      ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
-                      : 'border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/20 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {z.shortLabel}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        )}
       </div>
     </aside>
   );

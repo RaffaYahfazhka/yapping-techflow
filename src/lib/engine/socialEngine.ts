@@ -70,10 +70,10 @@ export interface EmployeeSim {
   treatActionIds: string[];
 }
 
-// Zones match the OfficeCanvas rect focus points: pantry {8,6}-{14,12}, terrace {-4,20}-{16,30}.
+// Zones match the penthouse layout: pantry bar area, terrace lounge area.
 export const SOCIAL_ZONES: Record<'pantry' | 'terrace', WorldPosition> = {
-  pantry: { x: 11, z: 9 },
-  terrace: { x: 6, z: 24 },
+  pantry: { x: 8.5, z: 7.2 },
+  terrace: { x: -6.0, z: 19.5 },
 };
 
 /** Deterministic phase lengths in ms. */

@@ -45,32 +45,32 @@ export default function TeamDirectoryModal({
       onClose={onClose}
       size="xl"
       title="Kartu Identitas Karyawan AI"
-      subtitle="Daftar profil resmi, ID badge & kredensial autonomous squad Kantor Raffa"
+      subtitle="Daftar profil resmi, ID badge & kredensial autonomous squad Yapping Techflow"
       icon={<span>🪪</span>}
     >
-      <div className="flex flex-col gap-4 font-sans select-none">
+      <div className="flex flex-col gap-6 font-sans select-none">
         {/* Search & Dept Filter */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#14151b] border border-white/10">
-          <div className="relative flex-1 min-w-[220px]">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4.5 rounded-2xl bg-[#14151b] border border-white/10 shadow-sm">
+          <div className="relative flex-1 min-w-[240px]">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
               🔍
             </span>
             <input
               type="text"
-              className="w-full pl-8 pr-3 py-2 rounded-xl text-xs bg-[#0d0e12] border border-white/10 text-white placeholder-zinc-500 outline-none focus:border-emerald-500/50"
+              className="w-full pl-10 pr-4 py-3 rounded-xl text-xs bg-[#0d0e12] border border-white/10 text-white placeholder-zinc-500 outline-none focus:border-emerald-500/50 transition"
               placeholder="Cari nama, role, employee ID, atau skill..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {['all', 'Product', 'Architecture', 'Frontend', 'Backend', 'QA', 'DevOps'].map((dept) => (
               <button
                 key={dept}
                 type="button"
                 onClick={() => setFilterDepartment(dept)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                   filterDepartment === dept
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
                     : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
@@ -83,7 +83,7 @@ export default function TeamDirectoryModal({
         </div>
 
         {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTeam.map((agent) => (
             <AgentIdentityCard
               key={agent.id}

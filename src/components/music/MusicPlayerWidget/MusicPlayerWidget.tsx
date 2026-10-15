@@ -46,7 +46,7 @@ const fmt = (s: number) => {
 const DEFAULT_COVER = 'https://i.ytimg.com/vi/NA7hmTexZ0E/mqdefault.jpg';
 
 const iconBtn =
-  'grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[10px] bg-white/[0.06] text-zinc-300 transition hover:-translate-y-px hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400';
+  'grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-zinc-300 transition hover:-translate-y-px hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400';
 
 /**
  * Mini player (pill) di pojok kiri bawah. Kontrol lengkap ada di MusicPlayerModal.
@@ -79,8 +79,8 @@ export default function MusicPlayerWidget({
 
   return (
     <section
-      className={`fixed bottom-6 left-6 z-[70] grid w-[min(320px,calc(100vw-48px))] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border bg-[#0d0e13]/95 p-2.5 text-zinc-100 shadow-[0_16px_38px_rgba(0,0,0,0.65)] backdrop-blur-[20px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
-        playing ? 'border-emerald-500/40 shadow-[0_0_24px_rgba(16,185,129,0.22)]' : 'border-white/15'
+      className={`fixed bottom-6 left-6 z-[70] grid w-[min(340px,calc(100vw-48px))] max-[1366px]:w-[310px] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3.5 overflow-hidden rounded-2xl border bg-[#0d0e13]/95 p-3 text-zinc-100 shadow-[0_20px_45px_rgba(0,0,0,0.7)] backdrop-blur-[20px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
+        playing ? 'border-emerald-500/40 shadow-[0_0_28px_rgba(16,185,129,0.25)]' : 'border-white/15'
       } ${className}`}
       aria-label="Mini music player"
     >
@@ -89,7 +89,7 @@ export default function MusicPlayerWidget({
         onClick={onOpenPlayer}
         title="Buka Music Player"
         aria-label="Buka Music Player"
-        className={`h-11 w-11 overflow-hidden rounded-full border-2 bg-zinc-900 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 shrink-0 ${
+        className={`h-11 w-11 overflow-hidden rounded-full border-2 bg-zinc-900 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 shrink-0 shadow-sm ${
           playing ? 'animate-[spin_8s_linear_infinite] border-emerald-500' : 'border-white/20'
         } ${playing ? '' : '[animation-play-state:paused]'}`}
       >
@@ -102,33 +102,33 @@ export default function MusicPlayerWidget({
         onClick={onOpenPlayer}
         title={currentTrack?.title}
       >
-        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold tracking-tight">
+        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-bold tracking-tight text-white">
           {currentTrack?.title || 'YouTube Music'}
         </div>
-        <div className={`mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] tabular-nums font-medium ${tone}`}>{subText}</div>
+        <div className={`mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-xs tabular-nums font-medium ${tone}`}>{subText}</div>
       </button>
 
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
           onClick={onTogglePlay}
           aria-label={playing ? 'Jeda' : 'Putar'}
           title={playing ? 'Jeda' : 'Putar'}
-          className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-emerald-400 to-emerald-600 text-[#04241a] transition hover:-translate-y-px hover:from-emerald-300 hover:to-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-[#04241a] transition hover:-translate-y-px hover:from-emerald-300 hover:to-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 shadow-sm"
         >
           {busy ? (
             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#04241a]/30 border-t-[#04241a]" />
           ) : playing ? (
-            <Pause size={15} />
+            <Pause size={16} />
           ) : (
-            <Play size={15} />
+            <Play size={16} className="ml-0.5" />
           )}
         </button>
         <button type="button" className={iconBtn} onClick={onNextTrack} aria-label="Lagu berikutnya" title="Berikutnya">
-          <SkipForward size={14} />
+          <SkipForward size={15} />
         </button>
         <button type="button" className={iconBtn} onClick={onOpenPlayer} aria-label="Buka player" title="Buka player">
-          <Maximize2 size={13} />
+          <Maximize2 size={14} />
         </button>
       </div>
 

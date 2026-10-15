@@ -26,8 +26,11 @@ export async function resolve(specifier, context, nextResolve) {
   if (RELATIVE.test(specifier) && !TS_FILE.test(specifier)) {
     const candidates = [
       specifier.replace(JS_SUFFIX, '') + '.ts',
+      specifier.replace(JS_SUFFIX, '') + '.tsx',
       specifier + '.ts',
+      specifier + '.tsx',
       specifier + '/index.ts',
+      specifier + '/index.tsx',
     ];
     for (const candidate of candidates) {
       try {

@@ -283,21 +283,27 @@ export default function SkyDartsModal({ isOpen, onClose, playerName = 'raffa', o
   if (!isOpen) return null;
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-slate-950/70 p-3" role="dialog" aria-label="Penthouse Sky Darts">
-      <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-violet-400/20 bg-slate-950/95 p-4 shadow-2xl sm:p-5">
-        <header className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-200">
-            <Target size={16} className="text-violet-400" /> Penthouse Sky Darts
-          </h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-white/10 hover:text-slate-200" aria-label="Close darts">
-            <X size={16} />
+    <div className="pointer-events-auto fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 md:p-6 backdrop-blur-md" role="dialog" aria-label="Penthouse Sky Darts">
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-violet-400/30 bg-[#0c0d12]/95 p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+        <header className="mb-6 pb-3 flex items-center justify-between border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/15">
+              <Target size={18} className="text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white tracking-wide">Penthouse Sky Darts</h2>
+              <p className="text-xs text-zinc-400 mt-0.5">Rooftop Sky Terrace Mini-Game · 3 Lemparan per Ronde</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-xl p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" aria-label="Close darts">
+            <X size={18} />
           </button>
         </header>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_230px]">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_260px]">
           <section aria-label="Darts game">
-            <p className="mb-3 text-xs text-slate-400">
-              Bidik dengan kursor atau panah. Tahan papan (atau Space/Enter) untuk mengisi tenaga, lepas untuk melempar. Tenaga menggeser titik jatuh. Tepat 3 lemparan per ronde.
+            <p className="mb-4 text-xs text-zinc-400 leading-relaxed">
+              Bidik dengan kursor mouse atau tombol panah. Tahan papan (atau Space/Enter) untuk mengisi meteran tenaga, lalu lepas untuk melempar. Tepat 3 lemparan per ronde.
             </p>
 
             <div className="mx-auto w-full max-w-[360px]">
@@ -347,19 +353,19 @@ export default function SkyDartsModal({ isOpen, onClose, playerName = 'raffa', o
               </div>
             </div>
 
-            <div className="mt-4 grid gap-2">
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                <span>Tenaga{charging ? ' · mengisi' : ''}</span>
-                <span className={sweet ? 'text-emerald-300' : 'text-violet-300'}>
-                  {Math.round(power * 100)}%{sweet ? ' · sweet spot' : ''}
+            <div className="mt-5 grid gap-3">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>Tenaga Lemparan{charging ? ' · mengisi...' : ''}</span>
+                <span className={sweet ? 'text-emerald-300 font-bold' : 'text-violet-300 font-semibold'}>
+                  {Math.round(power * 100)}%{sweet ? ' · sweet spot! 🎯' : ''}
                 </span>
               </div>
-              <div className="relative h-3 overflow-hidden rounded-full border border-white/10 bg-slate-900">
-                <div className="absolute inset-y-0 bg-emerald-500/20" style={{ left: `${DART_SWEET_MIN * 100}%`, width: `${(DART_SWEET_MAX - DART_SWEET_MIN) * 100}%` }} />
-                <div className="h-full bg-violet-500" style={{ width: `${power * 100}%` }} />
+              <div className="relative h-3.5 overflow-hidden rounded-full border border-white/10 bg-slate-900 shadow-inner">
+                <div className="absolute inset-y-0 bg-emerald-500/25" style={{ left: `${DART_SWEET_MIN * 100}%`, width: `${(DART_SWEET_MAX - DART_SWEET_MIN) * 100}%` }} />
+                <div className="h-full bg-gradient-to-r from-violet-500 to-emerald-400 transition-[width] duration-75" style={{ width: `${power * 100}%` }} />
               </div>
-              <label className="flex items-center gap-2 text-[10px] text-slate-400">
-                Tenaga (keyboard)
+              <label className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
+                <span className="shrink-0 font-medium">Slider Tenaga:</span>
                 <input
                   type="range"
                   min={0}
@@ -367,34 +373,38 @@ export default function SkyDartsModal({ isOpen, onClose, playerName = 'raffa', o
                   value={Math.round(power * 100)}
                   disabled={charging || roundFull}
                   onChange={(event) => setPowerManually(Number(event.currentTarget.value) / 100)}
-                  className="min-w-0 flex-1 accent-violet-400"
-                  aria-label="Tenaga lemparan"
+                  className="min-w-0 flex-1 accent-violet-400 cursor-pointer"
                 />
               </label>
+            </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                {throws.map((t, index) => (
-                  <div key={index} className="rounded-lg border border-white/5 bg-white/5 p-2 text-[10px]">
-                    {index + 1}: <strong className={t.points > 0 ? 'text-emerald-300' : 'text-rose-300'}>{t.points}</strong> {t.label}
-                  </div>
-                ))}
-                {Array.from({ length: DART_THROWS_PER_ROUND - throws.length }, (_, index) => (
-                  <div key={`pending-${index}`} className="rounded-lg border border-dashed border-white/10 p-2 text-[10px] text-slate-600">
-                    Lemparan {throws.length + index + 1} belum
-                  </div>
-                ))}
-              </div>
+            <div className="mt-4 grid grid-cols-3 gap-2.5">
+              {throws.map((t, index) => (
+                <div key={index} className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-xs text-center">
+                  <span className="text-zinc-400 font-mono text-[10px] block mb-0.5">Lemparan #{index + 1}</span>
+                  <strong className={`text-sm ${t.points > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{t.points}</strong>
+                  <span className="text-[10px] text-zinc-400 block truncate mt-0.5">{t.label}</span>
+                </div>
+              ))}
+              {Array.from({ length: DART_THROWS_PER_ROUND - throws.length }, (_, index) => (
+                <div key={`pending-${index}`} className="rounded-xl border border-dashed border-white/10 p-2.5 text-center text-xs text-zinc-500 flex flex-col items-center justify-center">
+                  <span className="text-[10px] font-mono">Slot #{throws.length + index + 1}</span>
+                  <span className="text-[11px] mt-0.5">Siap Lempar</span>
+                </div>
+              ))}
+            </div>
 
+            <div className="mt-4 flex flex-col gap-3">
               <p className="text-xs text-slate-300">
                 Skor ronde: <strong className="text-emerald-400">{roundScore}</strong> ({boardHits} hit · {misses} miss · {DART_THROWS_PER_ROUND - throws.length} tersisa)
               </p>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 <button
                   type="button"
                   onClick={throwDart}
                   disabled={roundFull || charging}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold text-slate-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 transition"
                 >
                   Lempar dengan tenaga ini
                 </button>
@@ -402,7 +412,7 @@ export default function SkyDartsModal({ isOpen, onClose, playerName = 'raffa', o
                   type="button"
                   onClick={finishRound}
                   disabled={!isDartRoundComplete(throws.length)}
-                  className="flex items-center gap-1.5 rounded-xl bg-violet-500 px-4 py-2 text-xs font-bold text-white hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-xl bg-violet-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-40 transition shadow-sm"
                 >
                   <Play size={13} /> Selesaikan ronde
                 </button>

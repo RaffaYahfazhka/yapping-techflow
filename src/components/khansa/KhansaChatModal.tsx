@@ -65,15 +65,15 @@ const styles = {
   dialogContainer: css`
     position: relative;
     width: 100%;
-    max-width: 1000px;
-    height: 90vh;
-    max-height: 840px;
+    max-width: 1200px;
+    height: 92vh;
+    max-height: 880px;
     display: flex;
     flex-direction: column;
     background: #0c0d12;
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    border-radius: 24px;
-    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(244, 63, 94, 0.35);
+    border-radius: 28px;
+    box-shadow: 0 30px 70px -10px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
     color: #f4f4f5;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -83,7 +83,7 @@ const styles = {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 22px;
+    padding: 18px 28px;
     background: linear-gradient(90deg, #161219 0%, #111218 50%, #161219 100%);
     border-bottom: 1px solid rgba(244, 63, 94, 0.2);
     flex-shrink: 0;
@@ -230,8 +230,8 @@ const styles = {
   ticketBar: css`
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
+    gap: 14px;
+    padding: 12px 28px;
     background: #111218;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     overflow-x: auto;
@@ -248,15 +248,15 @@ const styles = {
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
   `,
 
   ticketPill: (isActive: boolean) => css`
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 5px 12px;
-    border-radius: 10px;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 12px;
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
@@ -277,8 +277,8 @@ const styles = {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 8px 20px;
+    gap: 12px;
+    padding: 10px 28px;
     background: rgba(244, 63, 94, 0.06);
     border-bottom: 1px solid rgba(244, 63, 94, 0.15);
     flex-wrap: wrap;
@@ -319,24 +319,24 @@ const styles = {
   chatStream: css`
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 24px 32px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 22px;
     background: #090a0e;
   `,
 
   messageRow: (isUser: boolean) => css`
     display: flex;
     justify-content: ${isUser ? 'flex-end' : 'flex-start'};
-    gap: 12px;
+    gap: 14px;
     max-width: 100%;
   `,
 
   msgAvatar: css`
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
     overflow: hidden;
     flex-shrink: 0;
     border: 1.5px solid rgba(244, 63, 94, 0.5);
@@ -348,17 +348,17 @@ const styles = {
   `,
 
   bubble: (isUser: boolean) => css`
-    max-width: 82%;
-    padding: 14px 18px;
-    border-radius: ${isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
+    max-width: 80%;
+    padding: 16px 22px;
+    border-radius: ${isUser ? '20px 20px 6px 20px' : '20px 20px 20px 6px'};
     background: ${isUser
       ? 'linear-gradient(135deg, #1e293b, #0f172a)'
       : 'linear-gradient(135deg, #17151e, #111218)'};
     border: 1px solid ${isUser ? 'rgba(56, 189, 248, 0.25)' : 'rgba(244, 63, 94, 0.25)'};
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     color: #f4f4f5;
-    font-size: 13.5px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.65;
     word-break: break-word;
   `,
 
@@ -514,26 +514,26 @@ const styles = {
 
   // Input Area
   inputContainer: css`
-    padding: 14px 20px;
+    padding: 16px 28px;
     background: #111218;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
-    gap: 12px;
+    gap: 14px;
     align-items: flex-end;
     flex-shrink: 0;
   `,
 
   inputField: css`
     flex: 1;
-    min-height: 44px;
-    max-height: 120px;
-    padding: 12px 14px;
+    min-height: 48px;
+    max-height: 140px;
+    padding: 14px 16px;
     background: #161720;
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
+    border-radius: 16px;
     color: #ffffff;
-    font-size: 13.5px;
-    line-height: 1.4;
+    font-size: 14px;
+    line-height: 1.45;
     resize: none;
     outline: none;
     font-family: inherit;
@@ -548,9 +548,9 @@ const styles = {
   `,
 
   sendBtn: (disabled: boolean) => css`
-    height: 44px;
-    padding: 0 20px;
-    border-radius: 12px;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 14px;
     background: ${disabled
       ? 'rgba(255, 255, 255, 0.08)'
       : 'linear-gradient(135deg, #f43f5e, #be123c)'};

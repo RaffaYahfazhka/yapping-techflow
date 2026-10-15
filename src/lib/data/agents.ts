@@ -20,7 +20,7 @@ export const AGENTS = [
     skills: ['Executive Command', 'Subordinate Delegation', 'Jira Triage', 'Sprint Orchestration', 'Royal Companion'],
     stats: { tasksDone: 156, precision: '100%', streak: '28 Hari' },
     look: { skin: '#f5cbb7', hair: '#271710', shirt: '#e11d48', pants: '#3f3f46', hairStyle: 'long', accessory: 'tiara' },
-    desk: { x: -8, z: -6.5, rot: 0 },
+    desk: { x: -11.0, z: -6.5, rot: 0 },
     screens: ['kanban', 'doc'],
   },
   {
@@ -39,7 +39,7 @@ export const AGENTS = [
     skills: ['Codebase Mapping', 'ADR', 'Dependency Graph', 'Task Breakdown', 'AST Analysis'],
     stats: { tasksDone: 215, precision: '99.5%', streak: '21 Hari' },
     look: { skin: '#c98e6b', hair: '#1c1917', shirt: '#0ea5e9', pants: '#27272a', hairStyle: 'short', accessory: 'glasses' },
-    desk: { x: -2.5, z: -6.5, rot: 0 },
+    desk: { x: -3.0, z: -5.0, rot: 0 },
     screens: ['tree', 'code'],
   },
   {
@@ -58,7 +58,7 @@ export const AGENTS = [
     skills: ['Figma API', 'Tailwind CSS', 'React / Next.js', 'Design Tokens', 'Framer Motion'],
     stats: { tasksDone: 340, precision: '99.9%', streak: '30 Hari' },
     look: { skin: '#d9a383', hair: '#111113', shirt: '#7c3aed', pants: '#1f2937', hairStyle: 'spiky', accessory: 'headphones' },
-    desk: { x: 3, z: -6.5, rot: 0 },
+    desk: { x: 2.5, z: -5.0, rot: 0 },
     screens: ['figma', 'code'],
   },
   {
@@ -77,7 +77,7 @@ export const AGENTS = [
     skills: ['PostgreSQL', 'Prisma ORM', 'REST & gRPC', 'Idempotency', 'Redis Caching'],
     stats: { tasksDone: 189, precision: '99.7%', streak: '18 Hari' },
     look: { skin: '#b97f5a', hair: '#0c0a09', shirt: '#059669', pants: '#292524', hairStyle: 'buzz', accessory: 'beanie' },
-    desk: { x: -8, z: 6.5, rot: Math.PI },
+    desk: { x: -4.0, z: 4.5, rot: Math.PI },
     screens: ['sql', 'code'],
   },
   {
@@ -96,7 +96,7 @@ export const AGENTS = [
     skills: ['Vitest', 'Playwright', 'Pixel-Diff Engine', 'Oxlint / ESLint', 'Regression Testing'],
     stats: { tasksDone: 412, precision: '100%', streak: '45 Hari' },
     look: { skin: '#cbb49e', hair: '#1e293b', shirt: '#06b6d4', pants: '#0f172a', hairStyle: 'taper-fade', accessory: 'smart-glasses' },
-    desk: { x: -2.5, z: 6.5, rot: Math.PI },
+    desk: { x: 0.0, z: 4.5, rot: Math.PI },
     screens: ['diff', 'tests'],
   },
   {
@@ -115,7 +115,7 @@ export const AGENTS = [
     skills: ['Docker / K8s', 'Git Flow & CI/CD', 'GitLab / GitHub Actions', 'Jira Webhooks', 'Rollback Recovery'],
     stats: { tasksDone: 298, precision: '99.9%', streak: '25 Hari' },
     look: { skin: '#cf9b78', hair: '#292524', shirt: '#0891b2', pants: '#18181b', hairStyle: 'curly', accessory: 'headset' },
-    desk: { x: 3, z: 6.5, rot: Math.PI },
+    desk: { x: 4.0, z: 4.5, rot: Math.PI },
     screens: ['pipeline', 'code'],
   },
   {
@@ -135,7 +135,7 @@ export const AGENTS = [
     skills: ['Meteora DLMM', 'Solana', 'JIT Liquidity', 'Impermanent Loss', 'DeFi Analytics'],
     stats: { tasksDone: 0, precision: '—', streak: '—' },
     look: { skin: '#d9a383', hair: '#18181b', shirt: '#10b981', pants: '#1e293b', hairStyle: 'messy-crop', accessory: 'smartwatch' },
-    desk: { x: 13.5, z: -6.5, rot: 0 },
+    desk: { x: 13.8, z: -6.0, rot: 0 },
     screens: ['pipeline', 'code'],
   },
   {
@@ -155,7 +155,7 @@ export const AGENTS = [
     skills: ['Polymarket CLOB', 'Bayesian Analysis', 'Delta-Neutral', 'Paper Ledger', 'Risk Guardrails'],
     stats: { tasksDone: 0, precision: '—', streak: '—' },
     look: { skin: '#b97f5a', hair: '#0f172a', shirt: '#8b5cf6', pants: '#0f172a', hairStyle: 'undercut', accessory: 'headphones' },
-    desk: { x: 13.5, z: 0, rot: 0 },
+    desk: { x: 13.8, z: 0.0, rot: 0 },
     screens: ['pipeline', 'code'],
   },
   {
@@ -175,7 +175,7 @@ export const AGENTS = [
     skills: ['XAUUSD M5', 'EMA / ATR Signals', 'Exness Demo API', 'Paper Positions', 'Daily Loss Stop'],
     stats: { tasksDone: 0, precision: '—', streak: '—' },
     look: { skin: '#c98e6b', hair: '#172554', shirt: '#f59e0b', pants: '#1e293b', hairStyle: 'slick-part', accessory: 'glasses' },
-    desk: { x: 13.5, z: 6.5, rot: Math.PI },
+    desk: { x: 13.8, z: 6.0, rot: Math.PI },
     screens: ['pipeline', 'code'],
   },
 ];
@@ -194,7 +194,7 @@ export const BOSS = {
   bio: 'Pendiri & Komandan Utama Kantor Raffa. Mengarahkan visi autonomous engineering, mendelegasikan Jira backlog ke tim AI, dan memantau mission control real-time.',
   skills: ['Vision & Leadership', 'Autonomous AI Orchestration', 'Sprint Delegation', 'Code Review'],
   look: { skin: '#d6a07c', hair: '#0a0a0a', shirt: '#18181b', pants: '#27272a', hairStyle: 'short', accessory: 'crown', accent: '#10b981' },
-  spawn: { x: -2.5, z: 2.6 },
+  spawn: { x: -8.0, z: -3.5 },
 };
 
 export const AGENT_MAP = Object.fromEntries(AGENTS.map((a) => [a.id, a]));

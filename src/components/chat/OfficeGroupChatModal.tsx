@@ -89,21 +89,21 @@ export default function OfficeGroupChatModal({ isOpen, onClose, events, onSendUs
 
   return (
     <div
-      className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"
+      className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-black/70 p-4 md:p-6 backdrop-blur-md"
       role="dialog"
       aria-label="Warung Kopi TechFlow"
     >
-      <div className="flex h-[75vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0b0c11]/95 shadow-[0_24px_64px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+      <div className="flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/[0.12] bg-[#0c0d12]/95 shadow-[0_30px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/[0.03] via-transparent to-amber-500/[0.03] px-5 py-3.5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10">
-              <Hash size={14} className="text-emerald-400" />
+        <header className="flex items-center justify-between border-b border-white/[0.08] bg-gradient-to-r from-emerald-500/[0.04] via-transparent to-amber-500/[0.04] px-6 sm:px-8 py-5">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10">
+              <Hash size={19} className="text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-[13px] font-bold text-white tracking-tight">Warung Kopi TechFlow</h2>
-              <p className="flex items-center gap-1.5 text-[10px] text-zinc-500">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.5)]" />
+              <h2 className="text-base font-bold text-white tracking-wide">Warung Kopi TechFlow</h2>
+              <p className="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
                 {onlineCount} karyawan online
               </p>
             </div>
@@ -111,22 +111,22 @@ export default function OfficeGroupChatModal({ isOpen, onClose, events, onSendUs
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-1.5 text-zinc-500 hover:bg-white/10 hover:text-zinc-300 transition-colors"
+            className="rounded-xl p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
             aria-label="Tutup chat"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </header>
 
         {/* Message Feed */}
-        <div className="flex-1 space-y-1.5 overflow-y-auto px-4 py-3 scrollbar-thin">
+        <div className="flex-1 space-y-3.5 overflow-y-auto px-6 sm:px-8 py-5 scrollbar-thin">
           {sorted.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                <Coffee size={24} className="text-zinc-600" />
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                <Coffee size={28} className="text-zinc-500" />
               </div>
-              <p className="text-xs font-medium text-zinc-500">Belum ada aktivitas kantor.</p>
-              <p className="mt-1 text-[10px] text-zinc-600">Traktir kopi atau kirim pesan untuk memulai.</p>
+              <p className="text-sm font-medium text-zinc-400">Belum ada aktivitas kantor.</p>
+              <p className="mt-1 text-xs text-zinc-500">Traktir kopi atau kirim pesan untuk memulai percakapan.</p>
             </div>
           )}
           {sorted.map((ev) => {
@@ -139,26 +139,26 @@ export default function OfficeGroupChatModal({ isOpen, onClose, events, onSendUs
             return (
               <div
                 key={ev.id}
-                className={`group rounded-xl border border-white/[0.04] px-3.5 py-2.5 transition-colors hover:border-white/[0.08] ${KIND_BG[ev.kind] ?? 'bg-white/[0.02]'} ${isTreat ? 'border-amber-500/20' : ''}`}
+                className={`group rounded-2xl border border-white/[0.06] px-4.5 py-3.5 transition-all hover:border-white/[0.12] ${KIND_BG[ev.kind] ?? 'bg-white/[0.02]'} ${isTreat ? 'border-amber-500/25' : ''}`}
               >
-                <div className="mb-1 flex items-center gap-2">
+                <div className="mb-1.5 flex items-center gap-2.5">
                   {/* Avatar circle */}
                   <div
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white shadow-sm"
                     style={{ background: color }}
                   >
                     {name.charAt(0)}
                   </div>
-                  <span className="text-[11px] font-bold" style={{ color }}>
+                  <span className="text-xs font-bold" style={{ color }}>
                     {name}
                   </span>
-                  {isBoss && <span className="text-[9px]">👑</span>}
-                  {isTreat && <span className="text-[9px]">🎉</span>}
-                  <span className="ml-auto text-[9px] font-mono text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {isBoss && <span className="text-[10px]">👑</span>}
+                  {isTreat && <span className="text-[10px]">🎉</span>}
+                  <span className="ml-auto text-[10px] font-mono text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
                     {new Date(ev.at).toLocaleTimeString('id-ID', { hour12: false })}
                   </span>
                 </div>
-                <p className="text-[11px] leading-relaxed text-zinc-300 pl-7">{ev.text}</p>
+                <p className="text-xs leading-relaxed text-zinc-200 pl-8.5">{ev.text}</p>
               </div>
             );
           })}
@@ -166,40 +166,40 @@ export default function OfficeGroupChatModal({ isOpen, onClose, events, onSendUs
         </div>
 
         {/* Input Bar */}
-        <form onSubmit={submit} className="flex items-center gap-2 border-t border-white/[0.08] bg-white/[0.01] px-4 py-3">
+        <form onSubmit={submit} className="flex items-center gap-3.5 border-t border-white/[0.08] bg-white/[0.015] px-6 sm:px-8 py-4.5">
           <input
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Tulis sesuatu di warung kopi…"
-            className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-xs text-slate-200 placeholder:text-zinc-600 focus:border-emerald-400/40 focus:bg-white/[0.04] focus:outline-none transition-colors"
+            className="flex-1 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-4.5 py-3 text-xs md:text-sm text-slate-200 placeholder:text-zinc-500 focus:border-emerald-400/50 focus:bg-white/[0.06] focus:outline-none transition-colors"
             aria-label="Pesan"
           />
           <button
             type="button"
             onClick={onTreat}
             title="Traktir kopi sekantor"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-400/25 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 hover:border-amber-400/40 transition-all hover:shadow-[0_0_12px_rgba(251,191,36,0.1)]"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/25 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 hover:border-amber-400/40 transition-all hover:shadow-[0_0_12px_rgba(251,191,36,0.15)] shrink-0"
             aria-label="Traktir kopi"
           >
-            <Coffee size={14} />
+            <Coffee size={18} />
           </button>
           <button
             type="button"
             onClick={onDelegate}
             title="Delegasi tugas lewat Khansaku"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-400/10 text-violet-300 hover:bg-violet-400/20 hover:border-violet-400/40 transition-all hover:shadow-[0_0_12px_rgba(167,139,250,0.1)]"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/25 bg-violet-400/10 text-violet-300 hover:bg-violet-400/20 hover:border-violet-400/40 transition-all hover:shadow-[0_0_12px_rgba(167,139,250,0.15)] shrink-0"
             aria-label="Delegasi"
           >
-            <Users size={14} />
+            <Users size={18} />
           </button>
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-emerald-950 hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:shadow-[0_0_16px_rgba(52,211,153,0.2)]"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-emerald-950 hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:shadow-[0_0_16px_rgba(52,211,153,0.25)] shrink-0 font-bold"
             aria-label="Kirim"
           >
-            <Send size={14} />
+            <Send size={18} />
           </button>
         </form>
       </div>

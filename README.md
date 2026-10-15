@@ -1,7 +1,7 @@
-# Kantor Raffa — Interactive 3D AI Office & Mission Control
+# Yapping Techflow — Interactive 3D AI Penthouse & Mission Control
 
 ## Ringkasan Proyek
-- **Nama:** Kantor Raffa (`kantor-raffa`), kantor virtual 3D untuk melihat tim AI spesialis.
+- **Nama:** Yapping Techflow, kantor virtual 3D untuk melihat tim AI spesialis.
 - **Manfaat:** Memantau peran karyawan dan alur kerja dari satu tampilan.
 - **Kegunaan saat ini:** Demo interaktif alur Jira/Figma. Tahap engineering pada pipeline adalah simulasi; endpoint workspace dapat memeriksa repositori lokal dan menjalankan perintah Git tertentu.
 - **Tujuan:** Menambah bot karyawan untuk pekerjaan spesialis, termasuk otomasi bisnis.
