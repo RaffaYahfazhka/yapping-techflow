@@ -77,7 +77,7 @@ export default function Navbar({
   return (
     <header
       id="hud-header"
-      className={`fixed top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-40 max-w-[1920px] mx-auto flex items-center justify-between gap-2 sm:gap-4 md:gap-6 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-2xl md:rounded-3xl bg-[#0a0a0e]/95 backdrop-blur-2xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.7)] font-sans select-none overflow-visible ${className}`}
+      className={`fixed top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-40 max-w-[1920px] mx-auto flex items-center justify-between gap-3 sm:gap-5 md:gap-6 xl:gap-8 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-2xl md:rounded-3xl bg-[#0a0a0e]/95 backdrop-blur-2xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.7)] font-sans select-none overflow-visible ${className}`}
     >
       {/* Brand Logo & Title */}
       <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 min-w-0">
@@ -116,15 +116,15 @@ export default function Navbar({
       </div>
 
       {/* Right Desktop Actions - Clean Spacing & Adaptive Responsiveness */}
-      <div className="hidden md:flex items-center gap-1.5 lg:gap-2.5 shrink-0">
+      <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
         {/* Cluster 1: Penthouse Quick Toggles (Minimap & Group Chat) */}
-        <div className="flex items-center gap-1 lg:gap-1.5 p-1 px-1.5 rounded-2xl bg-white/[0.04] border border-white/10 shadow-sm shrink-0">
+        <div className="flex items-center gap-1 lg:gap-1.5 p-1.5 px-2 rounded-2xl bg-white/[0.04] border border-white/10 shadow-sm shrink-0">
           {onOpenMinimap && (
             <button
               type="button"
               onClick={onOpenMinimap}
               title="Radar Minimap Penthouse (Shortcut: M)"
-              className="inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:shadow-[0_4px_16px_rgba(52,211,153,0.2)] active:scale-95 transition-all whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 hover:shadow-[0_4px_16px_rgba(52,211,153,0.2)] active:scale-95 transition-all whitespace-nowrap"
             >
               <Compass size={14} />
               <span className="hidden lg:inline">Radar</span>
@@ -136,7 +136,7 @@ export default function Navbar({
               type="button"
               onClick={onOpenOfficeChat}
               title="Warung Kopi TechFlow / WAG Kantor (Shortcut: N)"
-              className="inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_4px_16px_rgba(251,191,36,0.2)] active:scale-95 transition-all whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_4px_16px_rgba(251,191,36,0.2)] active:scale-95 transition-all whitespace-nowrap"
             >
               <Coffee size={14} />
               <span className="hidden lg:inline">Warung Kopi</span>
@@ -144,10 +144,10 @@ export default function Navbar({
           )}
         </div>
 
-        <div className="w-px h-4 bg-white/15 mx-0.5 shrink-0" aria-hidden="true" />
+        <div className="w-px h-5 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
 
         {/* Cluster 2: Executive & Squad Operations with Responsive Text */}
-        <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
+        <div className="flex items-center gap-2 lg:gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onOpenMissionControl}
@@ -191,10 +191,10 @@ export default function Navbar({
           </button>
         </div>
 
-        <div className="w-px h-4 bg-white/15 mx-0.5 shrink-0" aria-hidden="true" />
+        <div className="w-px h-5 bg-white/15 mx-1 shrink-0" aria-hidden="true" />
 
         {/* Cluster 3: Utilities & Theme */}
-        <div className="flex items-center gap-1 p-1 px-1.5 rounded-2xl bg-white/[0.03] border border-white/10 shadow-sm shrink-0">
+        <div className="flex items-center gap-1 p-1.5 px-2 rounded-2xl bg-white/[0.03] border border-white/10 shadow-sm shrink-0">
           {onOpenFigma && (
             <button
               type="button"

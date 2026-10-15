@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CAMERA_OFFSET, CAMERA_YAW, ROOM, PLAYER, PALETTE } from './constants';
 import { screenToWorld, facingFromDirection, dampAngle } from './movement';
-import { resolveMovement } from './collision';
+import { resolveMovement, isColliding } from './collision';
 import { AGENTS, BOSS } from '../data/agents';
 import { wibMinutesNow, phaseFromMinutes, skyPaletteFor } from './skyEngine';
 
@@ -62,7 +62,9 @@ export class OfficeScene {
 
     // Khansa Companion (Permaisuri & Corporate Secretary)
     this.khansa = null;
-    this.khansaPos = new THREE.Vector3(BOSS.spawn.x + 1.25, 0, BOSS.spawn.z + 0.6);
+    this.khansaPos = new THREE.Vector3(BOSS.spawn.x + 2.2, 0, BOSS.spawn.z + 1.1);
+    this.bossTagSprite = null;
+    this.khansaTagSprite = null;
     this.khansaFacing = 0;
     this.khansaTargetFacing = 0;
     this.khansaIsMoving = false;
@@ -1084,7 +1086,7 @@ export class OfficeScene {
     texture.minFilter = THREE.LinearFilter;
     const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
     const sprite = new THREE.Sprite(spriteMat);
-    sprite.scale.set(2.4, 0.75, 1);
+    sprite.scale.set(2.4, 0.52, 1);
 
     return { sprite, canvas, ctx, texture };
   }
@@ -1093,68 +1095,107 @@ export class OfficeScene {
     ctx.clearRect(0, 0, 512, 160);
 
     const hasBubble = Boolean(bubbleText);
+    const strokeColor = statusColor || agent.color;
 
-    // Pill background
-    ctx.fillStyle = hasBubble ? 'rgba(15, 17, 26, 0.96)' : 'rgba(9, 10, 15, 0.9)';
-    ctx.beginPath();
-    ctx.roundRect(8, 8, 496, 144, 22);
-    ctx.fill();
-
-    // Border with agent color or highlight
-    ctx.strokeStyle = hasBubble ? '#38bdf8' : (statusColor || agent.color);
-    ctx.lineWidth = hasBubble ? 4 : 3;
-    ctx.stroke();
-
-    // Role circle indicator
-    ctx.fillStyle = statusColor || agent.color;
-    ctx.beginPath();
-    ctx.arc(42, 46, 15, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Name & Role
-    ctx.fillStyle = '#f4f4f5';
-    ctx.font = 'bold 26px "Inter", sans-serif';
-    ctx.fillText(agent.name, 68, 42);
-
-    ctx.fillStyle = '#a1a1aa';
-    ctx.font = '500 16px "Inter", sans-serif';
-    ctx.fillText(agent.role, 68, 66);
-
-    // Status pill on right
-    ctx.fillStyle = statusColor || agent.color;
-    ctx.font = 'bold 16px "JetBrains Mono", monospace';
-    const dispStatus = (statusText || 'WORKING').toUpperCase();
-    const statusW = ctx.measureText(dispStatus).width;
-    ctx.fillText(dispStatus, 488 - statusW, 46);
-
-    // Speech bubble section
     if (hasBubble) {
+      // Full card with speech bubble
+      ctx.fillStyle = 'rgba(10, 12, 18, 0.94)';
+      ctx.beginPath();
+      ctx.roundRect(10, 10, 492, 140, 20);
+      ctx.fill();
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      // Role avatar circle
+      ctx.fillStyle = strokeColor;
+      ctx.beginPath();
+      ctx.arc(46, 44, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Agent Name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 26px "Inter", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(agent.name, 74, 42);
+
+      // Agent Role
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 16px "Inter", sans-serif';
+      ctx.fillText(agent.role, 74, 66);
+
+      // Status Pill with dedicated rounded pill background
+      const dispStatus = (statusText || 'WORKING').toUpperCase();
+      ctx.font = 'bold 15px "JetBrains Mono", monospace';
+      const statusW = ctx.measureText(dispStatus).width;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.roundRect(470 - statusW - 14, 24, statusW + 28, 28, 8);
+      ctx.fill();
+      ctx.fillStyle = strokeColor;
+      ctx.fillText(dispStatus, 470 - statusW, 43);
+
       // Separator line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(18, 80);
-      ctx.lineTo(494, 80);
+      ctx.moveTo(20, 80);
+      ctx.lineTo(492, 80);
       ctx.stroke();
 
       // Speech balloon background
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
       ctx.beginPath();
-      ctx.roundRect(16, 90, 480, 52, 12);
+      ctx.roundRect(18, 90, 476, 50, 12);
       ctx.fill();
 
       // Emoji and Speech Text
       const emojiStr = bubbleEmoji || '💬';
       ctx.font = '22px "Inter", sans-serif';
-      ctx.fillText(emojiStr, 28, 124);
+      ctx.fillText(emojiStr, 30, 123);
 
       ctx.fillStyle = '#38bdf8';
       ctx.font = '600 16px "Inter", sans-serif';
       let snippet = String(bubbleText);
-      if (snippet.length > 40) {
-        snippet = snippet.substring(0, 38) + '...';
-      }
-      ctx.fillText(`"${snippet}"`, 64, 122);
+      if (snippet.length > 40) snippet = snippet.substring(0, 38) + '...';
+      ctx.fillText(`"${snippet}"`, 68, 122);
+    } else {
+      // Compact Nameplate (no speech bubble) — perfectly proportioned without empty space!
+      ctx.fillStyle = 'rgba(10, 12, 18, 0.92)';
+      ctx.beginPath();
+      ctx.roundRect(10, 10, 492, 90, 20);
+      ctx.fill();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Role avatar circle
+      ctx.fillStyle = strokeColor;
+      ctx.beginPath();
+      ctx.arc(48, 55, 17, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Agent Name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px "Inter", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(agent.name, 80, 50);
+
+      // Agent Role
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 17px "Inter", sans-serif';
+      ctx.fillText(agent.role, 80, 78);
+
+      // Status Pill with dedicated rounded background
+      const dispStatus = (statusText || 'WORKING').toUpperCase();
+      ctx.font = 'bold 15px "JetBrains Mono", monospace';
+      const statusW = ctx.measureText(dispStatus).width;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.roundRect(470 - statusW - 14, 34, statusW + 28, 32, 10);
+      ctx.fill();
+      ctx.fillStyle = strokeColor;
+      ctx.fillText(dispStatus, 470 - statusW, 56);
     }
   }
 
@@ -1295,23 +1336,27 @@ export class OfficeScene {
 
     // Floating "Raffa (Boss)" nameplate
     const tagCanvas = document.createElement('canvas');
-    tagCanvas.width = 256;
-    tagCanvas.height = 64;
+    tagCanvas.width = 384;
+    tagCanvas.height = 80;
     const tagCtx = tagCanvas.getContext('2d');
-    tagCtx.fillStyle = 'rgba(16, 185, 129, 0.9)';
+    tagCtx.fillStyle = 'rgba(10, 15, 20, 0.94)';
     tagCtx.beginPath();
-    tagCtx.roundRect(8, 8, 240, 48, 12);
+    tagCtx.roundRect(8, 8, 368, 64, 18);
     tagCtx.fill();
-    tagCtx.fillStyle = '#09090b';
+    tagCtx.strokeStyle = '#10b981';
+    tagCtx.lineWidth = 3;
+    tagCtx.stroke();
+    tagCtx.fillStyle = '#34d399';
     tagCtx.font = 'bold 24px "Inter", sans-serif';
     tagCtx.textAlign = 'center';
-    tagCtx.fillText('👑 RAFFA (BOSS)', 128, 40);
+    tagCtx.fillText('👑 RAFFA (BOSS)', 192, 48);
 
     const tagTex = new THREE.CanvasTexture(tagCanvas);
     const tagSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tagTex, transparent: true }));
-    tagSprite.scale.set(1.5, 0.4, 1);
-    tagSprite.position.y = 2.0;
+    tagSprite.scale.set(1.9, 0.45, 1);
+    tagSprite.position.y = 2.3;
     group.add(tagSprite);
+    this.bossTagSprite = tagSprite;
 
     this.scene.add(group);
     this.player = group;
@@ -1405,26 +1450,27 @@ export class OfficeScene {
 
     // Floating Royal Nameplate & Dynamic Status
     const tagCanvas = document.createElement('canvas');
-    tagCanvas.width = 384;
-    tagCanvas.height = 72;
+    tagCanvas.width = 440;
+    tagCanvas.height = 80;
     const tagCtx = tagCanvas.getContext('2d');
-    const grad = tagCtx.createLinearGradient(0, 0, 384, 0);
-    grad.addColorStop(0, 'rgba(244, 63, 94, 0.95)');
-    grad.addColorStop(1, 'rgba(251, 191, 36, 0.95)');
-    tagCtx.fillStyle = grad;
+    tagCtx.fillStyle = 'rgba(18, 10, 15, 0.94)';
     tagCtx.beginPath();
-    tagCtx.roundRect(8, 8, 368, 56, 14);
+    tagCtx.roundRect(8, 8, 424, 64, 18);
     tagCtx.fill();
-    tagCtx.fillStyle = '#ffffff';
-    tagCtx.font = 'bold 21px "Inter", sans-serif';
+    tagCtx.strokeStyle = '#f43f5e';
+    tagCtx.lineWidth = 3;
+    tagCtx.stroke();
+    tagCtx.fillStyle = '#fb7185';
+    tagCtx.font = 'bold 22px "Inter", sans-serif';
     tagCtx.textAlign = 'center';
-    tagCtx.fillText('💖 KHANSA (PERMAISURI)', 192, 43);
+    tagCtx.fillText('💖 KHANSAKU (PERMAISURI)', 220, 48);
 
     const tagTex = new THREE.CanvasTexture(tagCanvas);
     const tagSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tagTex, transparent: true }));
-    tagSprite.scale.set(1.9, 0.42, 1);
-    tagSprite.position.y = 2.15;
+    tagSprite.scale.set(2.1, 0.45, 1);
+    tagSprite.position.y = 2.3;
     group.add(tagSprite);
+    this.khansaTagSprite = tagSprite;
 
     // Click hitbox around Khansa (allows direct click on Khansa in 3D)
     const hitBox = new THREE.Mesh(
@@ -1995,9 +2041,9 @@ export class OfficeScene {
   updateKhansa(dt, elapsed) {
     if (!this.khansa || !this.player) return;
 
-    // Khansa accompanies Boss Raffa: stays close by his side (right) and slightly behind
-    const offsetSide = 1.35;
-    const offsetBack = 0.65;
+    // Khansa accompanies Boss Raffa: generous 2.0-2.4 units separation
+    const offsetSide = 2.1;
+    const offsetBack = 0.9;
     const cosF = Math.cos(this.playerFacing);
     const sinF = Math.sin(this.playerFacing);
 
@@ -2011,7 +2057,7 @@ export class OfficeScene {
     const distToRaffa = Math.hypot(this.playerPos.x - this.khansaPos.x, this.playerPos.z - this.khansaPos.z);
 
     // If far away or catching up to Raffa
-    const needsToMove = distToTarget > 0.38 || distToRaffa > 1.85;
+    const needsToMove = distToTarget > 0.45 || distToRaffa > 2.8;
 
     if (needsToMove) {
       this.khansaIsMoving = true;
@@ -2122,25 +2168,37 @@ export class OfficeScene {
   /**
    * Sync social states and active speech bubbles from the social engine
    */
+  /**
+   * Choose a standing slot for a social agent that keeps at least MIN_SEP world
+   * units from every other agent's target. Candidates spiral outward from the zone
+   * centre; the first candidate that is clear of other agents and of collision
+   * obstacles wins. Deterministic: the same agent order yields the same layout.
+   */
+  pickSeparatedSlot(agentId, zone, item) {
+    const MIN_SEP = 1.9;
+    const centre = zone === 'pantry' ? { x: 8.5, z: 7.4 } : { x: -6.0, z: 19.4 };
+    const others = [];
+    this.agentMeshes.forEach((other, otherId) => {
+      if (otherId === agentId || otherId === 'tara') return;
+      if (other.targetPos) others.push(other.targetPos);
+    });
+    for (let ring = 0; ring < 6; ring++) {
+      const radius = ring * MIN_SEP * 0.5;
+      const steps = ring === 0 ? 1 : 6 + ring * 2;
+      for (let k = 0; k < steps; k++) {
+        const ang = (k / steps) * Math.PI * 2 + ring * 0.37;
+        const x = centre.x + Math.cos(ang) * radius;
+        const z = centre.z + Math.sin(ang) * radius;
+        const clear = others.every((p) => Math.hypot(p.x - x, p.z - z) >= MIN_SEP);
+        if (clear && !isColliding(x, z, 0.4)) return { x, z };
+      }
+    }
+    return { x: centre.x, z: centre.z };
+  }
+
   setEmployeeSocial(states, bubbles) {
     if (!states) return;
     const now = Date.now();
-    const PANTRY_SPOTS = [
-      { x: 8.2, z: 7.4 },
-      { x: 8.8, z: 7.4 },
-      { x: 7.6, z: 7.8 },
-      { x: 9.4, z: 7.8 },
-      { x: 8.5, z: 6.8 },
-    ];
-    const TERRACE_SPOTS = [
-      { x: -7.5, z: 18.2 },
-      { x: -5.5, z: 18.2 },
-      { x: -4.0, z: 19.5 },
-      { x: -8.5, z: 19.8 },
-      { x: -6.0, z: 20.5 },
-    ];
-
-    let subordinateIdx = 0;
     this.agentMeshes.forEach((item, id) => {
       if (id === 'tara') return;
       const state = states[id] || 'working';
@@ -2157,19 +2215,17 @@ export class OfficeScene {
         item.targetPos.copy(item.chairPos);
         item.targetFacing = item.deskRot;
       } else if (state === 'pantry' || state === 'walking-pantry') {
-        const spot = PANTRY_SPOTS[subordinateIdx % PANTRY_SPOTS.length];
+        const spot = this.pickSeparatedSlot(id, 'pantry', item);
         item.targetPos.set(spot.x, 0, spot.z);
         item.targetFacing = 0; // face south toward lounge/office
       } else if (state === 'terrace' || state === 'walking-terrace') {
-        const spot = TERRACE_SPOTS[subordinateIdx % TERRACE_SPOTS.length];
+        const spot = this.pickSeparatedSlot(id, 'terrace', item);
         item.targetPos.set(spot.x, 0, spot.z);
         item.targetFacing = 0; // face scenic south skyline
       } else if (state === 'chatting') {
         // Face peers in either pantry or terrace
         const isTerrace = item.currentPos.z > 14;
-        const spot = isTerrace
-          ? TERRACE_SPOTS[subordinateIdx % TERRACE_SPOTS.length]
-          : PANTRY_SPOTS[subordinateIdx % PANTRY_SPOTS.length];
+        const spot = this.pickSeparatedSlot(id, isTerrace ? 'terrace' : 'pantry', item);
         item.targetPos.set(spot.x, 0, spot.z);
         item.targetFacing = (subordinateIdx % 2 === 0) ? Math.PI * 0.25 : -Math.PI * 0.75;
       } else if (state === 'shelter') {
@@ -2177,7 +2233,14 @@ export class OfficeScene {
         item.targetFacing = item.deskRot;
       }
 
-      // If status or speech bubble changed, redraw the badge canvas
+      // If status or speech bubble changed, update badge scale and redraw
+      if (item.badgeSprite) {
+        if (activeBubble) {
+          item.badgeSprite.scale.set(2.5, 0.82, 1);
+        } else {
+          item.badgeSprite.scale.set(2.4, 0.52, 1);
+        }
+      }
       if (prevStatus !== state || prevBubbleText !== activeBubble?.text) {
         let statusLabel = state.toUpperCase();
         let statusColor = item.agent.color;
@@ -2209,7 +2272,6 @@ export class OfficeScene {
         item.texture.needsUpdate = true;
       }
 
-      subordinateIdx++;
     });
   }
 
@@ -2298,6 +2360,71 @@ export class OfficeScene {
         item.badgeSprite.position.y = 2.3 + Math.sin(elapsed * 2.5 + typingOffset) * 0.06;
       }
     });
+    this.stackBadgesInScreenSpace();
+  }
+
+  /**
+   * 2D label collision avoidance: badges whose projected screen rects overlap are
+   * pushed apart vertically with a clear pixel gap, so status cards never stack on
+   * top of each other. Runs in screen space using the live orthographic projection.
+   */
+  stackBadgesInScreenSpace() {
+    if (!this.camera || !this.container) return;
+    const width = this.container.clientWidth || window.innerWidth;
+    const height = this.container.clientHeight || window.innerHeight;
+    const frustumH = this.camera.top - this.camera.bottom;
+    const pxPerWorldY = (height / frustumH) * this.camera.zoom;
+    const minSepPx = 42; // Vertical minimum pixel separation
+    const minSepX = 145; // Horizontal proximity window in screen pixels
+
+    const items = [];
+    const worldPos = new THREE.Vector3();
+
+    const addSprite = (sprite, baseLocalY) => {
+      if (!sprite || !sprite.visible) return;
+      sprite.getWorldPosition(worldPos);
+      const p = worldPos.clone().project(this.camera);
+      const sx = (p.x * 0.5 + 0.5) * width;
+      const sy = (-p.y * 0.5 + 0.5) * height;
+      items.push({ sprite, sx, sy, baseLocalY });
+    };
+
+    this.agentMeshes.forEach((item) => {
+      if (item.badgeSprite) {
+        addSprite(item.badgeSprite, item.bubble ? 2.5 : 2.15);
+      }
+    });
+
+    if (this.bossTagSprite) {
+      addSprite(this.bossTagSprite, 2.3);
+    }
+    if (this.khansaTagSprite) {
+      addSprite(this.khansaTagSprite, 2.3);
+    }
+
+    // Sort top to bottom in screen Y
+    items.sort((a, b) => a.sy - b.sy);
+
+    for (let i = 0; i < items.length; i++) {
+      const a = items[i];
+      let offsetAccum = 0;
+      for (let j = 0; j < i; j++) {
+        const b = items[j];
+        if (Math.abs(a.sx - b.sx) < minSepX) {
+          const dy = a.sy - b.sy;
+          if (dy < minSepPx) {
+            const push = minSepPx - dy;
+            offsetAccum += push;
+            a.sy += push;
+          }
+        }
+      }
+      if (offsetAccum > 0) {
+        a.sprite.position.y = a.baseLocalY + (offsetAccum / pxPerWorldY);
+      } else {
+        a.sprite.position.y = a.baseLocalY;
+      }
+    }
   }
 
   updateHolotable(elapsed) {

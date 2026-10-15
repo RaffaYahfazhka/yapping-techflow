@@ -58,7 +58,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/70 backdrop-blur-md transition-opacity duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 lg:p-8 bg-black/70 backdrop-blur-md transition-opacity duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -75,7 +75,7 @@ export default function Modal({
         {/* Header */}
         {(title || icon || subtitle) && (
           <div className="flex items-center justify-between px-6 py-4.5 md:px-8 md:py-5 border-b border-white/10 bg-white/[0.02] shrink-0">
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-4">
               {icon && <div className="text-emerald-400 shrink-0 text-lg">{icon}</div>}
               <div>
                 {title && <h2 className="text-base font-bold text-white tracking-wide">{title}</h2>}
@@ -99,7 +99,7 @@ export default function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 md:px-8 md:py-4.5 border-t border-white/10 bg-white/[0.02] shrink-0">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 md:px-8 md:py-5 border-t border-white/10 bg-white/[0.02] shrink-0">
             {footer}
           </div>
         )}

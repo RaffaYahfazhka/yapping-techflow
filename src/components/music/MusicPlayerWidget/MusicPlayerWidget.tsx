@@ -79,7 +79,7 @@ export default function MusicPlayerWidget({
 
   return (
     <section
-      className={`fixed bottom-6 left-6 z-[70] grid w-[min(340px,calc(100vw-48px))] max-[1366px]:w-[310px] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3.5 overflow-hidden rounded-2xl border bg-[#0d0e13]/95 p-3 text-zinc-100 shadow-[0_20px_45px_rgba(0,0,0,0.7)] backdrop-blur-[20px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
+      className={`fixed bottom-6 left-6 z-[70] grid w-[min(340px,calc(100vw-48px))] max-[1366px]:w-[310px] grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-4 overflow-hidden rounded-2xl border bg-[#0d0e13]/95 p-3.5 text-zinc-100 shadow-[0_20px_45px_rgba(0,0,0,0.7)] backdrop-blur-[20px] transition-[border-color,box-shadow] duration-200 max-[480px]:bottom-3 max-[480px]:left-3 max-[480px]:w-[calc(100vw-24px)] ${
         playing ? 'border-emerald-500/40 shadow-[0_0_28px_rgba(16,185,129,0.25)]' : 'border-white/15'
       } ${className}`}
       aria-label="Mini music player"

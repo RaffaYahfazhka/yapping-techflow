@@ -1024,8 +1024,9 @@ export default function OfficePage() {
 
       {/* Penthouse Quick Actions Dock — Glassmorphic with Lucide Icons */}
       {booted && (
-        <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 select-none max-w-[calc(100vw-2rem)] overflow-x-auto no-scrollbar shrink-0">
-          <Dock className="p-2 gap-1.5 sm:gap-2">
+        <div className="pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-4 select-none sm:bottom-4">
+          <div className="pointer-events-auto max-w-full overflow-x-auto overscroll-x-contain no-scrollbar">
+          <Dock className="mx-auto w-max gap-2 p-2.5 sm:gap-2.5 sm:p-3">
             <DockItem
               onClick={() => setIsMinimapOpen((o) => !o)}
               title="Radar Minimap Penthouse (M)"
@@ -1112,6 +1113,7 @@ export default function OfficePage() {
               </span>
             </DockItem>
           </Dock>
+          </div>
         </div>
       )}
       </main>

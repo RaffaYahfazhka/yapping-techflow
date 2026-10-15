@@ -129,7 +129,7 @@ export function DockItem({ children, className, onClick, title }: DockItemProps)
       onClick={onClick}
       title={title}
       className={cn(
-        "relative flex items-center justify-center rounded-xl p-2 font-medium text-xs text-zinc-300 transition-colors hover:text-white hover:bg-white/10 active:scale-95",
+        "relative flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl px-3 py-2 font-medium text-xs text-zinc-300 transition-colors hover:text-white hover:bg-white/10 active:scale-95",
         className
       )}
       style={{ minHeight: size }}
